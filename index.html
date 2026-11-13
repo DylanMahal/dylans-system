@@ -17,11 +17,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794592292">
+<link rel="stylesheet" href="app.css?v=1794592780">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
   <canvas id="bfxField"></canvas>
+  <canvas id="bfxFx"></canvas>
   <div class="bfx-vig"></div>
   <div class="bfx-term" id="bfxTerm"><span id="bfxCmd"></span><i class="bfx-caret"></i></div>
   <div class="bfx-line" id="bfxLine"></div>
@@ -46,8 +47,8 @@
   var fxOff=false;try{fxOff=localStorage.getItem('ds3:fx')==='false'}catch(e){}
   var lite=fxOff||matchMedia('(prefers-reduced-motion: reduce)').matches;if(lite)el.classList.add('lite');
   var $=function(i){return document.getElementById(i)};
-  var t0=performance.now(),MIN=lite?400:8200,done=false,closing=false,target=4,shown=0,raf=0;
-  document.body.classList.add('booting');
+  var t0=performance.now(),MIN=lite?400:9800,done=false,closing=false,target=4,shown=0,raf=0;
+  document.body.classList.add('booting');window.__bfxT0=t0;
 
   /* background: slow constellation field */
   var cv=$('bfxField'),cx=cv.getContext('2d'),W,H,DPR,pts=[];
@@ -64,14 +65,14 @@
   var cmd='dylan@stack:~$ ./boot --system',ci=0;
   function typeCmd(){if(ci<=cmd.length){$('bfxCmd').innerHTML=cmd.slice(0,ci).replace('dylan@stack','<b>dylan@stack</b>');ci++;setTimeout(typeCmd,lite?0:(ci<15?38:46))}}
   setTimeout(typeCmd,lite?0:250);
-  setTimeout(function(){el.classList.add('phB')},lite?0:1750);
-  setTimeout(function(){el.classList.add('phC')},lite?0:2500);
+  setTimeout(function(){el.classList.add('phB')},lite?0:1650);
+  setTimeout(function(){el.classList.add('phC')},lite?0:3960);
 
   /* face decoder */
   var fc=$('bfxFace'),fx=fc.getContext('2d'),img=new Image(),imgOk=false,off=document.createElement('canvas'),ox=off.getContext('2d');
   img.onload=function(){imgOk=true};img.src='icons/icon-512.png?v=2';
   var burst=0;
-  function face(e){if(!imgOk)return;var S=360,k=Math.max(0,Math.min(1,(e-2700)/3200));if(k<=0){fx.clearRect(0,0,S,S);return}
+  function face(e){if(!imgOk)return;var S=360,k=Math.max(0,Math.min(1,(e-3950)/2500));if(k<=0){fx.clearRect(0,0,S,S);return}
     var blk=Math.max(1,Math.round(60*Math.pow(1-k,2.4)));if(k<1&&Math.random()<.05)blk=Math.max(blk,8+Math.random()*16|0);
     var n=Math.max(1,Math.round(S/blk));off.width=n;off.height=n;ox.drawImage(img,0,0,n,n);
     fx.clearRect(0,0,S,S);fx.imageSmoothingEnabled=blk<=1;fx.globalAlpha=Math.min(1,k*2.5);fx.drawImage(off,0,0,S,S);fx.globalAlpha=1;
@@ -79,25 +80,59 @@
     if(burst>0)burst--}
 
   /* wordmark: letters resolve one by one */
-  var word='SYSTEM',wEl=$('bfxWord'),glyph='#%&*+=<>/\\|01',wT0=3300;
+  var word='SYSTEM',wEl=$('bfxWord'),glyph='#%&*+=<>/\\|01',wT0=5200;
   for(var i=0;i<word.length;i++){var s=document.createElement('span');s.textContent=' ';wEl.appendChild(s)}
   function wordTick(e){var sp=wEl.children;for(var i=0;i<sp.length;i++){var st=wT0+i*260,lock=st+520;
     if(e<st)sp[i].textContent=' ';else if(e<lock){sp[i].textContent=glyph[Math.random()*glyph.length|0];sp[i].className='scr'}else if(sp[i].className!=='ok'){sp[i].textContent=word[i];sp[i].className='ok'}}}
 
   /* status + log */
-  var subs=[[2600,'establishing link'],[3800,'decoding identity'],[5000,'syncing your stack'],[6200,'restoring today'],[7300,'compiling interface']],curSub='';
+  var subs=[[1800,'charging'],[3600,'release'],[4500,'decoding identity'],[6000,'syncing your stack'],[7300,'restoring today'],[8500,'compiling interface']],curSub='';
   function setSub(t){if(t===curSub)return;curSub=t;var s=$('bfxSub');s.classList.remove('in');void s.offsetWidth;s.textContent=t;s.classList.add('in')}
   var log=$('bfxLog'),q=[],qBusy=false,maxL=4;
   function render(s){var sp=document.createElement('span');sp.innerHTML=s;log.appendChild(sp);while(log.children.length>maxL)log.removeChild(log.firstChild)}
   function pump(){if(!q.length){qBusy=false;return}qBusy=true;render(q.shift());setTimeout(pump,lite?0:420)}
   var logOn=false;function addLine(s){q.push(s);if(logOn&&!qBusy)pump()}
   ['kernel · dylan.sys','crt · 60hz · gamma 2.2','mount /today /gym /journal /stack'].forEach(addLine);
-  setTimeout(function(){logOn=true;if(!qBusy)pump()},lite?0:2600);
+  setTimeout(function(){logOn=true;if(!qBusy)pump()},lite?0:4200);
+
+  /* anime-style power-up: spiral charge, focus lines, impact frames, shockwave */
+  var ec=$('bfxFx'),ex=ec.getContext('2d'),EW,EH,parts=[],debris=[],fired=false;
+  function esize(){EW=ec.width=innerWidth*DPR;EH=ec.height=innerHeight*DPR}esize();addEventListener('resize',esize);
+  function cen(){var r=$('bfxCore').getBoundingClientRect();return [(r.left+r.width/2)*DPR,(r.top+r.height/2)*DPR,r.width/2*DPR]}
+  function shake(a){var x=(Math.random()-.5)*a,y=(Math.random()-.5)*a;el.style.setProperty('--sx',x+'px');el.style.setProperty('--sy',y+'px')}
+  function energy(e){ex.clearRect(0,0,EW,EH);if(lite)return;var c=cen(),X=c[0],Y=c[1],R=Math.hypot(EW,EH)*.6;
+    if(e>=1700&&e<3600){var k=(e-1700)/1900,k2=k*k;
+      // focus lines
+      ex.save();ex.translate(X,Y);var nl=70+k*80|0;for(var i=0;i<nl;i++){var a=Math.random()*Math.PI*2,r0=R*(.95-.6*k2*Math.random()),w=(.002+.006*Math.random())*(1+k);
+        ex.fillStyle='rgba(255,255,255,'+(.04+.22*k2)*Math.random()+')';ex.beginPath();ex.moveTo(Math.cos(a-w)*R,Math.sin(a-w)*R);ex.lineTo(Math.cos(a)*r0,Math.sin(a)*r0);ex.lineTo(Math.cos(a+w)*R,Math.sin(a+w)*R);ex.fill()}ex.restore();
+      // spiral particles
+      var sp=2+k*14|0;for(i=0;i<sp;i++)parts.push({a:Math.random()*6.283,r:R*(.55+.45*Math.random()),c:Math.random()<.5?'255,46,136':'0,229,255',w:(1+Math.random()*2)*DPR});
+      ex.globalCompositeOperation='lighter';
+      for(i=parts.length-1;i>=0;i--){var p=parts[i],ox=X+Math.cos(p.a)*p.r,oy=Y+Math.sin(p.a)*p.r;p.r*=.93-k*.04;p.a+=.05+k*.09;var nx=X+Math.cos(p.a)*p.r,ny=Y+Math.sin(p.a)*p.r;
+        ex.strokeStyle='rgba('+p.c+',.85)';ex.lineWidth=p.w;ex.beginPath();ex.moveTo(ox,oy);ex.lineTo(nx,ny);ex.stroke();if(p.r<6*DPR)parts.splice(i,1)}
+      // core
+      var cr=(6+44*k2)*DPR*(.9+Math.random()*.2),g=ex.createRadialGradient(X,Y,0,X,Y,cr*3);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.18,'rgba(255,255,255,.9)');g.addColorStop(.35,'rgba(255,46,136,.6)');g.addColorStop(.6,'rgba(0,229,255,.25)');g.addColorStop(1,'rgba(0,0,0,0)');
+      ex.fillStyle=g;ex.beginPath();ex.arc(X,Y,cr*3,0,6.283);ex.fill();ex.globalCompositeOperation='source-over';shake(k2*7)}
+    else if(e>=3600&&e<3740){ // hold breath: darken + pinpoint
+      ex.fillStyle='rgba(0,0,0,.85)';ex.fillRect(0,0,EW,EH);ex.fillStyle='#fff';ex.beginPath();ex.arc(X,Y,3*DPR,0,6.283);ex.fill();shake(0)}
+    else if(e>=3740&&e<3980){ // impact frames
+      var f=((e-3740)/60|0)%2;ex.fillStyle=f?'#000':'#f4f4f4';ex.fillRect(0,0,EW,EH);ex.strokeStyle=f?'#fff':'#000';ex.lineCap='round';
+      for(var j=0;j<14;j++){var a2=j/14*6.283+Math.random()*.3,r=0;ex.lineWidth=(1+Math.random()*4)*DPR;ex.beginPath();ex.moveTo(X,Y);while(r<R){r+=(20+Math.random()*60)*DPR;var aa=a2+(Math.random()-.5)*.35;ex.lineTo(X+Math.cos(aa)*r,Y+Math.sin(aa)*r)}ex.stroke()}
+      ex.fillStyle=f?'#fff':'#000';ex.beginPath();ex.arc(X,Y,(30+Math.random()*30)*DPR,0,6.283);ex.fill();shake(22)
+      if(!fired){fired=true;for(var d=0;d<120;d++){var da=Math.random()*6.283,sp2=(4+Math.random()*16)*DPR;debris.push({x:X,y:Y,vx:Math.cos(da)*sp2,vy:Math.sin(da)*sp2,l:1,c:Math.random()<.5?'255,46,136':'0,229,255'})}}}
+    else if(e>=3980&&e<5200){ // shockwave + debris
+      var t=(e-3980)/1220,ease=1-Math.pow(1-t,3);ex.globalCompositeOperation='lighter';
+      [[0,'255,46,136'],[.06,'0,229,255'],[.14,'255,255,255']].forEach(function(o){var rr=Math.max(0,ease-o[0])*R*1.1;ex.strokeStyle='rgba('+o[1]+','+(1-t)*.8+')';ex.lineWidth=Math.max(.5,(1-t)*14)*DPR;ex.beginPath();ex.arc(X,Y,rr,0,6.283);ex.stroke()});
+      for(var i2=debris.length-1;i2>=0;i2--){var q2=debris[i2];q2.x+=q2.vx;q2.y+=q2.vy;q2.vx*=.95;q2.vy*=.95;q2.l-=.018;if(q2.l<=0){debris.splice(i2,1);continue}
+        ex.strokeStyle='rgba('+q2.c+','+q2.l+')';ex.lineWidth=2*DPR;ex.beginPath();ex.moveTo(q2.x,q2.y);ex.lineTo(q2.x-q2.vx*2.5,q2.y-q2.vy*2.5);ex.stroke()}
+      var fl=Math.max(0,1-t*7);if(fl>0){ex.fillStyle='rgba(255,255,255,'+fl*.35+')';ex.fillRect(0,0,EW,EH)}
+      ex.globalCompositeOperation='source-over';shake(Math.max(0,(1-t*3))*10)}
+    else shake(0)}
 
   function tick(now){raf=requestAnimationFrame(tick);var e=now-t0;
-    field(Math.min(1,e/2500));face(e);wordTick(e);
+    field(Math.min(1,e/2500));energy(e);face(e);wordTick(e);
     for(var si=subs.length-1;si>=0;si--)if(e>=subs[si][0]){setSub(done&&e>MIN-300?'ready':subs[si][1]);break}
-    var cap=Math.min(target,Math.max(0,(e-2500)/(MIN-2500))*100,done?100:97);shown+=(Math.max(cap,shown)-shown)*.08;if(done&&e>MIN)shown+=(100-shown)*.2;
+    var cap=Math.min(target,Math.max(0,(e-3900)/(MIN-3900))*100,done?100:97);shown+=(Math.max(cap,shown)-shown)*.08;if(done&&e>MIN)shown+=(100-shown)*.2;
     var p=Math.min(100,shown);$('bfxPct').textContent=p>=99.5?'OK':('0'+Math.floor(p)).slice(-2);$('bfxBar').style.transform='scaleX('+(p/100)+')';
     $('bfxProg').style.strokeDashoffset=1231.5*(1-p/100);$('bfxDotG').setAttribute('transform','rotate('+(p*3.6)+' 200 200)');
     if(done&&e>MIN&&p>99.4&&!q.length&&!closing)close();
@@ -352,9 +387,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794592292"</script>
-<script src="config.js?v=1794592292"></script>
+<script>window.APP_V="1794592780"</script>
+<script src="config.js?v=1794592780"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794592292"></script>
+<script src="app.js?v=1794592780"></script>
 </body>
 </html>

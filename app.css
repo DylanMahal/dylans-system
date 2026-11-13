@@ -582,7 +582,9 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 /* ===== boot animation ===== */
 body.booting{overflow:hidden}
 #bootfx{position:fixed;inset:0;z-index:10000;background:#030305;color:#ddd;font-family:var(--mono);overflow:hidden;--pk:#ff2e88;--cy:#00e5ff}
-#bfxField{position:absolute;inset:0;width:100%;height:100%}
+#bfxField,#bfxFx{position:absolute;inset:0;width:100%;height:100%}
+#bfxFx{z-index:2;transform:translate(var(--sx,0),var(--sy,0))}
+.bfx-core,.bfx-word,.bfx-status,.bfx-meter{translate:var(--sx,0) var(--sy,0)}
 .bfx-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.85) 100%),repeating-linear-gradient(0deg,rgba(255,255,255,.018) 0 1px,transparent 1px 3px)}
 /* phase A: terminal command */
 .bfx-term{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font:13px/1 var(--mono);color:#cfcfd6;letter-spacing:.04em;white-space:nowrap;transition:opacity .25s,filter .25s}
@@ -591,11 +593,13 @@ body.booting{overflow:hidden}
 @keyframes bfxBlink{50%{opacity:0}}
 .bfx-line{position:absolute;left:50%;top:50%;width:0;height:1px;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 12px #fff,0 0 30px var(--cy);opacity:0}
 #bootfx.phB .bfx-term{opacity:0;filter:blur(4px)}
-#bootfx.phB .bfx-line{animation:bfxLine .9s cubic-bezier(.7,0,.2,1) forwards}
+
 @keyframes bfxLine{0%{width:0;opacity:1}45%{width:min(70vw,520px);opacity:1}100%{width:0;opacity:0}}
 /* phase B/C: ring + face */
 .bfx-core{position:absolute;left:50%;top:43%;width:min(56vmin,340px);aspect-ratio:1;transform:translate(-50%,-50%);opacity:0;transition:opacity .4s}
-#bootfx.phB .bfx-core{opacity:1}
+#bootfx.phC .bfx-core{opacity:1;animation:bfxPop .7s cubic-bezier(.2,1.4,.3,1)}
+@keyframes bfxPop{from{transform:translate(-50%,-50%) scale(.2);filter:brightness(3)}}
+.bfx-core{z-index:3}
 .bfx-ring{position:absolute;inset:-6%;width:112%;height:112%;overflow:visible}
 .bfx-ring circle{fill:none}
 .bfx-ring .halo{stroke:rgba(255,255,255,.06);stroke-width:1}
@@ -603,7 +607,7 @@ body.booting{overflow:hidden}
 .bfx-ring .prog{stroke:var(--pk);stroke-width:1.6;stroke-dasharray:1231.5;stroke-dashoffset:1231.5;transform:rotate(-90deg);transform-origin:200px 200px;filter:drop-shadow(0 0 6px var(--pk));opacity:0;transition:opacity .6s}
 .bfx-ring .dot{fill:#fff;filter:drop-shadow(0 0 6px var(--pk)) drop-shadow(0 0 12px var(--pk))}
 #bfxDotG{opacity:0;transition:opacity .6s}
-#bootfx.phB .bfx-ring .ring{animation:bfxDraw 1.4s .55s cubic-bezier(.6,0,.2,1) forwards}
+#bootfx.phC .bfx-ring .ring{animation:bfxDraw 1.1s .1s cubic-bezier(.6,0,.2,1) forwards}
 @keyframes bfxDraw{to{stroke-dashoffset:0}}
 #bootfx.phC .bfx-ring .prog,#bootfx.phC #bfxDotG{opacity:1}
 .bfx-face{position:absolute;inset:4%;border-radius:50%;overflow:hidden;-webkit-mask:radial-gradient(circle,#000 50%,rgba(0,0,0,.55) 63%,transparent 71%);mask:radial-gradient(circle,#000 50%,rgba(0,0,0,.55) 63%,transparent 71%)}
