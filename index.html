@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794600617">
+<link rel="stylesheet" href="app.css?v=1794601561">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -184,13 +184,11 @@
 <div class="cur-xy" id="curxy" aria-hidden="true"></div>
 
 <header class="bar">
-  <span class="prompt">dylan@<b>stack</b>:~$<span class="caret"></span></span>
+  <span class="prompt">dylan@<b>system</b>:~$<span class="caret"></span></span>
   <nav class="tabs" aria-label="Views" id="tabs"></nav>
   <div class="meta">
     <button class="pendbtn" id="pendBtn" type="button" title="Edits waiting to go into the Excel sheet"></button>
     <span class="sync" id="sync" title="Where your data is saved"><i></i><span id="syncTxt">local</span></span>
-    <button class="iconbtn" id="editBtn" type="button" aria-pressed="false" title="Edit mode (e)">EDIT</button>
-    <button class="iconbtn hide-sm" id="palBtn" type="button" title="Search everything (/)">⌘K</button>
     <button class="iconbtn" id="fxBtn" type="button" aria-pressed="true" title="Effects on or off (f)">FX</button>
   </div>
 </header>
@@ -199,7 +197,7 @@
   <div class="nodata panel" id="nodata" hidden><div class="pb">No sheet data yet. Once the laptop sync agent runs, your plan, stack and money fill in here automatically.</div></div>
   <!-- TODAY -->
   <section class="view" id="v-today" aria-label="Today">
-    <div class="banner slim"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/today"><span class="slash">/</span>today</h2><span class="sub" id="todaySub">day plan v2</span></div></div>
+    <div class="banner slim"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/today"><span class="slash">/</span>today</h2><span class="sub" id="todaySub">weekday plan</span></div></div>
     <div class="hud">
       <div class="panel clockp">
         <div class="ph"><span class="tag">sys.clock</span><span id="planName"></span></div>
@@ -347,7 +345,7 @@
       <div class="panel"><div class="ph"><span class="tag">streaks · last 30 days</span><span>from your ticks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
     </div>
     <div class="two" style="margin-top:12px">
-      <div class="panel"><div class="ph"><span class="tag">daily targets</span><span>Day Plan v2 · rows 140–145</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ add target</button></div></div>
+      <div class="panel"><div class="ph"><span class="tag">daily targets</span><span>from your plan</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ add target</button></div></div>
       <div class="panel"><div class="ph"><span class="tag">weekly review notes</span><span id="notesSaved" class="dim"></span></div><div class="pb"><textarea class="notes" id="weekNotes" placeholder="What worked, what slipped, what to change next week…"></textarea></div></div>
     </div>
   </section>
@@ -385,6 +383,7 @@
     </div>
   </section>
 </main>
+<button class="editpill" id="editPill" type="button" hidden>✎ editing · tap to finish</button>
 
 
 <nav class="bnav" id="bnav" aria-label="Sections"></nav>
@@ -409,9 +408,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794600617"</script>
-<script src="config.js?v=1794600617"></script>
+<script>window.APP_V="1794601561"</script>
+<script src="config.js?v=1794601561"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794600617"></script>
+<script src="app.js?v=1794601561"></script>
 </body>
 </html>

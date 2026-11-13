@@ -321,7 +321,7 @@ const F_EXP=[{k:'name'},{k:'cat',label:'category',type:'select',options:EXP_CATS
 const F_TGT=[{k:'item',label:'target'},{k:'notes',label:'detail',type:'area'}];
 function pick(o,fields){const r={};fields.forEach(f=>r[f.k]=o[f.k]??null);return r}
 function editPlanItem(kind,it){const pre=kind==='weekday'?'wd':'we';
-  openEditor({title:`edit · ${kind==='weekday'?'Day Plan v2':'Weekend Plan'}${it.row?' · row '+it.row:''}`,fields:F_PLAN,values:pick(it,F_PLAN),
+  openEditor({title:`edit · ${kind==='weekday'?'weekday plan':'weekend plan'}${it.row?' · row '+it.row:''}`,fields:F_PLAN,values:pick(it,F_PLAN),
     onSave:(v,ch)=>patch(it.key,it.isNew?v:ch),onDelete:()=>{if(it.isNew)dropPatch(it.key);else patch(it.key,{_del:true})},onRevert:it.edited&&!it.isNew?()=>dropPatch(it.key):null})}
 function addPlanItem(kind,block){const pre=kind==='weekday'?'wd':'we';const b=M.plans[kind].find(x=>x.row===block);
   openEditor({title:`add to ${b?b.short.toLowerCase():'block'}`,fields:F_PLAN,values:{time:b?fmtM(b.s):'',type:'Task',sched:'Daily'},isNew:true,
@@ -342,8 +342,18 @@ function editIncome(){openEditor({title:'edit · income (Expenses Summary B15–
 
 /* ================= EDIT MODE ================= */
 let EDIT=false;
-function setEdit(on){EDIT=on;document.body.classList.toggle('edit-on',on);$('editBtn').setAttribute('aria-pressed',on);if(on)glitchAll()}
-$('editBtn').onclick=()=>setEdit(!EDIT);
+function setEdit(on){EDIT=on;document.body.classList.toggle('edit-on',on);$('editPill').hidden=!on;if(on){glitchAll();try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}}
+$('editPill').onclick=()=>setEdit(false);
+/* edit mode: long-press (touch) or right-click (mouse) on anything editable */
+(function(){let t=null,sx=0,sy=0,fired=false;
+  const EDITABLE='.it,.tr,.trk,.tgt,.blk,.panel,.exp,.row';
+  const trigger=(target)=>{if(target.closest('input,textarea,select,#sheet,.drawer,.modal,#v-gym,#v-journal'))return false;if(!target.closest('#main'))return false;
+    const wasOn=EDIT;if(!EDIT)setEdit(true);const row=target.closest('.it,.tr,.trk,.tgt,[data-key]');const ed=row&&row.querySelector('.ed,[data-edit],[data-editx],[data-tedit]');if(ed&&wasOn)ed.click();return true};
+  addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const tg=e.target;sx=e.touches[0].clientX;sy=e.touches[0].clientY;fired=false;clearTimeout(t);t=setTimeout(()=>{fired=trigger(tg)},520)},{passive:true});
+  addEventListener('touchmove',e=>{if(Math.hypot(e.touches[0].clientX-sx,e.touches[0].clientY-sy)>10)clearTimeout(t)},{passive:true});
+  addEventListener('touchend',e=>{clearTimeout(t);if(fired){e.preventDefault();fired=false}});
+  addEventListener('contextmenu',e=>{if(e.target.closest('input,textarea'))return;if(trigger(e.target))e.preventDefault()});
+})();
 
 
 /* ================= TODAY ================= */
@@ -360,7 +370,7 @@ function itemRow(i){
 }
 function renderToday(){
   const blocks=M.plans[planKind];
-  $('planName').textContent=planKind==='weekday'?'day plan v2':'weekend plan';
+  $('planName').textContent=planKind==='weekday'?'weekday plan':'weekend plan';$('todaySub').textContent=planKind==='weekday'?'weekday plan':'weekend plan';
   $('pWd').setAttribute('aria-pressed',planKind==='weekday');$('pWe').setAttribute('aria-pressed',planKind==='weekend');
   const gym=(planKind==='weekday'&&(DOWN==='Tue'||DOWN==='Thu'))||(planKind==='weekend');
   const tdate=L.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase();
@@ -1095,11 +1105,11 @@ let stF='all',catF=null,sortK='monthly',sortD=-1;
 const stFilter=k=>s=>k==='all'||(k==='inb'?s.inb:k==='opt'?!s.inb:k==='edited'?s.edited:s.status===k);
 function renderStack(){
   const st=M.stack;const c=s=>st.filter(x=>x.status===s).length;
-  $('stackSub').textContent=`${st.length} rows · Stack sheet · status from Day Plan v2`;
+  $('stackSub').textContent=`${st.length} rows · status from your daily plan`;
   $('stackKv').innerHTML=[['budget',gbp(M.stackBudget,2),'/month · in budget = Yes'],['live budget',gbp(M.liveBudget,2),'/month · minus paused in v2'],['optional',gbp(M.stackOpt,2),'/month · in budget = No'],['in plan',String(c('active')),`${c('asneeded')} as needed · ${c('paused')} paused`]]
     .map(([k,v,s],i)=>`<div class="panel"><div class="ph"><span class="tag">${k}</span></div><div class="pb"><span class="v num ${i===1?'pink':''}" data-scr="${esc(v)}">${v}</span><span class="s">${s}</span></div></div>`).join('');
   const pb=st.filter(s=>s.inb&&s.status==='paused'&&s.monthly>0);
-  $('stackWarn').innerHTML=pb.length?`<div class="panel"><div class="pb warn" style="font-size:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px">⚠ ${pb.map(s=>esc(s.name)+' ('+gbp(s.monthly,2)+')').join(', ')} ${pb.length>1?'are':'is'} paused in Day Plan v2 but still in budget.</span><button class="btn p" type="button" id="fixPaused">set to not in budget</button></div></div>`:'';
+  $('stackWarn').innerHTML=pb.length?`<div class="panel"><div class="pb warn" style="font-size:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px">⚠ ${pb.map(s=>esc(s.name)+' ('+gbp(s.monthly,2)+')').join(', ')} ${pb.length>1?'are':'is'} paused in your plan but still in budget.</span><button class="btn p" type="button" id="fixPaused">set to not in budget</button></div></div>`:'';
   if(pb.length)$('fixPaused').onclick=()=>{pb.forEach(s=>{EDITS.p[s.key]={...(EDITS.p[s.key]||{}),inb:false,_was:s.name}});saveEdits();rebuild();flash('queued');};
   const sts=[['all','all'],['active','in plan'],['asneeded','as needed'],['paused','paused'],['notinplan','not in plan'],['inb','in budget'],['opt','optional'],['edited','edited Δ']];
   $('stChips').innerHTML=sts.map(([k,l])=>`<button class="chip" type="button" data-s="${k}" aria-pressed="${stF===k}">${l}<span class="c">${st.filter(stFilter(k)).length}</span></button>`).join('');
@@ -1378,7 +1388,7 @@ function drawPal(){const q=norm($('palIn').value);const all=palIndex();palItems=
   $('palList').innerHTML=palItems.map((x,i)=>`<li class="${i===palSel?'sel':''}" data-i="${i}"><span>${esc(x.l)}</span><span class="dim">${esc(x.s)}</span></li>`).join('')||'<li class="dim">nothing found</li>'}
 $('palIn').oninput=()=>{palSel=0;drawPal()};
 $('palList').onclick=e=>{const li=e.target.closest('li[data-i]');if(li){closePal();palItems[+li.dataset.i].run()}};
-$('pal').onclick=e=>{if(e.target===$('pal'))closePal()};$('palBtn').onclick=openPal;
+$('pal').onclick=e=>{if(e.target===$('pal'))closePal()};
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
   if($('pal').classList.contains('on')){if(e.key==='Escape')closePal();else if(e.key==='ArrowDown'){palSel=Math.min(palSel+1,palItems.length-1);drawPal();e.preventDefault()}else if(e.key==='ArrowUp'){palSel=Math.max(palSel-1,0);drawPal();e.preventDefault()}else if(e.key==='Enter'&&palItems[palSel]){closePal();palItems[palSel].run()}return}

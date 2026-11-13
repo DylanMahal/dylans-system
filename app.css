@@ -731,3 +731,6 @@ body.booting{overflow:hidden}
 .medal{font-size:14px}
 .barviz{display:flex;align-items:center;gap:2px;height:110px}.barviz .bar{width:60px;height:10px;background:linear-gradient(#999,#555)}.barviz .plate{width:16px;background:var(--pink);color:#000;font:9px var(--pix);display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;border:1px solid #000}
 @media (hover:none){.sgrid{gap:4px}}
+
+.editpill{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(52px + env(safe-area-inset-bottom));z-index:70;appearance:none;border:1px solid var(--pink);background:rgba(10,10,12,.92);color:var(--pink);font:11px var(--pix);letter-spacing:.1em;padding:10px 16px;cursor:pointer;box-shadow:0 0 18px rgba(255,42,109,.35);backdrop-filter:blur(8px)}
+@media (max-width:900px){.editpill{bottom:calc(76px + env(safe-area-inset-bottom))}}
