@@ -591,7 +591,7 @@ body.booting{overflow:hidden}
 .bfx-floor{position:absolute;left:-50%;right:-50%;bottom:-10%;height:55%;perspective:420px;opacity:.5}
 .bfx-floor i{position:absolute;inset:0;transform:rotateX(68deg);transform-origin:50% 100%;background:linear-gradient(transparent 0 96%,rgba(255,46,136,.55) 96%) 0 0/100% 46px,linear-gradient(90deg,transparent 0 97%,rgba(0,229,255,.4) 97%) 0 0/46px 100%;animation:bfxFloor .6s linear infinite;-webkit-mask:linear-gradient(transparent,#000 60%)}
 @keyframes bfxFloor{to{background-position:0 46px,0 0}}
-.bfx-core{position:absolute;left:50%;top:44%;width:min(62vmin,400px);aspect-ratio:1;transform:translate(-50%,-50%);z-index:3;animation:bfxCoreIn .9s .25s cubic-bezier(.2,.9,.1,1) both}
+.bfx-core{position:absolute;left:50%;top:44%;width:min(62vmin,400px);aspect-ratio:1;transform:translate(-50%,-50%);z-index:3;animation:bfxCoreIn 1.6s .35s cubic-bezier(.2,.9,.1,1) both}
 @keyframes bfxCoreIn{0%{transform:translate(-50%,-50%) scale(.4) rotate(-40deg);opacity:0;filter:blur(8px)}100%{transform:translate(-50%,-50%) scale(1);opacity:1;filter:none}}
 .bfx-rings{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
 .bfx-rings circle{fill:none;transform-origin:200px 200px}
@@ -600,9 +600,16 @@ body.booting{overflow:hidden}
 .bfx-rings .r3{stroke:rgba(255,255,255,.18);stroke-width:1;stroke-dasharray:2 4;animation:bfxSpin 12s linear infinite}
 .bfx-rings .prog{stroke:var(--pk);stroke-width:6;stroke-linecap:butt;stroke-dasharray:1143.5;stroke-dashoffset:1143.5;transform:rotate(-90deg);filter:drop-shadow(0 0 8px var(--pk))}
 .bfx-rings .ticks line{stroke:rgba(0,229,255,.7);stroke-width:2;opacity:0;animation:bfxTick .3s forwards}
+.bfx-rings .ticks{animation:bfxSpin 30s linear infinite;transform-origin:200px 200px}
 @keyframes bfxTick{to{opacity:1}}
 @keyframes bfxSpin{to{transform:rotate(360deg)}}
-.bfx-logo{position:absolute;inset:24%;border-radius:22%;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,.12),0 0 60px rgba(0,229,255,.35),0 0 120px rgba(255,46,136,.25);animation:bfxLogoIn 1.1s .45s steps(1) both}
+.bfx-logo{position:absolute;inset:15%;border-radius:50%;overflow:hidden;-webkit-mask:radial-gradient(circle at 50% 50%,#000 46%,rgba(0,0,0,.6) 60%,transparent 71%);mask:radial-gradient(circle at 50% 50%,#000 46%,rgba(0,0,0,.6) 60%,transparent 71%);animation:bfxLogoIn 1.4s .6s steps(1) both}
+.bfx-logo canvas{width:100%;height:100%;display:block;filter:drop-shadow(-5px 0 rgba(255,46,136,.85)) drop-shadow(5px 0 rgba(0,229,255,.75)) saturate(1.2) contrast(1.1)}
+.bfx-logo::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0 2px,transparent 2px 4px);mix-blend-mode:multiply}
+.bfx-core::before{content:"";position:absolute;inset:12%;border-radius:50%;background:radial-gradient(circle,rgba(0,229,255,.18),rgba(255,46,136,.08) 55%,transparent 70%);animation:bfxPulse 1.6s ease-in-out infinite}
+@keyframes bfxPulse{50%{transform:scale(1.08);opacity:.6}}
+.bfx-sub{position:absolute;left:0;right:0;top:calc(44% + min(31vmin,200px) + 22px + clamp(26px,6vmin,46px) + 18px);text-align:center;z-index:4;font:11px var(--mono);letter-spacing:.4em;text-transform:uppercase;color:var(--cy);opacity:.8}
+.bfx-sub::after{content:"_";animation:bfxBlink .8s steps(1) infinite}@keyframes bfxBlink{50%{opacity:0}}
 @keyframes bfxLogoIn{0%{opacity:0}8%{opacity:1}12%{opacity:0}20%{opacity:1}24%{opacity:.2}30%,100%{opacity:1}}
 .bfx-logo .im{position:absolute;inset:0;background-size:cover;background-position:center}
 .bfx-logo .p,.bfx-logo .m{mix-blend-mode:screen;opacity:.75}
@@ -645,4 +652,4 @@ body.booting{overflow:hidden}
 #bootfx.fast .bfx-strips i{animation-duration:.3s;animation-delay:0s!important}
 #bootfx.lite{animation:none}#bootfx.lite *{animation-duration:.01s!important;animation-iteration-count:1!important}
 #bootfx.lite #bfxRain,#bootfx.lite .bfx-floor,#bootfx.lite .bfx-scan::after{display:none}
-@media (max-width:600px){.bfx-core{top:36%}.bfx-title{top:calc(36% + 31vmin + 18px)}.bfx-log{font-size:9px;max-width:60vw;bottom:9vh}.bfx-pct{bottom:9vh;font-size:13vmin}.bfx-hud{font-size:9px}}
+@media (max-width:600px){.bfx-core{top:36%}.bfx-title{top:calc(36% + 31vmin + 18px)}.bfx-sub{top:calc(36% + 31vmin + 18px + 6vmin + 16px);font-size:9px}.bfx-log{font-size:9px;max-width:60vw;bottom:9vh}.bfx-pct{bottom:9vh;font-size:13vmin}.bfx-hud{font-size:9px}}

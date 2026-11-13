@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794591096">
+<link rel="stylesheet" href="app.css?v=1794591686">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -36,14 +36,10 @@
       <circle class="prog" id="bfxProg" cx="200" cy="200" r="182"/>
       <g class="ticks" id="bfxTicks"></g>
     </svg>
-    <div class="bfx-logo">
-      <div class="im c" style="background-image:url(icons/icon-512.png?v=2)"></div>
-      <div class="im p" style="background-image:url(icons/icon-512.png?v=2)"></div>
-      <div class="im m" style="background-image:url(icons/icon-512.png?v=2)"></div>
-      <div class="bfx-sweep"></div>
-    </div>
+    <div class="bfx-logo"><canvas id="bfxFace" width="360" height="360"></canvas><div class="bfx-sweep"></div></div>
   </div>
   <div class="bfx-title"><span id="bfxTitle" data-text="SYSTEM">SYSTEM</span></div>
+  <div class="bfx-sub" id="bfxSub">initialising</div>
   <div class="bfx-pct"><span id="bfxPct">000</span><small>%</small></div>
   <div class="bfx-bar"><i id="bfxBar"></i></div>
   <pre class="bfx-log" id="bfxLog"></pre>
@@ -55,10 +51,10 @@
   var fxOff=false;try{fxOff=localStorage.getItem('ds3:fx')==='false'}catch(e){}
   var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
   var lite=fxOff||reduced; if(lite)el.classList.add('lite');
-  var t0=performance.now(),MIN=lite?350:2300,done=false,closing=false,target=6,shown=0,raf=0;
+  var t0=performance.now(),MIN=lite?350:5200,done=false,closing=false,target=6,shown=0,raf=0;
   var $=function(i){return document.getElementById(i)};
   var hex=function(n){var s='';for(var i=0;i<n;i++)s+='0123456789ABCDEF'[Math.random()*16|0];return s};
-  $('bfxBuild').textContent='build '+String('1794591096').slice(-6);
+  $('bfxBuild').textContent='build '+String('1794591686').slice(-6);
   $('bfxNode').textContent=(navigator.platform||'web').toUpperCase().slice(0,10);
   // ticks
   var g=$('bfxTicks'),ns='http://www.w3.org/2000/svg';
@@ -74,25 +70,35 @@
       drops[i]+=0.55+((i*7)%5)*0.18;if(y>H&&Math.random()>.96)drops[i]=Math.random()*-20}}
   // log
   var log=$('bfxLog'),lines=[],q=[],qBusy=false,maxL=innerWidth<600?5:9;
-  function render(s,cls){lines.push('<span class="'+(cls||'')+'">'+s+'</span>');if(lines.length>maxL)lines.shift();log.innerHTML=lines.join('\n')}
-  function pump(){if(!q.length){qBusy=false;return}qBusy=true;var x=q.shift();render(x[0],x[1]);setTimeout(pump,lite?0:115)}
+  function render(s,cls){var sp=document.createElement('span');sp.className=cls||'';sp.innerHTML=s;log.appendChild(sp);while(log.children.length>maxL)log.removeChild(log.firstChild)}
+  function pump(){if(!q.length){qBusy=false;return}qBusy=true;var x=q.shift();render(x[0],x[1]);setTimeout(pump,lite?0:260)}
   function addLine(s,cls,now){if(now){render(s,cls);return}q.push([s,cls]);if(!qBusy)pump()}
-  var script=[[0,'BIOS dylan.sys rev '+hex(4)+' ............ [ OK ]'],[120,'crt.init 60hz · scanlines · dither'],[260,'mount /today /gym /journal /stack /money'],[420,'load shader.glitch '+hex(8)],[560,'heap 0x'+hex(6)+' alloc ok'],[700,'auth.session · checking keychain'],[880,'net.link supabase.co · tls1.3']];
+  var script=[[0,'POST check · cpu ok · gpu ok · ram ok'],[0,'BIOS dylan.sys rev '+hex(4)+' ............ [ OK ]'],[120,'crt.init 60hz · scanlines · dither'],[260,'mount /today /gym /journal /stack /money'],[420,'load shader.glitch '+hex(8)],[560,'heap 0x'+hex(6)+' alloc ok'],[700,'auth.session · checking keychain'],[880,'net.link supabase.co · tls1.3'],[0,'decode identity.img · 360px · 4 passes'],[0,'calibrate crt gamma 2.2'],[0,'spin up glitch engine x4']];
   script.forEach(function(s){addLine('<b>&gt;</b> '+s[1])});
   // title scramble
   var T=$('bfxTitle'),word='SYSTEM',ch='!<>-_\\/[]{}=+*^?#ΔΞ01';
   function scr(p){var o='';for(var i=0;i<word.length;i++)o+=i<p*word.length?word[i]:ch[Math.random()*ch.length|0];T.textContent=o}
-  var titleT0=t0+350;
+  var titleT0=t0+900;
   function tick(now){raf=requestAnimationFrame(tick);rain();
     var e=now-t0;
-    var cap=Math.min(target,done?100:Math.min(95,6+e/MIN*70));shown+=(Math.max(cap,shown)-shown)*0.12;if(done&&e>MIN)shown+=(100-shown)*0.25;
+    var cap=Math.min(target,e/MIN*100,done?100:96);shown+=(Math.max(cap,shown)-shown)*0.12;if(done&&e>MIN)shown+=(100-shown)*0.25;
     var p=Math.min(100,shown);$('bfxPct').textContent=('00'+Math.floor(p)).slice(-3);$('bfxBar').style.transform='scaleX('+(p/100)+')';
     $('bfxProg').style.strokeDashoffset=1143.5*(1-p/100);
-    if(now>titleT0)scr(Math.min(1,(now-titleT0)/700));
+    if(now>titleT0)scr(Math.min(1,(now-titleT0)/1400));face(e);
+    for(var si=subs.length-1;si>=0;si--)if(e>=subs[si][0]){var st=(done&&e>MIN)?'ready':subs[si][1];if($('bfxSub').dataset.s!==st){$('bfxSub').dataset.s=st;$('bfxSub').textContent=st}break}
     if(Math.random()<.3)$('bfxMem').textContent='0x'+hex(4);
     var d=new Date();$('bfxClock').textContent=d.toTimeString().slice(0,8)+'.'+('00'+d.getMilliseconds()).slice(-3);
     if(done&&e>MIN&&p>99.4&&!q.length&&!closing)close();
   }
+  var fc=$('bfxFace'),fx=fc.getContext('2d'),img=new Image(),imgOk=false,off=document.createElement('canvas'),ox=off.getContext('2d');
+  img.onload=function(){imgOk=true};img.src='icons/icon-512.png?v=2';
+  function face(e){if(!imgOk)return;var k=Math.max(0,Math.min(1,(e-700)/2600));var S=360;
+    var blk=Math.max(1,Math.round(48*Math.pow(1-k,2.2)));if(Math.random()<.06&&k<1)blk=Math.max(blk,6+Math.random()*14|0);
+    var n=Math.max(1,Math.round(S/blk));off.width=n;off.height=n;ox.drawImage(img,0,0,n,n);
+    fx.clearRect(0,0,S,S);fx.imageSmoothingEnabled=blk<=1;fx.globalAlpha=Math.min(1,k*3+.15);fx.drawImage(off,0,0,S,S);
+    var gl=k<1?.35:.08;if(Math.random()<gl){for(var i=0;i<3;i++){var y=Math.random()*S|0,h=4+Math.random()*26|0,dx=(Math.random()-.5)*(k<1?70:28);fx.drawImage(fc,0,y,S,h,dx,y,S,h)}}
+    fx.globalAlpha=1}
+  var subs=[[0,'initialising'],[900,'decoding identity'],[2300,'linking stack'],[3600,'syncing sheets'],[4700,'compiling ui']];
   raf=requestAnimationFrame(tick);
   function close(fast){if(closing)return;closing=true;
     addLine('<b>&gt;</b> handoff → ui ............ [ OK ]','ok',true);
@@ -346,9 +352,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794591096"</script>
-<script src="config.js?v=1794591096"></script>
+<script>window.APP_V="1794591686"</script>
+<script src="config.js?v=1794591686"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794591096"></script>
+<script src="app.js?v=1794591686"></script>
 </body>
 </html>
