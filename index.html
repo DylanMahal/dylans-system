@@ -2,7 +2,7 @@
 <html lang="en-GB">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Dylan's System</title>
 <meta name="theme-color" content="#050505">
 <meta name="color-scheme" content="dark">
@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794608423">
+<link rel="stylesheet" href="app.css?v=1794608878">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -179,6 +179,19 @@
     skip:function(){close(true)}
   };
   setTimeout(function(){el.addEventListener('pointerdown',function(){if(done&&!VID)close(true)})},300);
+  /* hold anywhere to skip: a ring fills under your thumb, then it jumps straight to the TV-off (with its sound) */
+  var hold=null;
+  function holdStart(x,y){if(closing||hold)return;var r=document.createElement('div');r.className='bfx-hold';r.style.left=x+'px';r.style.top=y+'px';
+    r.innerHTML='<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="hb"/><circle cx="50" cy="50" r="44" class="hf"/></svg><span>skip</span>';el.appendChild(r);
+    requestAnimationFrame(function(){requestAnimationFrame(function(){r.classList.add('on')})});
+    hold={r:r,t:setTimeout(function(){r.classList.add('fire');setTimeout(function(){r.remove()},400);hold=null;skipToEnd()},700)}}
+  function holdEnd(){if(!hold)return;clearTimeout(hold.t);var r=hold.r;r.classList.remove('on');r.classList.add('cancel');setTimeout(function(){r.remove()},250);hold=null}
+  function skipToEnd(){try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}if(VID){var d=V.duration||13.6;try{unmute();V.currentTime=Math.max(0,d-1.3);if(V.paused)V.play()}catch(e){tvOff()}}else close(true)}
+  el.addEventListener('touchstart',function(e){var t=e.touches[0];if(e.touches.length===1)holdStart(t.clientX,t.clientY);else holdEnd()},{passive:true,capture:true});
+  el.addEventListener('mousedown',function(e){holdStart(e.clientX,e.clientY)},true);
+  ['touchend','touchcancel','mouseup','mouseleave'].forEach(function(t){el.addEventListener(t,holdEnd,true)});
+  el.addEventListener('touchmove',function(e){if(!hold)return;var t=e.touches[0],r=hold.r;if(Math.abs(t.clientX-parseFloat(r.style.left))>30||Math.abs(t.clientY-parseFloat(r.style.top))>30)holdEnd()},{passive:true,capture:true});
+  el.addEventListener('contextmenu',function(e){e.preventDefault()});
   setTimeout(function(){if(!closing){done=true;target=100}},12000);
 })();
 </script>
@@ -386,7 +399,7 @@
 <div class="login" id="login" hidden><div class="loginbg"></div><form class="loginbox" id="loginForm"><div id="loginBox"><div class="tag pink">dylan@stack:~$ login</div><h1 class="glitch" data-text="SYSTEM">SYSTEM</h1>
 <label>email<input class="inp" id="lEmail" type="email" autocomplete="username" required></label><label>password<input class="inp" id="lPass" type="password" autocomplete="current-password" required></label>
 <button class="btn p" type="submit">sign in</button><p class="dim" id="loginMsg" aria-live="polite"></p></div></form></div>
-<div class="ticker" aria-hidden="true"><span class="lab">MINDSET</span><div class="run" id="tick"></div></div>
+<div class="edgefx" aria-hidden="true"><i class="ec tl"></i><i class="ec tr"></i><i class="ec bl"></i><i class="ec br"></i></div>
 <div class="flash" id="flash" aria-hidden="true"><span id="flashTxt"></span></div>
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Details" aria-hidden="true"></aside>
@@ -402,9 +415,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794608423"</script>
-<script src="config.js?v=1794608423"></script>
+<script>window.APP_V="1794608878"</script>
+<script src="config.js?v=1794608878"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794608423"></script>
+<script src="app.js?v=1794608878"></script>
 </body>
 </html>

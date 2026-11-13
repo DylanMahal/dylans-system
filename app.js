@@ -1439,7 +1439,7 @@ let notesT;$('weekNotes').oninput=()=>{clearTimeout(notesT);$('notesSaved').text
 /* ================= STACK ================= */
 const STC={'Anabolic / Main':'#ff2a6d','Ancillaries':'#ffb000','Supplements':'#57f5a8','Peptides':'#05d9e8','Cognition / Anxiolytic':'#b18cff','Bloods & Supplies':'#7a7a7a'};
 const STATUSL={active:'in plan',asneeded:'as needed',paused:'paused',notinplan:'not in plan'};
-let stF='all',catF=null,sortK='monthly',sortD=-1;
+let stF='active',catF=null,sortK='monthly',sortD=-1;
 const stFilter=k=>s=>k==='all'||(k==='inb'?s.inb:k==='opt'?!s.inb:k==='edited'?s.edited:s.status===k);
 function renderStack(){
   const st=M.stack;const c=s=>st.filter(x=>x.status===s).length;
@@ -1681,7 +1681,7 @@ async function startAgentLink(){
 }
 
 /* ================= ROUTER ================= */
-const VIEWS=[['today','today','◉'],['gym','gym','▲'],['journal','journal','✎'],['tools','tools','⧗'],['media','media','◐'],['week','week','▦'],['stack','stack','◈'],['money','money','£']];
+const VIEWS=[['today','today','◉'],['week','week','▦'],['gym','gym','▲'],['journal','journal','✎'],['tools','tools','⧗'],['media','media','◐'],['stack','stack','◈'],['money','money','£']];
 $('tabs').innerHTML=VIEWS.map(([v,l],i)=>`<button type="button" data-v="${v}"><span class="k">${i+1}</span>${l}</button>`).join('');
 $('bnav').innerHTML=VIEWS.map(([v,l,ic])=>`<button type="button" data-v="${v}"><i>${ic}</i><span>${l}</span></button>`).join('')+'<span class="bnind" id="bnind"></span>';
 let cur=null;
@@ -1703,11 +1703,7 @@ function go(v,fromHash,dirHint){
 $('tabs').onclick=e=>{const b=e.target.closest('button');if(b)go(b.dataset.v)};
 $('bnav').onclick=e=>{const b=e.target.closest('button');if(b){go(b.dataset.v);try{navigator.vibrate&&navigator.vibrate(8)}catch(_){}}};
 addEventListener('hashchange',()=>go(location.hash.slice(1),true));
-// swipe left/right between sections on touch screens
-(function(){let sx=0,sy=0,st=0,ok=false;
-  addEventListener('touchstart',e=>{const t=e.touches[0];const el=e.target;ok=e.touches.length===1&&!el.closest('input,textarea,select,canvas,.strip,.tbl,.picklist,.sheet,.drawer,.modal,.restsel,.chips,.exc,.bnav');sx=t.clientX;sy=t.clientY;st=Date.now()},{passive:true});
-  addEventListener('touchend',e=>{if(!ok)return;const t=e.changedTouches[0];const dx=t.clientX-sx,dy=t.clientY-sy;if(Date.now()-st<600&&Math.abs(dx)>70&&Math.abs(dx)>Math.abs(dy)*1.8){const i=VIEWS.findIndex(x=>x[0]===cur);const j=i+(dx<0?1:-1);if(j>=0&&j<VIEWS.length)go(VIEWS[j][0],false,dx<0?1:-1)}},{passive:true});
-})();
+/* section changes only from the nav buttons (no swipe) */
 function renderAllViews(){renderToday();renderStack();renderMoney();renderTargets();renderTools()}
 
 /* ================= PALETTE + KEYS ================= */
@@ -1776,7 +1772,7 @@ async function startApp(session){
   BFX('ui compiled · '+(cur||'today'),78);
   await loadDay();await loadTools();loadBody();BFX('day state + tools restored',90);
   startRealtime();startAgentLink();loadArtImages();flushOutbox();
-  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,600);setTimeout(()=>{try{const d=localStorage.getItem('ds3:bootdiag');if(d)save('debug/boot',JSON.parse(d))}catch(e){}},4000);
+  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,600);
   schedWidget();setInterval(publishWidget,10*60*1000);
 }
 function flushOutbox(){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('ds3:outbox:'))ks.push(k.slice(11))}ks.forEach(p=>{const v=LS.get(p);if(v!=null)save(p,v,true);localStorage.removeItem('ds3:outbox:'+p)})}catch(e){}}
@@ -1827,6 +1823,9 @@ function openBootVideo(){openSheet('boot video',`<p class="dim" style="margin:0 
     if(error){$('bvStat').textContent='upload failed: '+error.message;return}LS.set('bootvidStamp',null);LS.set('bootvidRemoved',null);$('bvStat').textContent='uploaded · saving here…';await cacheBootVideo();flash('boot_video_set')};
   $('bvRefresh').onclick=async()=>{LS.set('bootvidStamp',null);$('bvStat').textContent='downloading…';await cacheBootVideo();bvStatus()};
   $('bvDel').onclick=async()=>{if(!SB||!UID)return;await SB.storage.from('vault').remove([UID+'/boot.mp4']);LS.set('bootvidRemoved',1);if(window.caches){const c=await caches.open('ds-media');await c.delete('bootvid')}LS.set('bootvidStamp',null);bvStatus()}}
+
+/* no pinch / double-tap zoom, like a real app */
+document.addEventListener('gesturestart',e=>e.preventDefault());document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 
 /* ================= MEDIA — anime · movies · manga · books (Letterboxd + MyAnimeList style) ================= */
 const MK={anime:{label:'anime',verb:'watch',unit:'ep',units:'episodes',ing:'watching',stars:10,icon:'◐'},movies:{label:'movies',verb:'watch',unit:'',units:'',ing:'watching',stars:5,icon:'▶'},manga:{label:'manga',verb:'read',unit:'ch',units:'chapters',ing:'reading',stars:10,icon:'❏'},books:{label:'books',verb:'read',unit:'p',units:'pages',ing:'reading',stars:5,icon:'▤'}};
@@ -1890,9 +1889,9 @@ function mLibrary(k){const all=mItems(k);const fav=all.filter(x=>x.fav).slice(0,
   const cnt=s=>all.filter(x=>s==='all'||x.st===s).length;
   $('mBody').innerHTML=`${fav.length?`<div class="tag" style="margin-bottom:6px">favourites</div><div class="mfavs">${fav.map(it=>mCard(k,it)).join('')}</div>`:''}
   <div class="row" style="gap:6px;flex-wrap:wrap;margin:10px 0"><div class="chips" id="mSt" style="margin:0">${[['all','all']].concat(MSTAT(k)).map(([s,l])=>`<button class="chip" type="button" data-st="${s}" aria-pressed="${MFILT.st===s}">${l} <span class="c">${cnt(s)}</span></button>`).join('')}</div></div>
-  <div class="row" style="gap:6px;margin-bottom:10px"><input class="inp" id="mQ" placeholder="filter your ${MK[k].label}" value="${esc(MFILT.q)}" style="flex:1"><select class="inp" id="mSort">${[['recent','recently updated'],['rating','rating'],['title','title'],['year','year']].map(([v,l])=>`<option value="${v}" ${MFILT.sort===v?'selected':''}>${l}</option>`).join('')}</select></div>
+  <div class="row" style="gap:6px;margin-bottom:10px"><select class="inp" id="mSort" style="flex:1">${[['recent','recently updated'],['rating','rating'],['title','title'],['year','year']].map(([v,l])=>`<option value="${v}" ${MFILT.sort===v?'selected':''}>${l}</option>`).join('')}</select></div>
   <div class="mgrid">${list.map(it=>mCard(k,it)).join('')||`<div class="dim">Nothing here yet. Tap “+ add” to search.</div>`}</div>`;
-  $('mSt').onclick=e=>{const b=e.target.closest('[data-st]');if(b){MFILT.st=b.dataset.st;mLibrary(k)}};$('mQ').oninput=e=>{MFILT.q=e.target.value;clearTimeout(mLibrary.t);mLibrary.t=setTimeout(()=>{mLibrary(k);$('mQ').focus();const v=$('mQ').value;$('mQ').setSelectionRange(v.length,v.length)},250)};$('mSort').onchange=e=>{MFILT.sort=e.target.value;mLibrary(k)};
+  $('mSt').onclick=e=>{const b=e.target.closest('[data-st]');if(b){MFILT.st=b.dataset.st;mLibrary(k)}};$('mSort').onchange=e=>{MFILT.sort=e.target.value;mLibrary(k)};
   $('mBody').onclick=e=>{const b=e.target.closest('[data-mkey]');if(b)mEntry(k,b.dataset.mkey)}}
 
 /* ---- add (search) ---- */
