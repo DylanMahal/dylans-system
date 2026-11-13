@@ -937,7 +937,7 @@ function renderFocus(){const el=$('t-focus');if(!el)return;
     <div style="margin-top:16px"><div class="dim" style="font-size:11px;margin-bottom:4px">deep work today · ${Math.floor(dw/60)}h ${pad(dw%60)}m of ${Math.floor(DW_TARGET/60)}h ${pad(DW_TARGET%60)}m</div><div class="meter"><span style="width:${Math.min(100,dw/DW_TARGET*100)}%"></span></div></div>
   </div></div>
   <div class="fside">
-    <div class="panel"><div class="ph"><span class="tag">music</span><button class="iconbtn" type="button" id="mAdd">+ add playlist</button></div><div class="pb" id="mBox">${musicHTML()}</div></div>
+    <div class="panel"><div class="ph"><span class="tag">audio deck</span><span class="dim" id="deckSub">${DECKS[deckNow()].sub}</span></div><div class="pb${MUSIC.showVid?' showvid':''}" id="mBox">${musicHTML()}</div></div>
     <div class="panel"><div class="ph"><span class="tag">ambient</span><span class="dim">generated on device</span></div><div class="pb"><div class="chips" id="ambBtns" style="margin:0 0 8px">${['rain','brown','pink','white','cafe'].map(k=>`<button class="chip" type="button" data-amb="${k}" aria-pressed="${AMB.kind===k}">${k}</button>`).join('')}</div><input type="range" id="ambVol" min="0" max="100" value="${AMB.vol}" class="vol"></div></div>
     <div class="panel"><div class="ph"><span class="tag">last 7 days</span><span class="dim">${today.length} session${today.length===1?'':'s'} today</span></div><div class="pb"><div class="wkbars" style="grid-template-columns:repeat(7,1fr);height:100px">${per.map((v,i)=>`<div class="d"><span class="p num">${v?Math.round(v/6)/10+'h':''}</span><div class="b" style="height:${v/mx*100}%"></div><span class="l">${new Date(days[i]+'T12:00').toLocaleDateString('en-GB',{weekday:'short'}).toLowerCase()}</span></div>`).join('')}</div>
       <div class="flog">${today.map(s=>`<div><span class="num">${new Date(s.at).toTimeString().slice(0,5)}</span><span>${esc(s.task||'focus')}</span><b class="num">${s.min}m</b></div>`).join('')}</div></div></div>
@@ -945,16 +945,16 @@ function renderFocus(){const el=$('t-focus');if(!el)return;
   drawTimer();bindFocus();
 }
 function bindFocus(){
-  $('tmGo').onclick=()=>{if(TM.end){TM.left=tmLeft();TM.end=null}else{TM.end=Date.now()+TM.left*1000;if(MUSIC.cur&&YTP&&YTP.playVideo&&MUSIC.autoplay!==false){try{YTP.playVideo()}catch(e){}}}LS.set('timer',TM);drawTimer();glitchAll()};
+  $('tmGo').onclick=()=>{if(TM.end){TM.left=tmLeft();TM.end=null}else{TM.end=Date.now()+TM.left*1000;if(YTP&&YTP.playVideo&&MUSIC.autoplay!==false){try{YTP.playVideo()}catch(e){}}}LS.set('timer',TM);drawTimer();glitchAll()};
   $('tmReset').onclick=()=>{if(TM.phase==='focus'){const done=Math.floor((TM.len*60-tmLeft())/60);logDw(done)}TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
   $('tmPresets').onclick=e=>{const b=e.target.closest('button');if(!b)return;let m=b.dataset.m;if(m==='custom'){m=parseInt(prompt('Minutes?',TM.len)||'');if(!(m>0))return}TM={len:+m,end:null,left:+m*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
   $('fTask').oninput=e=>{FOCUS.task=e.target.value;clearTimeout(bindFocus.t);bindFocus.t=setTimeout(()=>save('tools/focus',FOCUS),600)};
   $('fPomo').onclick=()=>{FOCUS.pomo=!FOCUS.pomo;save('tools/focus',FOCUS);renderFocus()};
   $('fFull').onclick=openFocusMode;
-  $('mAdd').onclick=addStation;$('mBox').onclick=musicClick;
+  $('mBox').onclick=musicClick;vizAttach($('vizC'));
   $('ambBtns').onclick=e=>{const b=e.target.closest('[data-amb]');if(!b)return;ambient(AMB.kind===b.dataset.amb?null:b.dataset.amb);$('ambBtns').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.amb===AMB.kind))};
   $('ambVol').oninput=e=>{AMB.vol=+e.target.value;LS.set('amb',{vol:AMB.vol});if(AMB.g)AMB.g.gain.value=AMB.vol/100*.6};
-  if(MUSIC.cur)ensureYT();
+  if(deckSrc())ensureYT();
 }
 function drawTimer(){const l=tmLeft();const tot=tmTotal();const txt=pad(Math.floor(l/60))+':'+pad(l%60);
   ['timer','fmTime'].forEach(id=>{const t=$(id);if(t){t.textContent=txt;t.classList.toggle('run',!!TM.end)}});
@@ -970,41 +970,95 @@ function chime(){try{const A=window.AudioContext||window.webkitAudioContext;cons
 
 /* focus mode (full screen) */
 function openFocusMode(){let fm=$('focusMode');if(!fm){fm=document.createElement('div');fm.id='focusMode';fm.className='focusmode';document.body.appendChild(fm)}
-  fm.innerHTML=`<button class="iconbtn fmx" type="button" id="fmX">exit</button><div class="fmtask">${esc(FOCUS.task||'deep work')}</div><div class="fmtime num" id="fmTime"></div><div class="bigbtns" style="justify-content:center"><button class="btn p" type="button" id="fmGo">start</button>${MUSIC.cur?'<button class="btn" type="button" id="fmMus">⏯ music</button>':''}</div><div class="fmnow" id="fmNow"></div>`;
+  fm.innerHTML=`<button class="iconbtn fmx" type="button" id="fmX">exit</button><div class="fmtask">${esc(FOCUS.task||'deep work')}</div>${DECKS[deckNow()].audio&&deckSrc()?'<canvas class="viz fmviz" id="fmViz"></canvas>':''}<div class="fmtime num" id="fmTime"></div><div class="bigbtns" style="justify-content:center"><button class="btn p" type="button" id="fmGo">start</button>${deckSrc()?'<button class="btn" type="button" id="fmMus">⏯ audio</button>':''}</div><div class="fmnow" id="fmNow"></div>`;
   fm.classList.add('on');try{fm.requestFullscreen&&fm.requestFullscreen().catch(()=>{})}catch(e){}
   $('fmX').onclick=()=>{fm.classList.remove('on');try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}};
-  $('fmGo').onclick=()=>$('tmGo')?$('tmGo').click():null;if($('fmMus'))$('fmMus').onclick=()=>ytToggle();drawTimer();ytNow()}
+  $('fmGo').onclick=()=>$('tmGo')?$('tmGo').click():null;if($('fmMus'))$('fmMus').onclick=()=>ytToggle();drawTimer();ytNow();vizAttach($('fmViz'))}
 
-/* music: YouTube / YouTube Music playlists through the official YouTube player */
-let YTP=null,ytReady=false,ytLoading=false;
+/* music deck: lofi / asmr (audio + visualiser) · jvscholz (random livestream, video) · mine (other playlists) */
+const SCHOLZ='UULVMwo6hT5hI3R56rO2HYP-wQ'; /* James Scholz — live streams uploads list */
+const DECKS={lofi:{label:'lofi',sub:'your lofi playlist',audio:true},asmr:{label:'asmr',sub:'your asmr playlist',audio:true,random:true},scholz:{label:'jvscholz',sub:'random old pomodoro stream',audio:false,random:true},mine:{label:'mine',sub:'your other playlists',audio:true}};
+let YTP=null,ytReady=false,ytLoading=false,ytQ=null,ytTries=0;
+const DPOS=LS.get('deckpos')||{};
 function parseYT(url){try{const u=new URL(url.trim());const list=u.searchParams.get('list');let v=u.searchParams.get('v');if(!v&&/youtu\.be$/.test(u.hostname))v=u.pathname.slice(1);if(!v&&u.pathname.startsWith('/shorts/'))v=u.pathname.split('/')[2];return list?{type:'list',key:list,v}:v?{type:'video',key:v}:null}catch(e){return null}}
-function musicHTML(){if(!MUSIC.list.length)return `<div class="dim" style="font-size:12px">Paste a YouTube Music or YouTube playlist link (Share → Copy link). It plays here with its own controls.</div>`;
-  const c=MUSIC.list.find(s=>s.id===MUSIC.cur)||null;
-  return `<div class="mplayer${c?'':' idle'}"><div class="mvid"><div id="ytFrame"></div></div><div class="mmeta"><b id="mTitle">${c?esc(c.name):'pick a playlist'}</b><span class="dim" id="mArtist"></span><div class="mprog"><i id="mBar"></i></div>
-    <div class="mctl"><button type="button" data-mc="prev" aria-label="Previous">⏮</button><button type="button" data-mc="play" class="mplay" id="mPlay" aria-label="Play">▶</button><button type="button" data-mc="next" aria-label="Next">⏭</button><button type="button" data-mc="shuf" aria-pressed="${MUSIC.shuffle}" aria-label="Shuffle">⤮</button><input type="range" min="0" max="100" value="${MUSIC.vol}" id="mVol" class="vol" aria-label="Volume"></div></div></div>
-    <div class="mlist">${MUSIC.list.map(s=>`<div class="mst${s.id===MUSIC.cur?' on':''}"><button type="button" data-ms="${esc(s.id)}"><span class="mthumb" style="background-image:url(${s.thumb?esc(s.thumb):''})"></span><span>${esc(s.name)}</span></button><button class="iconbtn" type="button" data-mdel="${esc(s.id)}" aria-label="Remove">✕</button></div>`).join('')}</div>`}
+const deckNow=()=>DECKS[MUSIC.deck]?MUSIC.deck:'lofi';
+function deckSrc(){const d=deckNow();if(d==='mine'){const s=MUSIC.list.find(x=>x.id===MUSIC.cur);return s?{...s,deck:'mine'}:null}const l=d==='scholz'?SCHOLZ:(MUSIC.decks||{})[d];return l?{type:'list',key:l,deck:d}:null}
+function openMode(d){return (MUSIC.open||{})[d]||(d==='scholz'?'random':'resume')}
+function musicHTML(){const d=deckNow(),D=DECKS[d],src=deckSrc();
+  const seg=`<div class="seg deckseg" id="deckSeg">${Object.keys(DECKS).map(k=>`<button type="button" data-deck="${k}" aria-pressed="${k===d}">${DECKS[k].label}</button>`).join('')}</div>`;
+  if(!src&&d!=='mine')return seg+`<div class="dsetup"><div class="dim">Paste your ${D.label} playlist link. It has to be <b>Public</b> or <b>Unlisted</b> on YouTube — private playlists won't play outside YouTube. The link is saved to your account only, not the app's code.</div><div class="row" style="gap:6px;margin-top:8px"><input class="inp" id="dkUrl" placeholder="https://music.youtube.com/playlist?list=…" style="flex:1"><button class="btn p" type="button" id="dkSave">set</button></div></div>`;
+  const mine=d==='mine'?`<div class="mlist">${MUSIC.list.map(s=>`<div class="mstn${s.id===MUSIC.cur?' on':''}"><button type="button" data-ms="${esc(s.id)}"><span class="mthumb" style="background-image:url(${s.thumb?esc(s.thumb):''})"></span><span>${esc(s.name)}</span></button><button class="iconbtn" type="button" data-mdel="${esc(s.id)}" aria-label="Remove">✕</button></div>`).join('')}</div><button class="iconbtn" type="button" id="mAdd" style="margin-top:8px">+ add playlist</button>`:'';
+  if(!src)return seg+mine;
+  const om=openMode(d);
+  return seg+`<div class="deck ${D.audio?'aud':'vid'}"><div class="dscreen">${D.audio?`<canvas class="viz" id="vizC"></canvas><div class="dhud"><span id="dHudL">> ${esc(D.label)}.stream</span><span id="dHudR" class="num"></span></div>`:''}<div class="mvid${D.audio?' mini':''}" id="mVidBox"><div id="ytFrame"></div></div></div>
+    <div class="mmeta"><b id="mTitle">loading…</b><span class="dim" id="mArtist"></span><div class="mprog"><i id="mBar"></i></div><div class="row" style="justify-content:space-between"><span class="dim num" id="mTime" style="font-size:10px"></span><span class="dim num" id="mIdx" style="font-size:10px"></span></div>
+    <div class="mctl"><button type="button" data-mc="prev" aria-label="Previous">⏮</button><button type="button" data-mc="play" class="mplay" id="mPlay" aria-label="Play">▶</button><button type="button" data-mc="next" aria-label="Next">⏭</button>${d!=='mine'?`<button type="button" data-mc="rnd" aria-label="Random" title="random">⤨</button>`:`<button type="button" data-mc="shuf" aria-pressed="${MUSIC.shuffle}" aria-label="Shuffle">⤮</button>`}<input type="range" min="0" max="100" value="${MUSIC.vol}" id="mVol" class="vol" aria-label="Volume"></div>
+    ${d!=='mine'?`<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><span class="dim" style="font-size:10px">on open:</span><div class="seg mini" id="dkOpen"><button type="button" data-om="resume" aria-pressed="${om==='resume'}">resume</button><button type="button" data-om="random" aria-pressed="${om==='random'}">random</button></div>${D.audio?`<button class="iconbtn" type="button" id="dkVid">${MUSIC.showVid?'hide':'show'} video</button>`:''}${d!=='scholz'?`<button class="iconbtn" type="button" id="dkEdit">change playlist</button>`:''}</div>`:''}</div></div>`+mine}
 function addStation(){openEditor({title:'add playlist',fields:[{k:'url',label:'YouTube Music / YouTube link'},{k:'name',label:'name (optional)'}],values:{url:'',name:''},isNew:true,
   hint:'Open the playlist in YouTube Music → Share → Copy link, and paste it here.',onSave:v=>{const p=parseYT(v.url||'');if(!p){flash('not_a_youtube_link');return}
-    const s={id:rid(),name:(v.name||'').trim()||(p.type==='list'?'playlist':'track'),...p,thumb:p.v||p.type==='video'?`https://i.ytimg.com/vi/${p.v||p.key}/hqdefault.jpg`:''};MUSIC.list.push(s);MUSIC.cur=s.id;save('tools/music',MUSIC);renderFocus();ytLoad(s,false)}})}
+    const s={id:rid(),name:(v.name||'').trim()||(p.type==='list'?'playlist':'track'),...p,thumb:p.v||p.type==='video'?`https://i.ytimg.com/vi/${p.v||p.key}/hqdefault.jpg`:''};MUSIC.list.push(s);MUSIC.cur=s.id;MUSIC.deck='mine';save('tools/music',MUSIC);renderFocus()}})}
+function musicRender(play,mode){if(!$('mBox'))return;try{YTP&&YTP.destroy()}catch(e){}YTP=null;ytReady=false;if($('deckSub'))$('deckSub').textContent=DECKS[deckNow()].sub;$('mBox').innerHTML=musicHTML();$('mBox').classList.toggle('showvid',!!MUSIC.showVid);vizAttach($('vizC'));ensureYT(play,mode)}
 function musicClick(e){const b=e.target.closest('button');if(!b)return;
-  if(b.dataset.ms){MUSIC.cur=b.dataset.ms;save('tools/music',MUSIC);const s=MUSIC.list.find(x=>x.id===MUSIC.cur);$('mBox').innerHTML=musicHTML();YTP=null;ytReady=false;ensureYT(true);return}
-  if(b.dataset.mdel){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='?';return}MUSIC.list=MUSIC.list.filter(x=>x.id!==b.dataset.mdel);if(MUSIC.cur===b.dataset.mdel){MUSIC.cur=null;try{YTP&&YTP.destroy()}catch(x){}YTP=null}save('tools/music',MUSIC);renderFocus();return}
+  if(b.dataset.deck){if(b.dataset.deck===deckNow())return;MUSIC.deck=b.dataset.deck;save('tools/music',MUSIC);musicRender(true);return}
+  if(b.id==='mAdd')return addStation();
+  if(b.id==='dkSave'){const p=parseYT($('dkUrl').value||'');if(!p||p.type!=='list'){flash('paste_a_playlist_link');return}MUSIC.decks={...(MUSIC.decks||{}),[deckNow()]:p.key};delete DPOS[deckNow()];LS.set('deckpos',DPOS);save('tools/music',MUSIC);musicRender(false);return}
+  if(b.id==='dkEdit'){const d=deckNow();const old=(MUSIC.decks||{})[d];MUSIC.decks={...MUSIC.decks};delete MUSIC.decks[d];musicRender(false);if(old)$('dkUrl').value='https://music.youtube.com/playlist?list='+old;MUSIC.decks[d]=old;return}
+  if(b.id==='dkVid'){MUSIC.showVid=!MUSIC.showVid;$('mBox').classList.toggle('showvid',MUSIC.showVid);b.textContent=(MUSIC.showVid?'hide':'show')+' video';save('tools/music',MUSIC);return}
+  if(b.dataset.om){MUSIC.open={...(MUSIC.open||{}),[deckNow()]:b.dataset.om};$('dkOpen').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));save('tools/music',MUSIC);return}
+  if(b.dataset.ms){MUSIC.cur=b.dataset.ms;save('tools/music',MUSIC);musicRender(true);return}
+  if(b.dataset.mdel){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='?';return}MUSIC.list=MUSIC.list.filter(x=>x.id!==b.dataset.mdel);if(MUSIC.cur===b.dataset.mdel)MUSIC.cur=null;save('tools/music',MUSIC);musicRender(false);return}
   const c=b.dataset.mc;if(!c||!YTP)return;
-  if(c==='play')ytToggle();if(c==='next')YTP.nextVideo&&YTP.nextVideo();if(c==='prev')YTP.previousVideo&&YTP.previousVideo();
+  if(c==='play')ytToggle();
+  if(c==='next'){if(DECKS[deckNow()].random&&deckNow()!=='lofi')ytRandom();else YTP.nextVideo&&YTP.nextVideo()}
+  if(c==='prev'){try{if(YTP.getCurrentTime()>8)YTP.seekTo(0,true);else YTP.previousVideo()}catch(x){}}
+  if(c==='rnd')ytRandom();
   if(c==='shuf'){MUSIC.shuffle=!MUSIC.shuffle;YTP.setShuffle&&YTP.setShuffle(MUSIC.shuffle);b.setAttribute('aria-pressed',MUSIC.shuffle);save('tools/music',MUSIC)}}
-function ytToggle(){if(!YTP||!YTP.getPlayerState)return;const st=YTP.getPlayerState();if(st===1)YTP.pauseVideo();else YTP.playVideo()}
-function ensureYT(play){if(!MUSIC.cur||!$('ytFrame'))return;const s=MUSIC.list.find(x=>x.id===MUSIC.cur);if(!s)return;
-  if(window.YT&&window.YT.Player){ytLoad(s,play);return}if(ytLoading)return;ytLoading=true;window.onYouTubeIframeAPIReady=()=>{ytLoading=false;ytLoad(s,play)};const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';document.head.appendChild(sc)}
-function ytLoad(s,play){if(!window.YT||!window.YT.Player||!$('ytFrame'))return ensureYT(play);
-  if(YTP&&ytReady&&$('ytFrame').tagName==='IFRAME'){if(s.type==='list')YTP[play?'loadPlaylist':'cuePlaylist']({list:s.key,listType:'playlist'});else YTP[play?'loadVideoById':'cueVideoById'](s.key);return}
-  const pv={controls:0,playsinline:1,rel:0,modestbranding:1};if(s.type==='list'){pv.listType='playlist';pv.list=s.key}
-  YTP=new YT.Player('ytFrame',{width:'100%',height:'100%',videoId:s.type==='video'?s.key:(s.v||undefined),playerVars:pv,events:{onReady:()=>{ytReady=true;try{YTP.setVolume(MUSIC.vol);if(MUSIC.shuffle&&YTP.setShuffle)YTP.setShuffle(true)}catch(e){}if(play)YTP.playVideo();ytNow()},onStateChange:ytNow}});
+function ytToggle(){if(!YTP||!YTP.getPlayerState)return;const st=YTP.getPlayerState();if(st===1){YTP.pauseVideo();return}YTP.playVideo();ytKick()}
+/* iOS sometimes needs one tap on the actual video before the API can start it: reveal it if play didn't take */
+function ytKick(){clearTimeout(ytKick.t);ytKick.t=setTimeout(()=>{try{const st=YTP.getPlayerState();if(st!==1&&st!==3&&$('mBox')&&!$('mBox').classList.contains('showvid')){$('mBox').classList.add('showvid');flash('tap_the_video_once')}}catch(e){}},2500)}
+function ensureYT(play,mode){const s=deckSrc();if(!s||!$('ytFrame'))return;
+  if(window.YT&&window.YT.Player){ytLoad(s,play,mode);return}ytQ=[play,mode];if(ytLoading)return;ytLoading=true;window.onYouTubeIframeAPIReady=()=>{ytLoading=false;const s2=deckSrc();if(s2&&$('ytFrame'))ytLoad(s2,ytQ[0],ytQ[1])};const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';document.head.appendChild(sc)}
+function ytLoad(s,play,mode){if(!window.YT||!window.YT.Player||!$('ytFrame'))return ensureYT(play,mode);
+  const pos=DPOS[s.deck];mode=mode||(s.type==='list'&&s.deck!=='mine'?openMode(s.deck):null);if(mode==='resume'&&!(pos&&pos.key===s.key))mode=DECKS[s.deck].random?'random':null;
+  const pv={controls:0,playsinline:1,rel:0,modestbranding:1,iv_load_policy:3,disablekb:1};if(s.type==='list'){pv.listType='playlist';pv.list=s.key}
+  ytTries=0;YTP=new YT.Player('ytFrame',{width:'100%',height:'100%',videoId:s.type==='video'?s.key:undefined,playerVars:pv,events:{
+    onReady:async()=>{ytReady=true;try{YTP.setVolume(MUSIC.vol);if(s.deck==='mine'&&MUSIC.shuffle&&YTP.setShuffle)YTP.setShuffle(true)}catch(e){}
+      if(s.type==='list'&&mode){const pl=await ytPlaylist();let i=-1,t=0;if(mode==='resume'){i=pl.indexOf(pos.v);t=Math.max(0,(pos.t||0)-3)}if(i<0&&(mode==='random'||DECKS[s.deck].random))i=Math.floor(Math.random()*pl.length);
+        if(i>=0){YTP[play?'loadPlaylist':'cuePlaylist']({list:s.key,listType:'playlist',index:i,startSeconds:t});ytNow();return}}
+      if(play)YTP.playVideo();ytNow()},
+    onStateChange:ytNow,
+    onError:()=>{if(++ytTries>6)return;setTimeout(()=>{if(DECKS[deckNow()].random&&deckNow()!=='lofi')ytRandom();else try{YTP.nextVideo()}catch(e){}},400)}}});
   $('mBox').oninput=e=>{if(e.target.id==='mVol'){MUSIC.vol=+e.target.value;try{YTP.setVolume(MUSIC.vol)}catch(x){}clearTimeout(ytLoad.t);ytLoad.t=setTimeout(()=>save('tools/music',MUSIC),800)}}}
-function ytNow(){if(!YTP||!YTP.getVideoData)return;let d={};try{d=YTP.getVideoData()||{}}catch(e){}const st=YTP.getPlayerState?YTP.getPlayerState():-1;
-  if($('mTitle')&&d.title)$('mTitle').textContent=d.title;if($('mArtist'))$('mArtist').textContent=d.author||'';if($('mPlay'))$('mPlay').textContent=st===1?'⏸':'▶';
+async function ytPlaylist(){for(let i=0;i<24;i++){let pl=null;try{pl=YTP.getPlaylist()}catch(e){}if(pl&&pl.length)return pl;await new Promise(r=>setTimeout(r,250))}return []}
+async function ytRandom(){if(!YTP)return;const pl=await ytPlaylist();if(!pl.length){try{YTP.nextVideo()}catch(e){}return}let cur=-1;try{cur=YTP.getPlaylistIndex()}catch(e){}let i=Math.floor(Math.random()*pl.length);if(i===cur&&pl.length>1)i=(i+1)%pl.length;try{YTP.playVideoAt(i)}catch(e){}}
+function fmtT(x){x=Math.floor(x||0);const h=Math.floor(x/3600),m=Math.floor(x%3600/60),s=x%60;return (h?h+':'+pad(m):m)+':'+pad(s)}
+function ytNow(){if(!YTP||!YTP.getVideoData)return;let d={};try{d=YTP.getVideoData()||{}}catch(e){}const st=YTP.getPlayerState?YTP.getPlayerState():-1;VIZ.on=st===1;
+  if($('mTitle'))$('mTitle').textContent=d.title||(st===-1||st===5?'ready':'loading…');if($('mArtist'))$('mArtist').textContent=d.author||'';if($('mPlay'))$('mPlay').textContent=st===1?'⏸':'▶';if($('fmMus'))$('fmMus').textContent=st===1?'⏸ audio':'▶ audio';
+  try{const pl=YTP.getPlaylist&&YTP.getPlaylist();if(pl&&pl.length&&$('mIdx'))$('mIdx').textContent='#'+(YTP.getPlaylistIndex()+1)+' / '+pl.length}catch(e){}
   if($('fmNow'))$('fmNow').textContent=d.title?'♪ '+d.title+(d.author?' — '+d.author:''):'';
-  const s=MUSIC.list.find(x=>x.id===MUSIC.cur);if(s&&d.video_id&&!s.thumb){s.thumb=`https://i.ytimg.com/vi/${d.video_id}/hqdefault.jpg`;save('tools/music',MUSIC)}}
-setInterval(()=>{if(!YTP||!YTP.getCurrentTime||!$('mBar'))return;try{const t=YTP.getCurrentTime(),d=YTP.getDuration();$('mBar').style.width=(d?t/d*100:0)+'%'}catch(e){}},1000);
+  const s=deckSrc();if(s&&s.deck==='mine'&&d.video_id){const m=MUSIC.list.find(x=>x.id===s.id);if(m&&!m.thumb){m.thumb=`https://i.ytimg.com/vi/${d.video_id}/hqdefault.jpg`;save('tools/music',MUSIC)}}}
+setInterval(()=>{if(!YTP||!YTP.getCurrentTime||!ytReady)return;try{const t=YTP.getCurrentTime(),du=YTP.getDuration();if($('mBar'))$('mBar').style.width=(du?t/du*100:0)+'%';if($('mTime'))$('mTime').textContent=fmtT(t)+' / '+fmtT(du);if($('dHudR'))$('dHudR').textContent=(YTP.getPlayerState()===1?'▶ ':'❚❚ ')+fmtT(t);
+  const s=deckSrc();if(s&&s.deck!=='mine'&&YTP.getPlayerState()===1&&t>5){const v=(YTP.getVideoData()||{}).video_id;if(v){DPOS[s.deck]={key:s.key,v,t};DPOS.n=(DPOS.n||0)+1;if(DPOS.n%5===0)LS.set('deckpos',DPOS)}}}catch(e){}},1000);
+
+/* PSP-style wave visualiser. It can't read YouTube's audio (cross-origin), so it follows play/pause and drifts organically. 30fps, stops when not visible. */
+const VIZ={cv:new Set(),run:false,e:0,on:false,t:0,last:0,col:null};
+function vizAttach(c){if(!c)return;VIZ.cv.add(c);if(!VIZ.run){VIZ.run=true;VIZ.last=performance.now();requestAnimationFrame(vizTick)}}
+function vizTick(ts){VIZ.cv.forEach(c=>{if(!c.isConnected)VIZ.cv.delete(c)});if(!VIZ.cv.size){VIZ.run=false;return}
+  const live=[...VIZ.cv].filter(c=>c.offsetWidth>0);if(!live.length||document.hidden){VIZ.last=ts;setTimeout(()=>requestAnimationFrame(vizTick),400);return}
+  if(ts-VIZ.last<32){requestAnimationFrame(vizTick);return}const dt=Math.min(.1,(ts-VIZ.last)/1000);VIZ.last=ts;
+  VIZ.e+=((VIZ.on?1:.08)-VIZ.e)*Math.min(1,dt*2);VIZ.t+=dt*(.25+VIZ.e*.9);live.forEach(drawViz);requestAnimationFrame(vizTick)}
+function drawViz(c){const dpr=Math.min(2,devicePixelRatio||1),W=c.offsetWidth,H=c.offsetHeight;if(c.width!==Math.round(W*dpr)){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr)}
+  const g=c.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);const t=VIZ.t,e=VIZ.e;
+  if(!VIZ.col){const cs=getComputedStyle(document.documentElement);VIZ.col=[cs.getPropertyValue('--pink').trim()||'#ff2a6d',cs.getPropertyValue('--cyan').trim()||'#05d9e8',cs.getPropertyValue('--ok').trim()||'#57f5a8']}
+  g.globalCompositeOperation='source-over';g.fillStyle='rgba(2,2,4,.28)';g.fillRect(0,0,W,H);
+  g.strokeStyle='rgba(255,255,255,.035)';g.lineWidth=1;g.beginPath();for(let x=0;x<W;x+=24){g.moveTo(x+.5,0);g.lineTo(x+.5,H)}for(let y=0;y<H;y+=24){g.moveTo(0,y+.5);g.lineTo(W,y+.5)}g.stroke();
+  g.globalCompositeOperation='lighter';const mid=H*.52,amp=H*.32;
+  for(let k=0;k<5;k++){const col=VIZ.col[k%3],ph=k*1.7,sp=.6+k*.17,thick=(6+k*5)*(.35+e*.65);
+    const y=x=>{const u=x/W;return mid+Math.sin(u*(2.2+k*.35)*Math.PI+t*sp+ph)*amp*(.25+.75*e)*(.55+.45*Math.sin(t*.5+k))+Math.sin(u*9+t*1.9+k)*amp*.12*e+Math.sin(u*3.1-t*.7+ph)*amp*.18};
+    g.beginPath();for(let x=0;x<=W;x+=6)g.lineTo(x,y(x)-thick);for(let x=W;x>=0;x-=6)g.lineTo(x,y(x)+thick);g.closePath();g.fillStyle=col;g.globalAlpha=.07+.05*e;g.fill();
+    g.beginPath();for(let x=0;x<=W;x+=4)g.lineTo(x,y(x));g.strokeStyle=col;g.globalAlpha=.35+.45*e;g.lineWidth=1.2;g.stroke()}
+  g.globalAlpha=1;g.globalCompositeOperation='source-over';
+  const n=Math.max(16,Math.floor(W/14)),bw=W/n;for(let i=0;i<n;i++){const v=Math.abs(Math.sin(i*.9+t*3.1)*Math.sin(i*.37-t*1.7)+Math.sin(t*5+i*2.3)*.25)*e;const h=Math.max(1.5,v*H*.22);g.fillStyle=i%2?VIZ.col[1]:VIZ.col[0];g.globalAlpha=.25+.5*v;g.fillRect(i*bw+1,H-h,bw-2,h)}g.globalAlpha=1}
 
 /* ambient sound, synthesised (no downloads) */
 const AMB={kind:null,vol:(LS.get('amb')||{}).vol??40,ctx:null,src:null,g:null};
@@ -1022,9 +1076,9 @@ function ambient(kind){try{if(AMB.src){AMB.src.forEach(n=>{try{n.stop()}catch(e)
   AMB.g=a.createGain();AMB.g.gain.value=AMB.vol/100*.6;node.connect(AMB.g);AMB.g.connect(a.destination);s.start();AMB.src=[s]}catch(e){}}
 
 /* ---------------- loading ---------------- */
-async function loadTools(){const [f,m]=await Promise.all([load('tools/focus'),load('tools/music')]);FOCUS={sessions:[],pomo:false,brk:10,task:'',...(f||{})};MUSIC={list:[],cur:null,vol:60,shuffle:false,...(m||{})};
+async function loadTools(){const [f,m]=await Promise.all([load('tools/focus'),load('tools/music')]);FOCUS={sessions:[],pomo:false,brk:10,task:'',...(f||{})};MUSIC={list:[],cur:null,vol:60,shuffle:false,deck:'lofi',decks:{},open:{},showVid:false,...(m||{})};
   WEEK=await load('weeks/w-'+WK)||{};if(typeof loadProto==='function')await loadProto();if(typeof loadLeet==='function')await loadLeet();renderTools()}
-watch('tools/music',d=>{if(!d)return;const curId=MUSIC.cur;MUSIC={list:[],...d};MUSIC.cur=curId;if(cur==='tools'&&TOOLV==='focus'&&$('mBox')&&!YTP)$('mBox').innerHTML=musicHTML()});
+watch('tools/music',d=>{if(!d)return;const keep={cur:MUSIC.cur,deck:MUSIC.deck};MUSIC={list:[],decks:{},open:{},...d,...keep};if(cur==='tools'&&TOOLV==='focus'&&$('mBox')&&!YTP)musicRender(false)});
 
 /* ================= JOURNAL (typing + Apple Pencil) ================= */
 const PAGE_W=1000,PAGE_H=1400;

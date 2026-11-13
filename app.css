@@ -756,7 +756,7 @@ body.booting{overflow:hidden}
 .mmeta{display:flex;flex-direction:column;gap:3px;min-width:0}.mmeta b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mmeta .dim{font-size:11px}
 .mprog{height:3px;background:var(--line);margin:6px 0}.mprog i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--pink))}
 .mctl{display:flex;gap:6px;align-items:center}.mctl button{appearance:none;background:var(--bg3);border:1px solid var(--line2);color:var(--fg);width:34px;height:34px;cursor:pointer;font-size:14px}.mctl .mplay{width:44px;background:var(--pink);color:#000;border-color:var(--pink)}.mctl button[aria-pressed="true"]{color:var(--cyan);border-color:var(--cyan)}.mctl .vol{flex:1;min-width:60px}
-.mlist{margin-top:10px;display:flex;flex-direction:column}.mst{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line)}.mst>button:first-child{flex:1;appearance:none;background:none;border:0;display:flex;gap:10px;align-items:center;padding:7px 2px;cursor:pointer;color:inherit;text-align:left;font-size:13px}.mst.on>button:first-child{color:var(--pink)}
+.mlist{margin-top:10px;display:flex;flex-direction:column}.mstn{display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--line)}.mstn>button:first-child{flex:1;appearance:none;background:none;border:0;display:flex;gap:10px;align-items:center;padding:7px 2px;cursor:pointer;color:inherit;text-align:left;font-size:13px}.mst.on>button:first-child{color:var(--pink)}
 .mthumb{width:40px;height:40px;background:#111 center/cover;border:1px solid var(--line2);flex:none}
 .focusmode{position:fixed;inset:0;z-index:200;background:#020203;display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px}.focusmode.on{display:flex}
 .fmx{position:absolute;top:calc(env(safe-area-inset-top) + 14px);right:16px}.fmtask{font:14px var(--pix);letter-spacing:.2em;color:var(--dim);text-transform:uppercase}.fmtime{font-size:clamp(80px,22vw,220px);font-weight:800;letter-spacing:-.04em;color:#fff;text-shadow:0 0 40px rgba(255,42,109,.35)}.fmnow{font-size:12px;color:var(--cyan);max-width:80vw;text-align:center}
@@ -802,3 +802,18 @@ a.iconbtn{text-decoration:none;display:inline-flex;align-items:center}
 .star5 button{position:absolute;top:0;bottom:0;width:50%;appearance:none;background:none;border:0;cursor:pointer;padding:0}.star5 button:first-child{left:0}.star5 button:last-child{right:0}
 .mdiary{display:flex;flex-direction:column}.mdm{font:11px var(--pix);letter-spacing:.1em;text-transform:uppercase;color:var(--pink);margin:14px 0 4px}
 .mdr{appearance:none;background:none;border:0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:30px 42px 1fr auto auto;gap:10px;align-items:center;padding:6px 2px;cursor:pointer;color:inherit;text-align:left}.mdr:hover{background:var(--bg3)}.mdd{font-size:18px;font-weight:800;color:var(--dim)}.mdt{display:flex;flex-direction:column;min-width:0}.mdt b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* audio deck */
+.deckseg{margin-bottom:10px;width:100%;display:flex}.deckseg button{flex:1}
+.seg.mini button{padding:3px 8px;font-size:10px}
+.dsetup{border:1px dashed var(--line2);padding:12px;font-size:12px}
+.deck .dscreen{position:relative;margin-bottom:10px}
+.deck.aud .dscreen{height:150px;background:#020204;border:1px solid var(--line2);overflow:hidden}
+.deck.aud .dscreen::after{content:"";position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(0,0,0,.28) 0 1px,transparent 1px 3px);mix-blend-mode:multiply}
+.viz{position:absolute;inset:0;width:100%;height:100%;display:block}
+.dhud{position:absolute;left:8px;right:8px;top:6px;display:flex;justify-content:space-between;font:10px var(--pix);letter-spacing:.12em;color:var(--ok);text-shadow:0 0 6px currentColor;z-index:2;pointer-events:none;text-transform:uppercase}
+.mvid.mini{position:absolute;right:6px;bottom:6px;width:2px;height:2px;opacity:.01;border:0;z-index:1;pointer-events:none}
+#mBox.showvid .mvid.mini{width:128px;height:72px;opacity:.85;border:1px solid var(--line2);pointer-events:auto;filter:saturate(.6) contrast(1.1)}
+.deck.vid .mvid{width:100%}
+.fmviz{position:relative;inset:auto;width:min(720px,90vw);height:120px}
+.mvid iframe{border:0}
