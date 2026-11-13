@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794587440">
+<link rel="stylesheet" href="app.css?v=1794588368">
 </head>
 <body class="fx">
 <canvas id="noise" width="160" height="90" aria-hidden="true"></canvas>
@@ -43,7 +43,7 @@
   <div class="nodata panel" id="nodata" hidden><div class="pb">No sheet data yet. Once the laptop sync agent runs, your plan, stack and money fill in here automatically.</div></div>
   <!-- TODAY -->
   <section class="view" id="v-today" aria-label="Today">
-    <div class="banner slim"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/today"><span class="slash">/</span>today</h2><span class="sub" id="todaySub">day plan v2</span></div><button class="artbtn" type="button" data-artimg="today" title="Use your own image here">img</button></div>
+    <div class="banner slim"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/today"><span class="slash">/</span>today</h2><span class="sub" id="todaySub">day plan v2</span></div></div>
     <div class="hud">
       <div class="panel clockp">
         <div class="ph"><span class="tag">sys.clock</span><span id="planName"></span></div>
@@ -87,14 +87,14 @@
 
   <!-- GYM -->
   <section class="view" id="v-gym" aria-label="Gym">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/gym"><span class="slash">/</span>gym</h2><span class="sub" id="gymSub"></span></div><button class="artbtn" type="button" data-artimg="gym" title="Use your own image here">img</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/gym"><span class="slash">/</span>gym</h2><span class="sub" id="gymSub"></span></div></div>
     <div class="seg gseg" role="group" aria-label="Gym" id="gymSeg"><button type="button" data-g="workout">workout</button><button type="button" data-g="routines">routines</button><button type="button" data-g="history">history</button><button type="button" data-g="exercises">exercises</button></div>
     <div id="g-workout"></div><div id="g-routines" hidden></div><div id="g-history" hidden></div><div id="g-exercises" hidden></div>
   </section>
 
   <!-- JOURNAL -->
   <section class="view" id="v-journal" aria-label="Journal">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/journal"><span class="slash">/</span>journal</h2><span class="sub" id="jStreak"></span></div><button class="artbtn" type="button" data-artimg="journal" title="Use your own image here">img</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/journal"><span class="slash">/</span>journal</h2><span class="sub" id="jStreak"></span></div></div>
     <div class="jgrid">
       <div class="jside"><input class="inp" id="jQ" type="search" placeholder="search entries + #tags" autocomplete="off"><div class="jlist" id="jList"></div></div>
       <div class="jeditor panel" id="jEditor">
@@ -124,7 +124,7 @@
 
   <!-- BODY -->
   <section class="view" id="v-body" aria-label="Body">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/body"><span class="slash">/</span>body</h2><span class="sub">blood pressure + weight log</span></div><button class="artbtn" type="button" data-artimg="body" title="Use your own image here">img</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/body"><span class="slash">/</span>body</h2><span class="sub">blood pressure + weight log</span></div></div>
     <div class="two">
       <div class="panel"><div class="ph"><span class="tag">blood pressure</span><span>seated · 5 min rest · same arm</span></div><div class="pb">
         <form class="bpgrid" id="bpForm">
@@ -151,7 +151,7 @@
 
   <!-- TOOLS -->
   <section class="view" id="v-tools" aria-label="Tools">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/tools"><span class="slash">/</span>tools</h2><span class="sub" id="toolsSub"></span></div><button class="artbtn" type="button" data-artimg="tools" title="Use your own image here">img</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/tools"><span class="slash">/</span>tools</h2><span class="sub" id="toolsSub"></span></div></div>
     <div class="week-grid">
       <div class="panel"><div class="ph"><span class="tag">focus timer</span><span id="dwToday"></span></div><div class="pb">
         <div class="timer num" id="timer">90:00</div>
@@ -185,7 +185,7 @@
 
   <!-- WEEK -->
   <section class="view" id="v-week" aria-label="Week">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/week"><span class="slash">/</span>week</h2><span class="sub" id="weekSub">review Sundays 19:00</span></div><button class="artbtn" type="button" data-artimg="week" title="Use your own image here">img</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/week"><span class="slash">/</span>week</h2><span class="sub" id="weekSub">review Sundays 19:00</span></div></div>
     <div class="two">
       <div class="panel"><div class="ph"><span class="tag">adherence · last 7 days</span><span>target 80%</span></div><div class="pb"><div class="days" id="days"></div><div class="dim" id="daysNote" style="font-size:12px;margin-top:10px"></div></div></div>
       <div class="panel"><div class="ph"><span class="tag">streaks · last 30 days</span><span>from your ticks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
@@ -198,7 +198,7 @@
 
   <!-- STACK -->
   <section class="view" id="v-stack" aria-label="Stack">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/stack"><span class="slash">/</span>stack</h2><span class="sub" id="stackSub"></span></div><button class="artbtn" type="button" data-artimg="stack" title="Use your own image here">img</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/stack"><span class="slash">/</span>stack</h2><span class="sub" id="stackSub"></span></div></div>
     <div class="kv" id="stackKv"></div>
     <div id="stackWarn"></div>
     <div class="searchrow">
@@ -212,7 +212,7 @@
 
   <!-- MONEY -->
   <section class="view" id="v-money" aria-label="Money">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/money"><span class="slash">/</span>money</h2><span class="sub">monthly · Expenses + Expenses Summary</span></div><button class="artbtn" type="button" data-artimg="money" title="Use your own image here">img</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/money"><span class="slash">/</span>money</h2><span class="sub">monthly · Expenses + Expenses Summary</span></div></div>
     <div class="kv" id="moneyKv"></div>
     <div class="money-grid">
       <div class="grid">
@@ -253,8 +253,8 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script src="config.js?v=1794587440"></script>
+<script src="config.js?v=1794588368"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794587440"></script>
+<script src="app.js?v=1794588368"></script>
 </body>
 </html>

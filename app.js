@@ -186,8 +186,7 @@ const ART={gl:null,canvas:null,prog:null,u:{},tex:null,hasTex:false,view:null,t0
 function artMount(view){
   const host=document.querySelector(`#v-${view} .banner .art`);if(!host)return;
   ART.view=view;if(ART.canvas.parentNode!==host)host.appendChild(ART.canvas);
-  const img=ART.imgs[view];const gl=ART.gl;
-  if(gl&&img){const im=new Image();im.onload=()=>{if(ART.view!==view)return;gl.bindTexture(gl.TEXTURE_2D,ART.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,im);ART.hasTex=true;artFrame(true)};im.src=img}else ART.hasTex=false;
+  ART.hasTex=false;
   artResize();cancelAnimationFrame(ART.raf);artLoop();
 }
 function artResize(){const c=ART.canvas;const host=c.parentNode;if(!host)return;const w=host.clientWidth,h=host.clientHeight;const r=Math.min(devicePixelRatio||1,1.5);c.width=Math.max(1,Math.round(w*r));c.height=Math.max(1,Math.round(h*r));if(ART.gl)ART.gl.viewport(0,0,c.width,c.height);artFrame(true)}
@@ -197,18 +196,14 @@ function artFrame(force){const gl=ART.gl;if(!gl||!ART.view)return;const a=VIEW_A
   gl.uniform3fv(ART.u.ca,a.a);gl.uniform3fv(ART.u.cb,a.b);gl.uniform2fv(ART.u.m,ART.mouse);gl.uniform1i(ART.u.tex,0);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)}
 let artLast=0;function artLoop(ts){ART.raf=requestAnimationFrame(artLoop);if(document.hidden||!FX){if(!FX&&ts-artLast>1000){artLast=ts;artFrame(true)}return}if(ts-artLast<33)return;artLast=ts;artFrame()}
 // your own image per section, dithered by the same shader
-async function loadArtImages(){const d=await load('tools/images');ART.imgs={...(d||{})};if(cur)artMount(cur)}
-watch('tools/images',d=>{ART.imgs={...(d||{})};if(cur)artMount(cur)});
-function pickArtImage(view){const inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.onchange=()=>{const f=inp.files&&inp.files[0];if(!f)return;const fr=new FileReader();fr.onload=()=>{const im=new Image();im.onload=()=>{
-  const W=640,H=Math.round(W*im.height/im.width);const c=document.createElement('canvas');c.width=W;c.height=Math.min(H,640);const x=c.getContext('2d');x.drawImage(im,0,(c.height-H)/2,W,H);
-  ART.imgs[view]=c.toDataURL('image/jpeg',.72);save('tools/images',ART.imgs,true);artMount(view);flash('image_set')};im.src=fr.result};fr.readAsDataURL(f)};inp.click()}
-function clearArtImage(view){delete ART.imgs[view];save('tools/images',ART.imgs,true);artMount(view)}
-document.addEventListener('click',e=>{const b=e.target.closest('[data-artimg]');if(!b)return;const v=b.dataset.artimg;if(ART.imgs[v]&&b.dataset.mode==='clear')clearArtImage(v);else pickArtImage(v)});
 
 /* motion helpers */
 function staggerIn(root){if(!FX||!root||!root.animate)return;const els=[...root.querySelectorAll(':scope > *, .panel, .exc, .rcard, .wcard, .blk, .tr:not(.hd), .kv > *, .trk, .streak, .jitem, .spend, .cat')].filter((el,i,a)=>a.indexOf(el)===i&&el.offsetParent).slice(0,40);
   els.forEach((el,i)=>el.animate([{transform:'translateY(18px)',opacity:.15,clipPath:'inset(0 0 100% 0)'},{transform:'none',opacity:1,clipPath:'inset(0 0 0% 0)'}],{duration:420,delay:Math.min(i*28,500),easing:'cubic-bezier(.2,.9,.1,1)',fill:'backwards'}))}
 addEventListener('scroll',()=>{if(!FX)return;const c=ART.canvas;if(c&&c.parentNode)c.style.transform=`translateY(${Math.min(60,scrollY*.35)}px)`},{passive:true});
+
+// own-image banners removed; clear any old stored images once
+function loadArtImages(){load('tools/images').then(d=>{if(d)removeDoc('tools/images')}).catch(()=>{})}
 
 /* ================= DATES ================= */
 const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
