@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794606581">
+<link rel="stylesheet" href="app.css?v=1794606695">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -47,6 +47,7 @@
   var el=document.getElementById('bootfx');if(!el)return;
   var fxOff=false;try{fxOff=localStorage.getItem('ds3:fx')==='false'}catch(e){}
   var quick=false;try{quick=sessionStorage.getItem('ds-quickboot')==='1';sessionStorage.removeItem('ds-quickboot')}catch(e){}
+  if(quick)el.style.display='none';
   var lite=quick||fxOff||matchMedia('(prefers-reduced-motion: reduce)').matches;if(lite)el.classList.add('lite');
   var $=function(i){return document.getElementById(i)};
   var SPD=lite?1:5.4,t0=performance.now(),MIN=lite?400:10200,done=false,closing=false,target=4,shown=0,raf=0;
@@ -396,9 +397,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794606581"</script>
-<script src="config.js?v=1794606581"></script>
+<script>window.APP_V="1794606695"</script>
+<script src="config.js?v=1794606695"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794606581"></script>
+<script src="app.js?v=1794606695"></script>
 </body>
 </html>

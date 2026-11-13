@@ -1808,9 +1808,9 @@ boot();
 
 /* own boot video: lives in private storage (vault/<uid>/boot.mp4); each device keeps a copy in its own cache */
 async function cacheBootVideo(){try{if(!window.caches||!SB||!UID)return;
-  const {data:list}=await SB.storage.from('vault').list(UID,{search:'boot.mp4'});const f=(list||[]).find(x=>x.name==='boot.mp4');
-  const c=await caches.open('ds-media');
-  if(!f){await c.delete('bootvid');LS.set('bootvidStamp',null);return}
+  const {data:list,error:le}=await SB.storage.from('vault').list(UID,{search:'boot.mp4'});if(le||!Array.isArray(list))return; /* a failed check must never wipe the saved edit */
+  const f=list.find(x=>x.name==='boot.mp4');const c=await caches.open('ds-media');
+  if(!f){if(list.length===0&&LS.get('bootvidRemoved'))await c.delete('bootvid');return}
   const stamp=f.updated_at||f.created_at||String(f.metadata&&f.metadata.size);if(LS.get('bootvidStamp')===stamp&&await c.match('bootvid'))return;
   const {data:blob,error}=await SB.storage.from('vault').download(UID+'/boot.mp4');if(error||!blob)return;
   await c.put('bootvid',new Response(blob,{headers:{'Content-Type':'video/mp4'}}));LS.set('bootvidStamp',stamp);bvStatus()}catch(e){console.warn('boot video',e)}}
@@ -1823,9 +1823,9 @@ function openBootVideo(){openSheet('boot video',`<p class="dim" style="margin:0 
   $('bvFile').onchange=async e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f||!SB||!UID)return;
     if(f.size>50*1048576){$('bvStat').textContent='over 50 MB: trim it first';return}
     $('bvStat').textContent='uploading…';const {error}=await SB.storage.from('vault').upload(UID+'/boot.mp4',f,{upsert:true,contentType:f.type||'video/mp4'});
-    if(error){$('bvStat').textContent='upload failed: '+error.message;return}LS.set('bootvidStamp',null);$('bvStat').textContent='uploaded · saving here…';await cacheBootVideo();flash('boot_video_set')};
+    if(error){$('bvStat').textContent='upload failed: '+error.message;return}LS.set('bootvidStamp',null);LS.set('bootvidRemoved',null);$('bvStat').textContent='uploaded · saving here…';await cacheBootVideo();flash('boot_video_set')};
   $('bvRefresh').onclick=async()=>{LS.set('bootvidStamp',null);$('bvStat').textContent='downloading…';await cacheBootVideo();bvStatus()};
-  $('bvDel').onclick=async()=>{if(!SB||!UID)return;await SB.storage.from('vault').remove([UID+'/boot.mp4']);if(window.caches){const c=await caches.open('ds-media');await c.delete('bootvid')}LS.set('bootvidStamp',null);bvStatus()}}
+  $('bvDel').onclick=async()=>{if(!SB||!UID)return;await SB.storage.from('vault').remove([UID+'/boot.mp4']);LS.set('bootvidRemoved',1);if(window.caches){const c=await caches.open('ds-media');await c.delete('bootvid')}LS.set('bootvidStamp',null);bvStatus()}}
 
 /* ================= MEDIA — anime · movies · manga · books (Letterboxd + MyAnimeList style) ================= */
 const MK={anime:{label:'anime',verb:'watch',unit:'ep',units:'episodes',ing:'watching',stars:10,icon:'◐'},movies:{label:'movies',verb:'watch',unit:'',units:'',ing:'watching',stars:5,icon:'▶'},manga:{label:'manga',verb:'read',unit:'ch',units:'chapters',ing:'reading',stars:10,icon:'❏'},books:{label:'books',verb:'read',unit:'p',units:'pages',ing:'reading',stars:5,icon:'▤'}};
