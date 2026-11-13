@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dylan's System</title>
+<meta name="theme-color" content="#050505">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="System">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css?v=1794582216">
+</head>
+<body class="fx">
+<canvas id="noise" width="160" height="90" aria-hidden="true"></canvas>
+<div class="scan" aria-hidden="true"></div>
+<div class="vign" aria-hidden="true"></div>
+<canvas id="parts" aria-hidden="true"></canvas>
+<div class="cur-x" id="curx" aria-hidden="true"></div>
+<div class="cur-xy" id="curxy" aria-hidden="true"></div>
+
+<header class="bar">
+  <span class="prompt">dylan@<b>stack</b>:~$<span class="caret"></span></span>
+  <nav class="tabs" aria-label="Views" id="tabs"></nav>
+  <div class="meta">
+    <button class="pendbtn" id="pendBtn" type="button" title="Edits waiting to go into the Excel sheet"></button>
+    <span class="sync" id="sync" title="Where your data is saved"><i></i><span id="syncTxt">local</span></span>
+    <button class="iconbtn" id="editBtn" type="button" aria-pressed="false" title="Edit mode (e)">EDIT</button>
+    <button class="iconbtn hide-sm" id="palBtn" type="button" title="Search everything (/)">⌘K</button>
+    <button class="iconbtn" id="fxBtn" type="button" aria-pressed="true" title="Effects on or off (f)">FX</button>
+  </div>
+</header>
+
+<main id="main">
+  <div class="nodata panel" id="nodata" hidden><div class="pb">No sheet data yet. Once the laptop sync agent runs, your plan, stack and money fill in here automatically.</div></div>
+  <!-- TODAY -->
+  <section class="view" id="v-today" aria-label="Today">
+    <div class="banner slim"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/today"><span class="slash">/</span>today</h2><span class="sub" id="todaySub">day plan v2</span></div><button class="artbtn" type="button" data-artimg="today" title="Use your own image here">img</button></div>
+    <div class="hud">
+      <div class="panel clockp">
+        <div class="ph"><span class="tag">sys.clock</span><span id="planName"></span></div>
+        <div class="pb">
+          <div class="clock num"><span class="glitch" id="clock" data-text="00:00">00:00</span><span class="sec" id="secs">00</span></div>
+          <div class="dateline" id="dateline"></div>
+        </div>
+      </div>
+      <div class="nn">
+        <div class="panel"><div class="ph"><span class="tag">now</span><span id="nowBlk"></span></div>
+          <div class="pb"><span class="big" id="nowItem"></span><span class="small" id="nowSub"></span></div></div>
+        <div class="panel"><div class="ph"><span class="tag">next</span><span id="nextAt"></span></div>
+          <div class="pb"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end"><span class="big" id="nextItem"></span><span class="eta num" id="eta"></span></div>
+          <div class="meter scan"><span id="etaBar"></span></div></div></div>
+      </div>
+    </div>
+    <div class="panel prog"><div class="pb">
+      <span class="pct num" id="pct">0%</span>
+      <span class="asc num" id="asc"></span>
+      <span class="target-mark num" id="pctTxt"></span>
+    </div></div>
+    <div class="strip" id="strip" role="group" aria-label="Blocks of the day"></div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Show" id="filtSeg">
+        <button type="button" data-f="all" aria-pressed="true">all</button>
+        <button type="button" data-f="cmp" aria-pressed="false">compounds</button>
+        <button type="button" data-f="rtn" aria-pressed="false">routine</button>
+      </div>
+      <button class="iconbtn" type="button" id="hideDone" aria-pressed="false">hide done</button>
+      <button class="iconbtn" type="button" id="infoBtn" aria-pressed="false">notes + cautions</button>
+      <span class="sp"></span>
+      <div class="seg" role="group" aria-label="Plan">
+        <button type="button" id="pWd" aria-pressed="false">weekday</button>
+        <button type="button" id="pWe" aria-pressed="false">weekend</button>
+      </div>
+      <button class="iconbtn" type="button" id="resetDay" title="Untick everything for this day">reset</button>
+    </div>
+    <div id="blocks"></div>
+    <div id="todayExtra"></div>
+  </section>
+
+  <!-- GYM -->
+  <section class="view" id="v-gym" aria-label="Gym">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/gym"><span class="slash">/</span>gym</h2><span class="sub" id="gymSub"></span></div><button class="artbtn" type="button" data-artimg="gym" title="Use your own image here">img</button></div>
+    <div class="seg gseg" role="group" aria-label="Gym" id="gymSeg"><button type="button" data-g="workout">workout</button><button type="button" data-g="routines">routines</button><button type="button" data-g="history">history</button><button type="button" data-g="exercises">exercises</button></div>
+    <div id="g-workout"></div><div id="g-routines" hidden></div><div id="g-history" hidden></div><div id="g-exercises" hidden></div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section class="view" id="v-journal" aria-label="Journal">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/journal"><span class="slash">/</span>journal</h2><span class="sub" id="jStreak"></span></div><button class="artbtn" type="button" data-artimg="journal" title="Use your own image here">img</button></div>
+    <div class="jgrid">
+      <div class="jside"><input class="inp" id="jQ" type="search" placeholder="search entries + #tags" autocomplete="off"><div class="jlist" id="jList"></div></div>
+      <div class="jeditor panel" id="jEditor">
+        <div class="ph"><span class="row" style="gap:6px"><button class="iconbtn" type="button" id="jPrev" aria-label="Previous day">‹</button><button class="iconbtn" type="button" id="jToday">today</button><button class="iconbtn" type="button" id="jNext" aria-label="Next day">›</button></span><span id="jSaved" class="dim"></span></div>
+        <div class="pb">
+          <h3 class="jdate" id="jDate"></h3>
+          <div class="jmood" id="jMood" role="group" aria-label="Mood"></div>
+          <div class="jtagrow" id="jTags"></div>
+          <div class="row" style="justify-content:space-between;margin:12px 0 8px"><div class="seg" id="jModeSeg" role="group" aria-label="Mode"><button type="button" data-jm="type">type</button><button type="button" data-jm="ink">write</button></div><div class="chips" id="jPrompts" style="margin:0"></div></div>
+          <div id="jTypePane"><textarea class="jtext" id="jText" placeholder="What happened today? How did it feel?" spellcheck="true"></textarea><div class="dim" style="font-size:11px;text-align:right" id="jWords"></div></div>
+          <div id="jInkPane" hidden>
+            <div class="jtools" id="jTools">
+              <button type="button" data-tool="pen">pen</button><button type="button" data-tool="hl">highlight</button><button type="button" data-tool="eraser">erase</button>
+              <span class="sep"></span>
+              <button type="button" class="col" data-col="#e6e6e6" style="--c:#e6e6e6" aria-label="White"></button><button type="button" class="col" data-col="#ff2a6d" style="--c:#ff2a6d" aria-label="Pink"></button><button type="button" class="col" data-col="#05d9e8" style="--c:#05d9e8" aria-label="Cyan"></button><button type="button" class="col" data-col="#ffb000" style="--c:#ffb000" aria-label="Amber"></button>
+              <input type="range" id="jWidth" min="1" max="12" value="4" aria-label="Pen width">
+              <span class="sep"></span>
+              <button type="button" id="jUndo">undo</button><button type="button" id="jRedo">redo</button><button type="button" id="jPage">+ page</button><button type="button" id="jClear">clear</button>
+              <button type="button" id="jPencil" aria-pressed="false" title="Ignore fingers so your palm can rest on the screen">pencil only</button>
+            </div>
+            <div class="jcanvaswrap" id="jCanvasWrap"><canvas id="jCanvas"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BODY -->
+  <section class="view" id="v-body" aria-label="Body">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/body"><span class="slash">/</span>body</h2><span class="sub">blood pressure + weight log</span></div><button class="artbtn" type="button" data-artimg="body" title="Use your own image here">img</button></div>
+    <div class="two">
+      <div class="panel"><div class="ph"><span class="tag">blood pressure</span><span>seated · 5 min rest · same arm</span></div><div class="pb">
+        <form class="bpgrid" id="bpForm">
+          <label>sys<input class="inp num" id="bpS" type="number" inputmode="numeric" min="60" max="250" required></label>
+          <label>dia<input class="inp num" id="bpD" type="number" inputmode="numeric" min="30" max="160" required></label>
+          <label>pulse<input class="inp num" id="bpP" type="number" inputmode="numeric" min="30" max="220"></label>
+          <button class="btn p" type="submit" style="height:46px">log</button>
+        </form>
+        <div class="stat" id="bpStat" style="margin-top:14px"></div>
+        <div id="bpChart"></div>
+        <div class="rlist" id="bpList"></div>
+      </div></div>
+      <div class="panel"><div class="ph"><span class="tag">bodyweight</span><span>kg</span></div><div class="pb">
+        <form class="bpgrid" id="wtForm" style="grid-template-columns:1fr auto">
+          <label>kg<input class="inp num" id="wtIn" type="number" inputmode="decimal" step="0.1" min="30" max="250" required></label>
+          <button class="btn p" type="submit" style="height:46px">log</button>
+        </form>
+        <div class="stat" id="wtStat" style="margin-top:14px"></div>
+        <div id="wtChart"></div>
+        <div class="rlist" id="wtList"></div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- TOOLS -->
+  <section class="view" id="v-tools" aria-label="Tools">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/tools"><span class="slash">/</span>tools</h2><span class="sub" id="toolsSub"></span></div><button class="artbtn" type="button" data-artimg="tools" title="Use your own image here">img</button></div>
+    <div class="week-grid">
+      <div class="panel"><div class="ph"><span class="tag">focus timer</span><span id="dwToday"></span></div><div class="pb">
+        <div class="timer num" id="timer">90:00</div>
+        <div class="meter"><span id="tmBar" style="width:0"></span></div>
+        <div class="bigbtns" style="margin-top:14px"><button class="btn p" type="button" id="tmGo">start</button><button class="btn" type="button" id="tmReset">stop + log</button></div>
+        <div class="seg" role="group" aria-label="Timer length" style="margin-top:12px;width:fit-content" id="tmPresets">
+          <button type="button" data-m="90">90</button><button type="button" data-m="80">80</button><button type="button" data-m="75">75</button><button type="button" data-m="25">25</button><button type="button" data-m="10">10</button>
+        </div>
+        <div style="margin-top:14px"><div class="dim" style="font-size:11px;margin-bottom:4px" id="dwLbl"></div><div class="meter"><span id="dwBar"></span></div></div>
+      </div></div>
+      <div class="panel"><div class="ph"><span class="tag">leetcode · this week</span><span id="lcWeek"></span></div><div class="pb">
+        <div class="timer num" id="lcNum">0</div>
+        <div class="slots" id="slots"></div>
+        <div class="bigbtns"><button class="btn p" type="button" id="lcAdd">+1 solved</button><button class="btn" type="button" id="lcSub">−1</button></div>
+      </div></div>
+      <div class="grid" style="align-content:start">
+        <div class="panel"><div class="ph"><span class="tag">water · today</span><button class="ed" type="button" id="waterTgtEd">target</button></div><div class="pb">
+          <div class="counter"><b class="num" id="waterN">0</b><div class="bigbtns"><button class="btn p" type="button" id="waterAdd">+ glass</button><button class="btn" type="button" id="waterSub">−</button></div></div>
+          <div class="pips" id="waterPips"></div>
+        </div></div>
+        <div class="panel"><div class="ph"><span class="tag">inbox checks · today</span><span id="msgN"></span></div><div class="pb"><p class="dim" style="font-size:12px;margin:0 0 10px">Your Day Plan v2 rule: only check messages at these three times. Tap each one when you've done it.</p>
+          <div class="msgs" id="msgs"></div>
+        </div></div>
+      </div>
+    </div>
+    <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">pins + cycles</span><span>tap “done today” after each dose</span></div><div class="pb">
+      <div class="cards" id="trackers"></div>
+      <div class="sugg" id="trkSugg"></div>
+    </div></div>
+  </section>
+
+  <!-- WEEK -->
+  <section class="view" id="v-week" aria-label="Week">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/week"><span class="slash">/</span>week</h2><span class="sub" id="weekSub">review Sundays 19:00</span></div><button class="artbtn" type="button" data-artimg="week" title="Use your own image here">img</button></div>
+    <div class="two">
+      <div class="panel"><div class="ph"><span class="tag">adherence · last 7 days</span><span>target 80%</span></div><div class="pb"><div class="days" id="days"></div><div class="dim" id="daysNote" style="font-size:12px;margin-top:10px"></div></div></div>
+      <div class="panel"><div class="ph"><span class="tag">streaks · last 30 days</span><span>from your ticks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
+    </div>
+    <div class="two" style="margin-top:12px">
+      <div class="panel"><div class="ph"><span class="tag">daily targets</span><span>Day Plan v2 · rows 140–145</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ add target</button></div></div>
+      <div class="panel"><div class="ph"><span class="tag">weekly review notes</span><span id="notesSaved" class="dim"></span></div><div class="pb"><textarea class="notes" id="weekNotes" placeholder="What worked, what slipped, what to change next week…"></textarea></div></div>
+    </div>
+  </section>
+
+  <!-- STACK -->
+  <section class="view" id="v-stack" aria-label="Stack">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/stack"><span class="slash">/</span>stack</h2><span class="sub" id="stackSub"></span></div><button class="artbtn" type="button" data-artimg="stack" title="Use your own image here">img</button></div>
+    <div class="kv" id="stackKv"></div>
+    <div id="stackWarn"></div>
+    <div class="searchrow">
+      <label class="grep"><span class="pink">grep</span><input id="q" type="search" placeholder="name, dose, source, note…" autocomplete="off"></label>
+      <button class="btn p" type="button" id="addCmp">+ compound</button>
+    </div>
+    <div class="chips" id="stChips"></div>
+    <div class="chips" id="catChips"></div>
+    <div class="tbl" id="stackTbl"></div>
+  </section>
+
+  <!-- MONEY -->
+  <section class="view" id="v-money" aria-label="Money">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/money"><span class="slash">/</span>money</h2><span class="sub">monthly · Expenses + Expenses Summary</span></div><button class="artbtn" type="button" data-artimg="money" title="Use your own image here">img</button></div>
+    <div class="kv" id="moneyKv"></div>
+    <div class="money-grid">
+      <div class="grid">
+        <div class="panel"><div class="ph"><span class="tag">outgoings by category</span><span>click to list</span></div><div class="pb" id="cats"></div></div>
+        <div class="panel"><div class="ph"><span class="tag" id="billsTitle">every bill</span><span id="billsTot"></span></div><div class="pb"><div id="bills"></div><button class="addrow" type="button" id="addBill">+ add bill</button></div></div>
+      </div>
+      <div class="grid" style="align-content:start">
+        <div class="panel"><div class="ph"><span class="tag">savings</span><span id="saveTot"></span></div><div class="pb"><div id="saves"></div><button class="addrow" type="button" id="addSave">+ add saving</button></div></div>
+        <div class="panel"><div class="ph"><span class="tag">price → hours of work</span><span id="rateLbl"></span></div><div class="pb">
+          <div class="calc"><span class="dim">£</span><input id="calcIn" type="number" inputmode="decimal" min="0" step="0.01" value="40" aria-label="Price in pounds"><span class="dim">=</span><span class="res num" id="calcOut"></span></div>
+          <p class="dim" style="margin:10px 0 0;font-size:12px" id="calcNote"></p></div></div>
+        <div class="panel"><div class="ph"><span class="tag">actual vs budget</span><span>not logged</span></div><div class="pb dim">No months in the log yet. Fill in October's totals on the Actual vs Budget sheet and this panel can compare them.</div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+
+<nav class="bnav" id="bnav" aria-label="Sections"></nav>
+<div class="restdock" id="restDock" aria-live="polite"><span class="tag">rest</span><b class="num" id="restT">2:00</b><div class="meter"><span id="restBar"></span></div><button class="iconbtn" type="button" data-rd="-15">−15</button><button class="iconbtn" type="button" data-rd="15">+15</button><button class="iconbtn" type="button" data-rd="skip">skip</button></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sheetTitle"><div class="sgrab"></div><div class="sh"><span class="tag" id="sheetTitle"></span><button class="iconbtn" type="button" id="sheetX">close</button></div><div class="sbody" id="sheetBody"></div></div>
+<div class="login" id="login" hidden><div class="loginbg"></div><form class="loginbox" id="loginForm"><div id="loginBox"><div class="tag pink">dylan@stack:~$ login</div><h1 class="glitch" data-text="SYSTEM">SYSTEM</h1>
+<label>email<input class="inp" id="lEmail" type="email" autocomplete="username" required></label><label>password<input class="inp" id="lPass" type="password" autocomplete="current-password" required></label>
+<button class="btn p" type="submit">sign in</button><p class="dim" id="loginMsg" aria-live="polite"></p></div></form></div>
+<div class="ticker" aria-hidden="true"><span class="lab">UP NEXT</span><div class="run" id="tick"></div></div>
+<div class="flash" id="flash" aria-hidden="true"><span id="flashTxt"></span></div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Details" aria-hidden="true"></aside>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mb"><div class="mh"><span class="tag" id="mTitle">edit</span><button class="iconbtn" type="button" id="mX">esc ✕</button></div><form id="mForm"></form></div></div>
+<div class="pal" id="pal" role="dialog" aria-label="Search">
+  <div class="box2">
+    <div class="in"><span class="pink">&gt;</span><input id="palIn" type="text" placeholder="jump to an item, compound, bill or view…" autocomplete="off" aria-label="Search"></div>
+    <ul id="palList"></ul>
+    <div class="hint"><span class="kbd">↑↓</span> move · <span class="kbd">enter</span> open · <span class="kbd">esc</span> close · keys: <span class="kbd">1–8</span> views <span class="kbd">/</span> search <span class="kbd">e</span> edit mode <span class="kbd">n</span> now <span class="kbd">j k</span> move <span class="kbd">x</span> tick <span class="kbd">f</span> fx</div>
+  </div>
+</div>
+
+<div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
+<script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
+addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
+<script src="config.js?v=1794582216"></script>
+<script src="vendor/supabase.js"></script>
+<script src="app.js?v=1794582216"></script>
+</body>
+</html>
