@@ -817,3 +817,9 @@ a.iconbtn{text-decoration:none;display:inline-flex;align-items:center}
 .deck.vid .mvid{width:100%}
 .fmviz{position:relative;inset:auto;width:min(720px,90vw);height:120px}
 .mvid iframe{border:0}
+
+.mprog.seek{height:16px;margin:2px 0;background:none;position:relative;cursor:pointer;touch-action:none}
+.mprog.seek::before{content:"";position:absolute;left:0;right:0;top:7px;height:3px;background:var(--line)}
+.mprog.seek i{position:absolute;left:0;top:7px;height:3px}
+.mprog.seek b{position:absolute;top:3px;width:10px;height:10px;margin-left:-5px;background:var(--pink);box-shadow:0 0 8px var(--pink);left:0}
+.mskip{display:flex;gap:6px;margin-top:8px}.mskip button{appearance:none;flex:1;background:var(--bg3);border:1px solid var(--line2);color:var(--dim);font:11px var(--mono);padding:5px 0;cursor:pointer}.mskip button:active{color:var(--fg);border-color:var(--pink)}
