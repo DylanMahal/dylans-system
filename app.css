@@ -256,8 +256,10 @@ h1,h2{margin:0;font-weight:800;letter-spacing:-.04em;line-height:.9}
 /* ---------- ticker ---------- */
 .ticker{position:fixed;left:0;right:0;bottom:0;height:32px;border-top:1px solid var(--line);background:rgba(5,5,5,.94);overflow:hidden;z-index:25;display:flex;align-items:center}
 .ticker .lab{flex:none;background:var(--pink);color:#000;height:100%;display:flex;align-items:center;padding:0 10px;font-family:var(--pix);font-size:10px;z-index:1}
-.ticker .run{display:flex;white-space:nowrap;animation:marq 60s linear infinite;padding-left:20px}
-.ticker .run span{margin-right:40px;color:var(--dim)}
+.ticker{contain:paint}
+.ticker .run{display:flex;flex:none;white-space:nowrap;animation:marq 60s linear infinite;will-change:transform;backface-visibility:hidden}
+.ticker .run span{flex:none;padding-left:20px;margin-right:20px}
+.ticker .run span{color:var(--dim)}
 .ticker .run span b{color:var(--fg);font-weight:500}
 @keyframes marq{to{transform:translateX(-50%)}}
 .nofx .ticker .run{animation:none}

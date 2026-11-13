@@ -441,7 +441,7 @@ function tickNow(force){
   if(firstNow&&!cur){if(sleeping&&m>=1440){const all=document.querySelectorAll('#blocks .blk');all.length&&all[all.length-1].classList.add('open')}else{const f=document.querySelector('#blocks .blk');f&&f.classList.add('open')}}
   firstNow=false;
   document.querySelectorAll('#blocks .it').forEach(el=>el.classList.toggle('nowit',el.dataset.t!==''&&+el.dataset.t===nowT&&!sleeping));
-  const up=vis.filter(i=>i.t>m).slice(0,14);const html=(up.length?up:vis.slice(0,10)).map(i=>`<span><b>${fmtM(i.t)}</b> ${esc(i.item)}</span>`).join('');$('tick').innerHTML=html+html;
+  const up=vis.filter(i=>i.t>m).slice(0,14);const html=(up.length?up:vis.slice(0,10)).map(i=>`<span><b>${fmtM(i.t)}</b> ${esc(i.item)}</span>`).join('');const tk=$('tick');if(tk.dataset.h!==html){tk.dataset.h=html;tk.innerHTML=html+html;const w=tk.scrollWidth/2;tk.style.animationDuration=Math.max(20,w/45)+'s'}
 }
 setInterval(()=>tickNow(false),1000);
 async function loadDay(){
