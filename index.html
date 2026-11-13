@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794595233">
+<link rel="stylesheet" href="app.css?v=1794597745">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -328,6 +328,10 @@
         </div></div>
       </div>
     </div>
+    <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">boot video</span><span id="bvStat" class="dim"></span></div><div class="pb">
+      <p class="dim" style="font-size:12px;margin:0 0 10px">Plays full screen every time the app opens. Stored privately in your account; each device keeps its own copy.</p>
+      <div class="bigbtns"><label class="btn p" style="cursor:pointer">upload new<input type="file" id="bvFile" accept="video/mp4,video/*" hidden></label><button class="btn" type="button" id="bvRefresh">re-download here</button><button class="btn" type="button" id="bvDel">remove</button></div>
+    </div></div>
     <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">pins + cycles</span><span>tap “done today” after each dose</span></div><div class="pb">
       <div class="cards" id="trackers"></div>
       <div class="sugg" id="trkSugg"></div>
@@ -388,7 +392,7 @@
 <div class="login" id="login" hidden><div class="loginbg"></div><form class="loginbox" id="loginForm"><div id="loginBox"><div class="tag pink">dylan@stack:~$ login</div><h1 class="glitch" data-text="SYSTEM">SYSTEM</h1>
 <label>email<input class="inp" id="lEmail" type="email" autocomplete="username" required></label><label>password<input class="inp" id="lPass" type="password" autocomplete="current-password" required></label>
 <button class="btn p" type="submit">sign in</button><p class="dim" id="loginMsg" aria-live="polite"></p></div></form></div>
-<div class="ticker" aria-hidden="true"><span class="lab">UP NEXT</span><div class="run" id="tick"></div></div>
+<div class="ticker" aria-hidden="true"><span class="lab">MINDSET</span><div class="run" id="tick"></div></div>
 <div class="flash" id="flash" aria-hidden="true"><span id="flashTxt"></span></div>
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Details" aria-hidden="true"></aside>
@@ -404,9 +408,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794595233"</script>
-<script src="config.js?v=1794595233"></script>
+<script>window.APP_V="1794597745"</script>
+<script src="config.js?v=1794597745"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794595233"></script>
+<script src="app.js?v=1794597745"></script>
 </body>
 </html>

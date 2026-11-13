@@ -441,7 +441,7 @@ function tickNow(force){
   if(firstNow&&!cur){if(sleeping&&m>=1440){const all=document.querySelectorAll('#blocks .blk');all.length&&all[all.length-1].classList.add('open')}else{const f=document.querySelector('#blocks .blk');f&&f.classList.add('open')}}
   firstNow=false;
   document.querySelectorAll('#blocks .it').forEach(el=>el.classList.toggle('nowit',el.dataset.t!==''&&+el.dataset.t===nowT&&!sleeping));
-  const up=vis.filter(i=>i.t>m).slice(0,14);const html=(up.length?up:vis.slice(0,10)).map(i=>`<span><b>${fmtM(i.t)}</b> ${esc(i.item)}</span>`).join('');const tk=$('tick');if(tk.dataset.h!==html){tk.dataset.h=html;tk.innerHTML=html+html;const w=tk.scrollWidth/2;tk.style.animationDuration=Math.max(20,w/45)+'s'}
+  renderQuotes();
 }
 setInterval(()=>tickNow(false),1000);
 async function loadDay(){
@@ -449,6 +449,11 @@ async function loadDay(){
   renderToday();renderTools();watch(p,dd=>{if(p!=='days/d-'+DAYK)return;DAY={ticks:{},water:0,msg:{},dw:0,...dd};applyTicks();renderTools()});
 }
 
+
+/* bottom ticker: quotes */
+const QUOTES=[["Everyone has a plan until they get punched in the mouth.", "Mike Tyson"], ["Discipline is doing what you hate to do, but doing it like you love it.", "Mike Tyson"], ["Fear is the greatest obstacle to learning. But fear is your best friend.", "Mike Tyson"], ["The biggest challenge is learning how to psych yourself up into believing in yourself as you walk into the Octagon.", "Jon Jones"], ["Being remembered for standing for something is a lot more important than just for a cool move that you did.", "Jon Jones"], ["To stimulate optimal size and strength increases, it's imperative that you regularly attempt the momentarily impossible.", "Mike Mentzer"], ["It is the body itself that produces growth; but it does so only during a sufficient rest period.", "Mike Mentzer"], ["Man's proper stature is not one of mediocrity, failure, frustration, or defeat, but one of achievement, strength, and nobility.", "Mike Mentzer"], ["Success doesn't know these things about cold or early or tired. It just knows if you showed up or not.", "Greg Plitt"], ["It's early in the morning and your competition is still sleeping.", "Greg Plitt"], ["We all fall in life. The question is: who gets back up?", "Greg Plitt"], ["We don't live forever. Our legacy does.", "Greg Plitt"]];
+function renderQuotes(){const tk=$('tick');if(!tk||tk.dataset.q)return;const q=[...QUOTES].sort(()=>Math.random()-.5);
+  const html=q.map(([t,a])=>`<span>“${esc(t)}” <b>— ${esc(a)}</b></span>`).join('');tk.dataset.q='1';tk.innerHTML=html+html;tk.style.animationDuration=Math.max(60,tk.scrollWidth/2/40)+'s'}
 
 /* ================= GYM (workout logger) ================= */
 const EXLIB=[
@@ -728,7 +733,7 @@ $('wtList').onclick=e=>{const b=e.target.closest('[data-rwt]');if(!b)return;WT.r
 
 /* ================= TOOLS ================= */
 let lc=0,WK=isoWeek(logical()),SET={water:8},TRK={list:[]};
-function renderTools(){
+function renderTools(){bvStatus();
   // water
   const wt=SET.water||8;$('waterN').textContent=DAY.water||0;$('waterPips').innerHTML=Array.from({length:Math.max(wt,DAY.water||0)},(_,i)=>`<i class="${i<(DAY.water||0)?'f':''}"></i>`).join('');
   // messages
@@ -1259,7 +1264,7 @@ async function startApp(session){
   BFX('ui compiled · '+(cur||'today'),78);
   await loadDay();await loadTools();BFX('day state + tools restored',90);
   startRealtime();startAgentLink();loadArtImages();flushOutbox();
-  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,4000);
+  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,600);
   schedWidget();setInterval(publishWidget,10*60*1000);
 }
 function flushOutbox(){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('ds3:outbox:'))ks.push(k.slice(11))}ks.forEach(p=>{const v=LS.get(p);if(v!=null)save(p,v,true);localStorage.removeItem('ds3:outbox:'+p)})}catch(e){}}
@@ -1295,7 +1300,17 @@ async function cacheBootVideo(){try{if(!window.caches||!SB||!UID)return;
   if(!f){await c.delete('bootvid');LS.set('bootvidStamp',null);return}
   const stamp=f.updated_at||f.created_at||String(f.metadata&&f.metadata.size);if(LS.get('bootvidStamp')===stamp&&await c.match('bootvid'))return;
   const {data:blob,error}=await SB.storage.from('vault').download(UID+'/boot.mp4');if(error||!blob)return;
-  await c.put('bootvid',new Response(blob,{headers:{'Content-Type':'video/mp4'}}));LS.set('bootvidStamp',stamp)}catch(e){console.warn('boot video',e)}}
+  await c.put('bootvid',new Response(blob,{headers:{'Content-Type':'video/mp4'}}));LS.set('bootvidStamp',stamp);bvStatus()}catch(e){console.warn('boot video',e)}}
+
+/* boot video controls (Tools) */
+async function bvStatus(){const el=$('bvStat');if(!el)return;try{const c=window.caches?await caches.open('ds-media'):null;const r=c?await c.match('bootvid'):null;
+  if(r){const b=await r.blob();el.textContent=`on this device · ${(b.size/1048576).toFixed(1)} MB`}else el.textContent='not on this device yet'}catch(e){el.textContent=''}}
+$('bvFile').onchange=async e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f||!SB||!UID)return;
+  if(f.size>50*1048576){$('bvStat').textContent='over 50 MB: trim it first';return}
+  $('bvStat').textContent='uploading…';const {error}=await SB.storage.from('vault').upload(UID+'/boot.mp4',f,{upsert:true,contentType:f.type||'video/mp4'});
+  if(error){$('bvStat').textContent='upload failed: '+error.message;return}LS.set('bootvidStamp',null);$('bvStat').textContent='uploaded · saving here…';await cacheBootVideo();flash('boot_video_set')};
+$('bvRefresh').onclick=async()=>{LS.set('bootvidStamp',null);$('bvStat').textContent='downloading…';await cacheBootVideo();bvStatus()};
+$('bvDel').onclick=async()=>{if(!SB||!UID)return;await SB.storage.from('vault').remove([UID+'/boot.mp4']);if(window.caches){const c=await caches.open('ds-media');await c.delete('bootvid')}LS.set('bootvidStamp',null);bvStatus()};
 
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
 const CACHE='system-__V__';
