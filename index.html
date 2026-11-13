@@ -17,110 +17,110 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794591686">
+<link rel="stylesheet" href="app.css?v=1794592292">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
-  <canvas id="bfxRain"></canvas>
-  <div class="bfx-floor"><i></i></div>
-  <div class="bfx-scan"></div>
-  <div class="bfx-crt"></div>
-  <div class="bfx-hud tl"><b>DYLAN.SYS</b><span id="bfxBuild">build ----</span><span id="bfxClock">--:--:--</span></div>
-  <div class="bfx-hud tr"><span>NODE <b id="bfxNode">----</b></span><span>LINK <b id="bfxLink">wait</b></span><span>MEM <b id="bfxMem">0x0000</b></span></div>
-  <div class="bfx-brk a"></div><div class="bfx-brk b"></div><div class="bfx-brk c"></div><div class="bfx-brk d"></div>
-  <div class="bfx-core">
-    <svg class="bfx-rings" viewBox="0 0 400 400">
-      <circle class="r1" cx="200" cy="200" r="190"/>
-      <circle class="r2" cx="200" cy="200" r="172"/>
-      <circle class="r3" cx="200" cy="200" r="158"/>
-      <circle class="prog" id="bfxProg" cx="200" cy="200" r="182"/>
-      <g class="ticks" id="bfxTicks"></g>
+  <canvas id="bfxField"></canvas>
+  <div class="bfx-vig"></div>
+  <div class="bfx-term" id="bfxTerm"><span id="bfxCmd"></span><i class="bfx-caret"></i></div>
+  <div class="bfx-line" id="bfxLine"></div>
+  <div class="bfx-core" id="bfxCore">
+    <svg class="bfx-ring" viewBox="0 0 400 400">
+      <circle class="halo" cx="200" cy="200" r="196"/>
+      <circle class="ring" id="bfxRing" cx="200" cy="200" r="186"/>
+      <circle class="prog" id="bfxProg" cx="200" cy="200" r="196"/>
+      <g id="bfxDotG"><circle class="dot" cx="200" cy="4" r="3.2"/></g>
     </svg>
-    <div class="bfx-logo"><canvas id="bfxFace" width="360" height="360"></canvas><div class="bfx-sweep"></div></div>
+    <div class="bfx-face"><canvas id="bfxFace" width="360" height="360"></canvas></div>
   </div>
-  <div class="bfx-title"><span id="bfxTitle" data-text="SYSTEM">SYSTEM</span></div>
-  <div class="bfx-sub" id="bfxSub">initialising</div>
-  <div class="bfx-pct"><span id="bfxPct">000</span><small>%</small></div>
-  <div class="bfx-bar"><i id="bfxBar"></i></div>
+  <div class="bfx-word" id="bfxWord"></div>
+  <div class="bfx-status"><span id="bfxSub">&nbsp;</span></div>
+  <div class="bfx-meter"><i id="bfxBar"></i><span id="bfxPct">00</span></div>
   <pre class="bfx-log" id="bfxLog"></pre>
-  <div class="bfx-skip">tap to skip</div>
+  <div class="bfx-off"></div>
 </div>
 <script>
 (function(){
   var el=document.getElementById('bootfx');if(!el)return;
   var fxOff=false;try{fxOff=localStorage.getItem('ds3:fx')==='false'}catch(e){}
-  var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var lite=fxOff||reduced; if(lite)el.classList.add('lite');
-  var t0=performance.now(),MIN=lite?350:5200,done=false,closing=false,target=6,shown=0,raf=0;
+  var lite=fxOff||matchMedia('(prefers-reduced-motion: reduce)').matches;if(lite)el.classList.add('lite');
   var $=function(i){return document.getElementById(i)};
-  var hex=function(n){var s='';for(var i=0;i<n;i++)s+='0123456789ABCDEF'[Math.random()*16|0];return s};
-  $('bfxBuild').textContent='build '+String('1794591686').slice(-6);
-  $('bfxNode').textContent=(navigator.platform||'web').toUpperCase().slice(0,10);
-  // ticks
-  var g=$('bfxTicks'),ns='http://www.w3.org/2000/svg';
-  for(var i=0;i<72;i++){var l=document.createElementNS(ns,'line'),a=i/72*Math.PI*2,r1=i%6?146:138;
-    l.setAttribute('x1',200+Math.cos(a)*r1);l.setAttribute('y1',200+Math.sin(a)*r1);l.setAttribute('x2',200+Math.cos(a)*152);l.setAttribute('y2',200+Math.sin(a)*152);
-    l.style.animationDelay=(i*12)+'ms';g.appendChild(l)}
-  // hex rain
-  var cv=$('bfxRain'),cx=cv.getContext('2d'),W,H,cols,drops,F=14;
-  function size(){var d=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*d;H=cv.height=innerHeight*d;F=14*d;cols=Math.ceil(W/F);drops=[];for(var i=0;i<cols;i++)drops.push(Math.random()*-H/F)}
+  var t0=performance.now(),MIN=lite?400:8200,done=false,closing=false,target=4,shown=0,raf=0;
+  document.body.classList.add('booting');
+
+  /* background: slow constellation field */
+  var cv=$('bfxField'),cx=cv.getContext('2d'),W,H,DPR,pts=[];
+  function size(){DPR=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*DPR;H=cv.height=innerHeight*DPR;pts=[];var n=Math.round(Math.min(70,innerWidth*innerHeight/16000));
+    for(var i=0;i<n;i++)pts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.12*DPR,vy:(Math.random()-.5)*.12*DPR,c:Math.random()<.5?'255,46,136':'0,229,255'})}
   size();addEventListener('resize',size);
-  function rain(){if(lite)return;cx.fillStyle='rgba(5,5,7,0.22)';cx.fillRect(0,0,W,H);cx.font=F+'px monospace';
-    for(var i=0;i<cols;i++){var y=drops[i]*F;if(y>0){var c=Math.random();cx.fillStyle=c<.04?'#fff':c<.55?'rgba(255,46,136,.75)':'rgba(0,229,255,.6)';cx.fillText('0123456789ABCDEF<>/#$'[Math.random()*21|0],i*F,y)}
-      drops[i]+=0.55+((i*7)%5)*0.18;if(y>H&&Math.random()>.96)drops[i]=Math.random()*-20}}
-  // log
-  var log=$('bfxLog'),lines=[],q=[],qBusy=false,maxL=innerWidth<600?5:9;
-  function render(s,cls){var sp=document.createElement('span');sp.className=cls||'';sp.innerHTML=s;log.appendChild(sp);while(log.children.length>maxL)log.removeChild(log.firstChild)}
-  function pump(){if(!q.length){qBusy=false;return}qBusy=true;var x=q.shift();render(x[0],x[1]);setTimeout(pump,lite?0:260)}
-  function addLine(s,cls,now){if(now){render(s,cls);return}q.push([s,cls]);if(!qBusy)pump()}
-  var script=[[0,'POST check · cpu ok · gpu ok · ram ok'],[0,'BIOS dylan.sys rev '+hex(4)+' ............ [ OK ]'],[120,'crt.init 60hz · scanlines · dither'],[260,'mount /today /gym /journal /stack /money'],[420,'load shader.glitch '+hex(8)],[560,'heap 0x'+hex(6)+' alloc ok'],[700,'auth.session · checking keychain'],[880,'net.link supabase.co · tls1.3'],[0,'decode identity.img · 360px · 4 passes'],[0,'calibrate crt gamma 2.2'],[0,'spin up glitch engine x4']];
-  script.forEach(function(s){addLine('<b>&gt;</b> '+s[1])});
-  // title scramble
-  var T=$('bfxTitle'),word='SYSTEM',ch='!<>-_\\/[]{}=+*^?#ΔΞ01';
-  function scr(p){var o='';for(var i=0;i<word.length;i++)o+=i<p*word.length?word[i]:ch[Math.random()*ch.length|0];T.textContent=o}
-  var titleT0=t0+900;
-  function tick(now){raf=requestAnimationFrame(tick);rain();
-    var e=now-t0;
-    var cap=Math.min(target,e/MIN*100,done?100:96);shown+=(Math.max(cap,shown)-shown)*0.12;if(done&&e>MIN)shown+=(100-shown)*0.25;
-    var p=Math.min(100,shown);$('bfxPct').textContent=('00'+Math.floor(p)).slice(-3);$('bfxBar').style.transform='scaleX('+(p/100)+')';
-    $('bfxProg').style.strokeDashoffset=1143.5*(1-p/100);
-    if(now>titleT0)scr(Math.min(1,(now-titleT0)/1400));face(e);
-    for(var si=subs.length-1;si>=0;si--)if(e>=subs[si][0]){var st=(done&&e>MIN)?'ready':subs[si][1];if($('bfxSub').dataset.s!==st){$('bfxSub').dataset.s=st;$('bfxSub').textContent=st}break}
-    if(Math.random()<.3)$('bfxMem').textContent='0x'+hex(4);
-    var d=new Date();$('bfxClock').textContent=d.toTimeString().slice(0,8)+'.'+('00'+d.getMilliseconds()).slice(-3);
-    if(done&&e>MIN&&p>99.4&&!q.length&&!closing)close();
+  function field(a){cx.clearRect(0,0,W,H);if(lite)return;var L=150*DPR;
+    for(var i=0;i<pts.length;i++){var p=pts[i];p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+      cx.fillStyle='rgba('+p.c+','+(.55*a)+')';cx.fillRect(p.x,p.y,1.6*DPR,1.6*DPR);
+      for(var j=i+1;j<pts.length;j++){var q=pts[j],dx=p.x-q.x,dy=p.y-q.y,d=dx*dx+dy*dy;if(d<L*L){cx.strokeStyle='rgba('+p.c+','+(.12*a*(1-Math.sqrt(d)/L))+')';cx.lineWidth=DPR*.6;cx.beginPath();cx.moveTo(p.x,p.y);cx.lineTo(q.x,q.y);cx.stroke()}}}
   }
+
+  /* phase A: typed command */
+  var cmd='dylan@stack:~$ ./boot --system',ci=0;
+  function typeCmd(){if(ci<=cmd.length){$('bfxCmd').innerHTML=cmd.slice(0,ci).replace('dylan@stack','<b>dylan@stack</b>');ci++;setTimeout(typeCmd,lite?0:(ci<15?38:46))}}
+  setTimeout(typeCmd,lite?0:250);
+  setTimeout(function(){el.classList.add('phB')},lite?0:1750);
+  setTimeout(function(){el.classList.add('phC')},lite?0:2500);
+
+  /* face decoder */
   var fc=$('bfxFace'),fx=fc.getContext('2d'),img=new Image(),imgOk=false,off=document.createElement('canvas'),ox=off.getContext('2d');
   img.onload=function(){imgOk=true};img.src='icons/icon-512.png?v=2';
-  function face(e){if(!imgOk)return;var k=Math.max(0,Math.min(1,(e-700)/2600));var S=360;
-    var blk=Math.max(1,Math.round(48*Math.pow(1-k,2.2)));if(Math.random()<.06&&k<1)blk=Math.max(blk,6+Math.random()*14|0);
+  var burst=0;
+  function face(e){if(!imgOk)return;var S=360,k=Math.max(0,Math.min(1,(e-2700)/3200));if(k<=0){fx.clearRect(0,0,S,S);return}
+    var blk=Math.max(1,Math.round(60*Math.pow(1-k,2.4)));if(k<1&&Math.random()<.05)blk=Math.max(blk,8+Math.random()*16|0);
     var n=Math.max(1,Math.round(S/blk));off.width=n;off.height=n;ox.drawImage(img,0,0,n,n);
-    fx.clearRect(0,0,S,S);fx.imageSmoothingEnabled=blk<=1;fx.globalAlpha=Math.min(1,k*3+.15);fx.drawImage(off,0,0,S,S);
-    var gl=k<1?.35:.08;if(Math.random()<gl){for(var i=0;i<3;i++){var y=Math.random()*S|0,h=4+Math.random()*26|0,dx=(Math.random()-.5)*(k<1?70:28);fx.drawImage(fc,0,y,S,h,dx,y,S,h)}}
-    fx.globalAlpha=1}
-  var subs=[[0,'initialising'],[900,'decoding identity'],[2300,'linking stack'],[3600,'syncing sheets'],[4700,'compiling ui']];
+    fx.clearRect(0,0,S,S);fx.imageSmoothingEnabled=blk<=1;fx.globalAlpha=Math.min(1,k*2.5);fx.drawImage(off,0,0,S,S);fx.globalAlpha=1;
+    var g=burst>0?.9:(k<1?.22:.03);if(Math.random()<g){var m=burst>0?7:3;for(var i=0;i<m;i++){var y=Math.random()*S|0,h=3+Math.random()*(burst>0?40:18)|0,dx=(Math.random()-.5)*(burst>0?120:(k<1?50:16));fx.drawImage(fc,0,y,S,h,dx,y,S,h)}}
+    if(burst>0)burst--}
+
+  /* wordmark: letters resolve one by one */
+  var word='SYSTEM',wEl=$('bfxWord'),glyph='#%&*+=<>/\\|01',wT0=3300;
+  for(var i=0;i<word.length;i++){var s=document.createElement('span');s.textContent=' ';wEl.appendChild(s)}
+  function wordTick(e){var sp=wEl.children;for(var i=0;i<sp.length;i++){var st=wT0+i*260,lock=st+520;
+    if(e<st)sp[i].textContent=' ';else if(e<lock){sp[i].textContent=glyph[Math.random()*glyph.length|0];sp[i].className='scr'}else if(sp[i].className!=='ok'){sp[i].textContent=word[i];sp[i].className='ok'}}}
+
+  /* status + log */
+  var subs=[[2600,'establishing link'],[3800,'decoding identity'],[5000,'syncing your stack'],[6200,'restoring today'],[7300,'compiling interface']],curSub='';
+  function setSub(t){if(t===curSub)return;curSub=t;var s=$('bfxSub');s.classList.remove('in');void s.offsetWidth;s.textContent=t;s.classList.add('in')}
+  var log=$('bfxLog'),q=[],qBusy=false,maxL=4;
+  function render(s){var sp=document.createElement('span');sp.innerHTML=s;log.appendChild(sp);while(log.children.length>maxL)log.removeChild(log.firstChild)}
+  function pump(){if(!q.length){qBusy=false;return}qBusy=true;render(q.shift());setTimeout(pump,lite?0:420)}
+  var logOn=false;function addLine(s){q.push(s);if(logOn&&!qBusy)pump()}
+  ['kernel · dylan.sys','crt · 60hz · gamma 2.2','mount /today /gym /journal /stack'].forEach(addLine);
+  setTimeout(function(){logOn=true;if(!qBusy)pump()},lite?0:2600);
+
+  function tick(now){raf=requestAnimationFrame(tick);var e=now-t0;
+    field(Math.min(1,e/2500));face(e);wordTick(e);
+    for(var si=subs.length-1;si>=0;si--)if(e>=subs[si][0]){setSub(done&&e>MIN-300?'ready':subs[si][1]);break}
+    var cap=Math.min(target,Math.max(0,(e-2500)/(MIN-2500))*100,done?100:97);shown+=(Math.max(cap,shown)-shown)*.08;if(done&&e>MIN)shown+=(100-shown)*.2;
+    var p=Math.min(100,shown);$('bfxPct').textContent=p>=99.5?'OK':('0'+Math.floor(p)).slice(-2);$('bfxBar').style.transform='scaleX('+(p/100)+')';
+    $('bfxProg').style.strokeDashoffset=1231.5*(1-p/100);$('bfxDotG').setAttribute('transform','rotate('+(p*3.6)+' 200 200)');
+    if(done&&e>MIN&&p>99.4&&!q.length&&!closing)close();
+  }
   raf=requestAnimationFrame(tick);
+
   function close(fast){if(closing)return;closing=true;
-    addLine('<b>&gt;</b> handoff → ui ............ [ OK ]','ok',true);
-    el.classList.add('out');if(fast)el.classList.add('fast');
-    var strips=document.createElement('div');strips.className='bfx-strips';
-    for(var i=0;i<14;i++){var s=document.createElement('i');s.style.top=(i/14*100)+'%';s.style.height=(100/14+0.3)+'%';s.style.setProperty('--d',(i%2?1:-1));s.style.animationDelay=(Math.abs(i-7)*22)+'ms';strips.appendChild(s)}
-    el.appendChild(strips);
-    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},lite||fast?250:720);
-    setTimeout(function(){cancelAnimationFrame(raf);el.remove()},lite||fast?600:1200)}
+    if(fast||lite)el.classList.add('fast');else{burst=18;el.classList.add('flare')}
+    setTimeout(function(){el.classList.add('off')},fast||lite?0:520);
+    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},fast||lite?220:1250);
+    setTimeout(function(){cancelAnimationFrame(raf);el.remove()},fast||lite?700:1900)}
   window.BOOTFX={
-    step:function(msg,pct,ok){if(closing)return;if(pct)target=Math.max(target,pct);if(msg)addLine((ok===false?'<b class="er">!</b> ':'<b>&gt;</b> ')+msg+(ok===false?'':' <em>[ OK ]</em>'),ok===false?'er':'');if(/supabase|link/i.test(msg||''))$('bfxLink').textContent='up'},
-    done:function(msg){if(done)return;done=true;target=100;if(msg)addLine('<b>&gt;</b> '+msg,'ok')},
+    step:function(msg,pct,ok){if(closing)return;if(pct)target=Math.max(target,pct);if(msg)addLine(msg+(ok===false?' <em class="er">· cached</em>':' <em>· ok</em>'))},
+    done:function(){if(done)return;done=true;target=100},
     skip:function(){close(true)}
   };
-  setTimeout(function(){el.addEventListener('pointerdown',function(){if(done)close(true)})},500);
-  setTimeout(function(){if(!closing){done=true;target=100}},9000); // failsafe
-  document.body.classList.add('booting');
+  setTimeout(function(){el.addEventListener('pointerdown',function(){if(done)close(true)})},1200);
+  setTimeout(function(){if(!closing){done=true;target=100}},12000);
 })();
 </script>
 
 <canvas id="noise" width="160" height="90" aria-hidden="true"></canvas>
-<div class="scan" aria-hidden="true"></div>
+<div class="scanfx" aria-hidden="true"></div>
 <div class="vign" aria-hidden="true"></div>
 <canvas id="parts" aria-hidden="true"></canvas>
 <div class="cur-x" id="curx" aria-hidden="true"></div>
@@ -352,9 +352,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794591686"</script>
-<script src="config.js?v=1794591686"></script>
+<script>window.APP_V="1794592292"</script>
+<script src="config.js?v=1794592292"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794591686"></script>
+<script src="app.js?v=1794592292"></script>
 </body>
 </html>
