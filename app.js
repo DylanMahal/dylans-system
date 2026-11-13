@@ -1333,7 +1333,7 @@ async function startAgentLink(){
 }
 
 /* ================= ROUTER ================= */
-const VIEWS=[['today','today','◉'],['gym','gym','▲'],['journal','journal','✎'],['body','body','♥'],['tools','tools','⧗'],['week','week','▦'],['stack','stack','◈'],['money','money','£']];
+const VIEWS=[['today','today','◉'],['gym','gym','▲'],['journal','journal','✎'],['tools','tools','⧗'],['week','week','▦'],['stack','stack','◈'],['money','money','£']];
 $('tabs').innerHTML=VIEWS.map(([v,l],i)=>`<button type="button" data-v="${v}"><span class="k">${i+1}</span>${l}</button>`).join('');
 $('bnav').innerHTML=VIEWS.map(([v,l,ic])=>`<button type="button" data-v="${v}"><i>${ic}</i><span>${l}</span></button>`).join('')+'<span class="bnind" id="bnind"></span>';
 let cur=null;
@@ -1348,7 +1348,7 @@ function go(v,fromHash,dirHint){
   if(FX&&m.animate){m.animate([{transform:`translateX(${dir*48}px)`,opacity:.1,filter:'hue-rotate(80deg) contrast(1.6)'},{transform:`translateX(${-dir*6}px)`,opacity:1,filter:'none',offset:.7},{transform:'none',opacity:1}],{duration:380,easing:'cubic-bezier(.2,.9,.1,1)'});m.classList.remove('switching');void m.offsetWidth;m.classList.add('switching')}
   const h=$('v-'+v).querySelector('.banner h2.glitch');if(h&&FX){const node=h.lastChild;scramble({set textContent(t){node.textContent=t}},h.dataset.text.slice(1),500)}
   artMount(v);
-  if(v==='week')renderWeek();if(v==='gym')loadGym();if(v==='body')loadBody();if(v==='tools')renderTools();if(v==='journal'){if(jLoaded)renderJEditor();else loadJournal()}
+  if(v==='week')renderWeek();if(v==='gym')loadGym();if(v==='tools')renderTools();if(v==='journal'){if(jLoaded)renderJEditor();else loadJournal()}
   if(v==='money'||v==='stack')document.querySelectorAll(`#v-${v} [data-scr]`).forEach(el=>scramble(el,el.dataset.scr,700));
   window.scrollTo(0,0);setTimeout(()=>staggerIn($('v-'+v)),20);
 }
@@ -1366,7 +1366,7 @@ function renderAllViews(){renderToday();renderStack();renderMoney();renderTarget
 let palItems=[],palSel=0;
 function palIndex(){
   const a=VIEWS.map(([v])=>({l:'/'+v,s:'view',run:()=>go(v)}));
-  a.push({l:'edit mode',s:EDIT?'on':'off',run:()=>setEdit(!EDIT)},{l:'pending edits → excel',s:Object.keys(EDITS.p).length+' queued',run:openPendDrawer},{l:'add compound',s:'stack',run:()=>{go('stack');addStack()}},{l:'add bill',s:'money',run:()=>{go('money');addExp()}},{l:'log blood pressure',s:'body',run:()=>{go('body');setTimeout(()=>$('bpS').focus(),50)}},{l:'log weight',s:'body',run:()=>{go('body');setTimeout(()=>$('wtIn').focus(),50)}},{l:'start focus timer',s:'tools',run:()=>{go('tools');if(!TM.end)$('tmGo').click()}},{l:'write in journal',s:'journal',run:()=>{go('journal')}},{l:'start workout',s:'gym',run:()=>{go('gym');if(!ACTIVE)startWorkout(null)}},{l:'sign out',s:'account',run:signOut});
+  a.push({l:'edit mode',s:EDIT?'on':'off',run:()=>setEdit(!EDIT)},{l:'pending edits → excel',s:Object.keys(EDITS.p).length+' queued',run:openPendDrawer},{l:'add compound',s:'stack',run:()=>{go('stack');addStack()}},{l:'add bill',s:'money',run:()=>{go('money');addExp()}},{l:'log blood pressure',s:'body',run:()=>{go('today');setTimeout(()=>{$('bodyCheck').scrollIntoView({behavior:'smooth',block:'center'});$('bpS').focus()},300)}},{l:'log weight',s:'body',run:()=>{go('today');setTimeout(()=>{$('bodyCheck').scrollIntoView({behavior:'smooth',block:'center'});$('wtIn').focus()},300)}},{l:'start focus timer',s:'tools',run:()=>{go('tools');if(!TM.end)$('tmGo').click()}},{l:'write in journal',s:'journal',run:()=>{go('journal')}},{l:'start workout',s:'gym',run:()=>{go('gym');if(!ACTIVE)startWorkout(null)}},{l:'sign out',s:'account',run:signOut});
   visibleItems().forEach(i=>a.push({l:i.item,s:(i.time||'')+' · today',run:()=>{go('today');const el=document.querySelector(`#v-today [data-k="${CSS.escape(i.tk)}"]`);if(el){el.closest('.blk').classList.add('open');el.scrollIntoView({block:'center',behavior:FX?'smooth':'auto'});el.focus();FX&&el.animate([{background:'rgba(255,42,109,.4)'},{background:'transparent'}],{duration:1200})}}}));
   M.stack.forEach(s=>a.push({l:s.name,s:'stack · '+STATUSL[s.status],run:()=>{go('stack');openDrawer(s.key)}}));
   M.expenses.forEach(e=>a.push({l:e.name,s:'money · '+(e.m?gbp(e.m,2):'—'),run:()=>{go('money');billCat=e.cat;renderMoney()}}));
@@ -1425,7 +1425,7 @@ async function startApp(session){
   rebuild();booted=true;renderPend();renderStack();renderMoney();renderTargets();
   cur=null;go(location.hash.slice(1)||'today',true);
   BFX('ui compiled · '+(cur||'today'),78);
-  await loadDay();await loadTools();BFX('day state + tools restored',90);
+  await loadDay();await loadTools();loadBody();BFX('day state + tools restored',90);
   startRealtime();startAgentLink();loadArtImages();flushOutbox();
   setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,600);
   schedWidget();setInterval(publishWidget,10*60*1000);

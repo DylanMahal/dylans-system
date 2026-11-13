@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794599315">
+<link rel="stylesheet" href="app.css?v=1794600617">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -239,6 +239,28 @@
     </div>
     <div id="blocks"></div>
     <div id="todayExtra"></div>
+    <div class="two" id="bodyCheck" style="margin-top:14px">
+      <div class="panel"><div class="ph"><span class="tag">bp check</span><span>seated · 5 min rest · same arm</span></div><div class="pb">
+        <form class="bpgrid" id="bpForm">
+          <label>sys<input class="inp num" id="bpS" type="number" inputmode="numeric" min="60" max="250" required></label>
+          <label>dia<input class="inp num" id="bpD" type="number" inputmode="numeric" min="30" max="160" required></label>
+          <label>pulse<input class="inp num" id="bpP" type="number" inputmode="numeric" min="30" max="220"></label>
+          <button class="btn p" type="submit" style="height:46px">log</button>
+        </form>
+        <div class="stat" id="bpStat" style="margin-top:14px"></div>
+        <div id="bpChart"></div>
+        <div class="rlist" id="bpList"></div>
+      </div></div>
+      <div class="panel"><div class="ph"><span class="tag">bodyweight</span><span>kg</span></div><div class="pb">
+        <form class="bpgrid" id="wtForm" style="grid-template-columns:1fr auto">
+          <label>kg<input class="inp num" id="wtIn" type="number" inputmode="decimal" step="0.1" min="30" max="250" required></label>
+          <button class="btn p" type="submit" style="height:46px">log</button>
+        </form>
+        <div class="stat" id="wtStat" style="margin-top:14px"></div>
+        <div id="wtChart"></div>
+        <div class="rlist" id="wtList"></div>
+      </div></div>
+    </div>
   </section>
 
   <!-- GYM -->
@@ -278,32 +300,6 @@
     </div>
   </section>
 
-  <!-- BODY -->
-  <section class="view" id="v-body" aria-label="Body">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/body"><span class="slash">/</span>body</h2><span class="sub">blood pressure + weight log</span></div></div>
-    <div class="two">
-      <div class="panel"><div class="ph"><span class="tag">blood pressure</span><span>seated · 5 min rest · same arm</span></div><div class="pb">
-        <form class="bpgrid" id="bpForm">
-          <label>sys<input class="inp num" id="bpS" type="number" inputmode="numeric" min="60" max="250" required></label>
-          <label>dia<input class="inp num" id="bpD" type="number" inputmode="numeric" min="30" max="160" required></label>
-          <label>pulse<input class="inp num" id="bpP" type="number" inputmode="numeric" min="30" max="220"></label>
-          <button class="btn p" type="submit" style="height:46px">log</button>
-        </form>
-        <div class="stat" id="bpStat" style="margin-top:14px"></div>
-        <div id="bpChart"></div>
-        <div class="rlist" id="bpList"></div>
-      </div></div>
-      <div class="panel"><div class="ph"><span class="tag">bodyweight</span><span>kg</span></div><div class="pb">
-        <form class="bpgrid" id="wtForm" style="grid-template-columns:1fr auto">
-          <label>kg<input class="inp num" id="wtIn" type="number" inputmode="decimal" step="0.1" min="30" max="250" required></label>
-          <button class="btn p" type="submit" style="height:46px">log</button>
-        </form>
-        <div class="stat" id="wtStat" style="margin-top:14px"></div>
-        <div id="wtChart"></div>
-        <div class="rlist" id="wtList"></div>
-      </div></div>
-    </div>
-  </section>
 
   <!-- TOOLS -->
   <section class="view" id="v-tools" aria-label="Tools">
@@ -413,9 +409,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794599315"</script>
-<script src="config.js?v=1794599315"></script>
+<script>window.APP_V="1794600617"</script>
+<script src="config.js?v=1794600617"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794599315"></script>
+<script src="app.js?v=1794600617"></script>
 </body>
 </html>
