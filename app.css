@@ -673,4 +673,17 @@ body.booting{overflow:hidden}
 #bfxV{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 /* phone held upright: turn the video sideways so it plays landscape, edge to edge */
 @media (orientation:portrait){#bfxV{inset:auto;left:50%;top:50%;width:100vh;height:100vw;width:100dvh;height:100dvw;transform:translate(-50%,-50%) rotate(90deg)}}
-#bootfx.vidmode.off .bfx-vid{animation:bfxCrtOff .38s cubic-bezier(.7,0,.3,1) forwards}
+/* TV power-off: picture squashes to a bright line, line shrinks to a dot, dot fades */
+#bootfx.tvoff{background:#000}
+#bootfx.tvoff .bfx-vid{animation:tvOff .62s cubic-bezier(.55,0,.1,1) forwards;transform-origin:50% 50%}
+@keyframes tvOff{
+  0%{transform:scale(1,1);filter:brightness(1) contrast(1)}
+  8%{transform:scale(1.02,1.04);filter:brightness(1.6) contrast(1.3)}
+  30%{transform:scale(1.04,.012);filter:brightness(5) contrast(2) saturate(0)}
+  58%{transform:scale(.004,.012);filter:brightness(9) saturate(0)}
+  100%{transform:scale(.004,.012);filter:brightness(9) saturate(0);opacity:0}}
+#bootfx.tvoff .bfx-vid::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.25) 0 1px,transparent 1px 3px);mix-blend-mode:screen;animation:tvStatic .62s steps(1) forwards}
+@keyframes tvStatic{0%{opacity:.9}12%{opacity:0}}
+#bootfx.tvoff .bfx-off{visibility:visible;left:50%;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 24px 10px #fff,0 0 70px 24px rgba(160,220,255,.75);transform:translate(-50%,-50%) scale(0);opacity:0;animation:tvDot .62s ease-out forwards}
+@keyframes tvDot{0%,48%{opacity:0;transform:translate(-50%,-50%) scale(.2)}58%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.15)}}
+#bootfx.tvoff.gone{transition:opacity .45s ease-out}

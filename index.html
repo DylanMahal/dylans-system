@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794597745">
+<link rel="stylesheet" href="app.css?v=1794598045">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -146,7 +146,7 @@
   if(!lite&&window.caches&&(location.protocol==='https:'||location.hostname==='localhost')){try{caches.open('ds-media').then(function(c){return c.match('bootvid')}).then(function(r){return r?r.blob():null}).then(function(b){if(b&&b.size>1000&&!closing)startVideo(URL.createObjectURL(b))}).catch(function(){})}catch(e){}}
 
   function tick(now){raf=requestAnimationFrame(tick);var e=(now-t0)*SPD;
-    if(VID){var d=V.duration||13,ct=V.currentTime||0;if(done&&(vEnded||ct>=d-.05)&&!closing)close();return}
+    if(VID){var d=V.duration||13.2,ct=V.currentTime||0;if(!closing&&(ct>=d-0.87||vEnded))tvOff();return}
     gpu(e);face(e);wordTick(e);
     for(var si=subs.length-1;si>=0;si--)if(e>=subs[si][0]){setSub(done&&e>MIN-300?'ready':subs[si][1]);break}
     var cap=Math.min(target,Math.max(0,(e-4300)/(MIN-4300))*100,done?100:97);shown+=(Math.max(cap,shown)-shown)*.35;if(done&&e>MIN)shown+=(100-shown)*.5;
@@ -156,6 +156,10 @@
   }
   raf=requestAnimationFrame(tick);
 
+  // own video: old-TV power-off, synced to the cut (the power-off sound is baked into the clip)
+  function tvOff(){if(closing)return;closing=true;el.classList.add('tvoff');
+    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},640);
+    setTimeout(function(){cancelAnimationFrame(raf);try{V.pause()}catch(e){}el.remove()},1250)}
   function close(fast){if(closing)return;closing=true;
     if(fast||lite)el.classList.add('fast');else{burst=5;el.classList.add('flare')}
     setTimeout(function(){el.classList.add('off')},fast||lite?0:140);
@@ -408,9 +412,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794597745"</script>
-<script src="config.js?v=1794597745"></script>
+<script>window.APP_V="1794598045"</script>
+<script src="config.js?v=1794598045"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794597745"></script>
+<script src="app.js?v=1794598045"></script>
 </body>
 </html>
