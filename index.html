@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794598506">
+<link rel="stylesheet" href="app.css?v=1794599315">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -244,8 +244,8 @@
   <!-- GYM -->
   <section class="view" id="v-gym" aria-label="Gym">
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/gym"><span class="slash">/</span>gym</h2><span class="sub" id="gymSub"></span></div></div>
-    <div class="seg gseg" role="group" aria-label="Gym" id="gymSeg"><button type="button" data-g="workout">workout</button><button type="button" data-g="routines">routines</button><button type="button" data-g="history">history</button><button type="button" data-g="exercises">exercises</button></div>
-    <div id="g-workout"></div><div id="g-routines" hidden></div><div id="g-history" hidden></div><div id="g-exercises" hidden></div>
+    <div class="seg gseg" role="group" aria-label="Gym" id="gymSeg"><button type="button" data-g="workout">workout</button><button type="button" data-g="routines">routines</button><button type="button" data-g="history">history</button><button type="button" data-g="stats">stats</button><button type="button" data-g="exercises">exercises</button></div>
+    <div id="g-workout"></div><div id="g-routines" hidden></div><div id="g-history" hidden></div><div id="g-stats" hidden></div><div id="g-exercises" hidden></div>
   </section>
 
   <!-- JOURNAL -->
@@ -413,9 +413,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794598506"</script>
-<script src="config.js?v=1794598506"></script>
+<script>window.APP_V="1794599315"</script>
+<script src="config.js?v=1794599315"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794598506"></script>
+<script src="app.js?v=1794599315"></script>
 </body>
 </html>
