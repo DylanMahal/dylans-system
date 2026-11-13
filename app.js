@@ -240,7 +240,7 @@ function patch(key,fields,ctx){const cur=EDITS.p[key]||{};const n={...cur,...fie
 function dropPatch(key){delete EDITS.p[key];saveEdits();rebuild()}
 function ago(iso){if(!iso)return '';const m=Math.round((Date.now()-new Date(iso))/60000);return m<1?'just now':m<60?m+'m ago':m<1440?Math.round(m/60)+'h ago':Math.round(m/1440)+'d ago'}
 function renderPend(){const b=$('pendBtn');if(!b)return;const n=Object.keys(EDITS.p).length;const st=typeof XLSTATE==='undefined'?'off':XLSTATE;b.className='pendbtn on xl-'+st;
-  b.textContent=st==='live'?(n?`XL ⟳ ${n}`:'XL ● live'):st==='err'?`XL ! ${n||''}`.trim():(n?`XL · ${n} queued`:'XL · '+(ago(GMETA.at)||'—'));b.title='Excel sync: click for details'}
+  b.textContent=st==='live'?(n?`XL ⟳ ${n}`:'XL ● live'):st==='err'?`XL ! ${n||''}`.trim():(n?`XL · ${n} waiting for laptop`:'XL · laptop off');b.title=st==='off'?'App is the main copy. Excel catches up next time your laptop is on.':'Excel sync: click for details'}
 
 /* ================= MODEL ================= */
 const STACK_CATS=['Anabolic / Main','Ancillaries','Supplements','Peptides','Cognition / Anxiolytic','Bloods & Supplies'];
@@ -1154,7 +1154,7 @@ function publishOps(){
 function agentState(){
   if(!AGENT||!AGENT.at)return setXL('off');
   const age=(Date.now()-new Date(AGENT.at))/1000;
-  if(age>150)return setXL('off',`Laptop agent last seen ${ago(AGENT.at)}.`);
+  if(age>150)return setXL('off',`Laptop is off (last seen ${ago(AGENT.at)}). The app is your main copy and everything still syncs between devices; Excel catches up automatically next time the laptop is on.`);
   if(AGENT.ok===false)return setXL('err',AGENT.msg||'The laptop agent reported a problem.');
   const errs=SYNCRES&&SYNCRES.results?resArr(SYNCRES.results).filter(r=>!r.ok&&EDITS.p[String(r.id).split('#')[0]]):[];
   if(errs.length){errs.forEach(r=>{const k=String(r.id).split('#')[0];if(EDITS.p[k])EDITS.p[k]._err=r.error||'failed'});return setXL('err',`${errs.length} edit${errs.length>1?'s':''} couldn't be written. Open the queue to see why.`)}
