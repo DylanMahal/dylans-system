@@ -1794,13 +1794,15 @@ function publishWidget(){if(!R||!booted||!M.plans)return;
 /* installable app: offline cache */
 if('serviceWorker' in navigator&&location.protocol==='https:'){
   const hadCtl=!!navigator.serviceWorker.controller;let reloaded=false;
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadCtl&&!reloaded){reloaded=true;location.reload()}});
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{if(hadCtl&&!reloaded){reloaded=true;safeReload()}});
   addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{
     const chk=()=>{r.update().catch(()=>{});checkVersion()};document.addEventListener('visibilitychange',()=>{if(!document.hidden)chk()});setInterval(chk,10*60*1000)}).catch(()=>{}));
 }
 // belt and braces: if the server has a newer build than the one running, reload once
 async function checkVersion(){try{const t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();const m=t.match(/APP_V="(\d+)"/);
-  if(m&&window.APP_V&&m[1]!==window.APP_V&&!sessionStorage.getItem('ds-reloaded-'+m[1])){sessionStorage.setItem('ds-reloaded-'+m[1],'1');if(window.caches){const ks=await caches.keys();await Promise.all(ks.filter(k=>k!=='ds-media').map(k=>caches.delete(k)))}location.reload()}}catch(e){}}
+  if(m&&window.APP_V&&m[1]!==window.APP_V&&!sessionStorage.getItem('ds-reloaded-'+m[1])){sessionStorage.setItem('ds-reloaded-'+m[1],'1');if(window.caches){const ks=await caches.keys();await Promise.all(ks.filter(k=>k!=='ds-media').map(k=>caches.delete(k)))}safeReload()}}catch(e){}}
+/* never reload under the boot edit: wait until it's finished, then reload with a quick boot (no second play) */
+function safeReload(){if(document.getElementById('bootfx')){setTimeout(safeReload,700);return}try{sessionStorage.setItem('ds-quickboot','1')}catch(e){}location.reload()}
 if(location.protocol==='https:')setTimeout(checkVersion,1500);
 boot();
 
