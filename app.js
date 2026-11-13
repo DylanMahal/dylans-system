@@ -1231,7 +1231,8 @@ addEventListener('keydown',e=>{
 
 /* ================= BOOT: sign in, then load ================= */
 let booted=false,loginBusy=false;
-function showLogin(msg){$('login').hidden=false;document.body.classList.add('locked');$('loginMsg').textContent=msg||'';setTimeout(()=>{const e=$('lEmail');if(e&&!e.value)e.focus()},50)}
+const BFX=(m,p,ok)=>{try{window.BOOTFX&&BOOTFX.step(m,p,ok)}catch(e){}};const BFXdone=m=>{try{window.BOOTFX&&BOOTFX.done(m)}catch(e){}};
+function showLogin(msg){BFXdone('auth required · awaiting operator');$('login').hidden=false;document.body.classList.add('locked');$('loginMsg').textContent=msg||'';setTimeout(()=>{const e=$('lEmail');if(e&&!e.value)e.focus()},50)}
 function hideLogin(){$('login').hidden=true;document.body.classList.remove('locked')}
 $('loginForm').onsubmit=async e=>{e.preventDefault();if(loginBusy)return;loginBusy=true;$('loginMsg').textContent='signing in…';
   try{const {data,error}=await SB.auth.signInWithPassword({email:$('lEmail').value.trim(),password:$('lPass').value});if(error)throw error;$('lPass').value='';await startApp(data.session)}
@@ -1242,20 +1243,23 @@ async function boot(){
   if(!cfg.supabaseUrl||!window.supabase){showLogin('This copy of the app isn\'t connected to its database yet.');return}
   SB=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'ds-auth'}});
   SB.auth.onAuthStateChange((ev)=>{if(ev==='SIGNED_OUT'){R=null;UID=null;showLogin()}});
+  BFX('supabase client up',22);
   let session=null;try{session=(await SB.auth.getSession()).data.session}catch(e){}
+  if(session)BFX('session '+String(session.user.id).slice(0,8)+' verified',36);
   if(!session){showLogin();return}
   await startApp(session);
 }
 async function startApp(session){
   UID=session.user.id;R=true;hideLogin();setSync('busy','loading');
-  await loadEdits();
-  const ok=await loadGridsFromDb(true);
+  await loadEdits();BFX('edit queue synced',48);
+  const ok=await loadGridsFromDb(true);BFX(ok?'sheets pulled · stack/money/plan':'sheets: using local cache',ok?66:66,ok?undefined:false);
   $('nodata').hidden=ok||!!GMETA.at;
   rebuild();booted=true;renderPend();renderStack();renderMoney();renderTargets();
   cur=null;go(location.hash.slice(1)||'today',true);
-  await loadDay();await loadTools();
+  BFX('ui compiled · '+(cur||'today'),78);
+  await loadDay();await loadTools();BFX('day state + tools restored',90);
   startRealtime();startAgentLink();loadArtImages();flushOutbox();
-  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');
+  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');
   schedWidget();setInterval(publishWidget,10*60*1000);
 }
 function flushOutbox(){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('ds3:outbox:'))ks.push(k.slice(11))}ks.forEach(p=>{const v=LS.get(p);if(v!=null)save(p,v,true);localStorage.removeItem('ds3:outbox:'+p)})}catch(e){}}

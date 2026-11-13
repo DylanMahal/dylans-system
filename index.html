@@ -17,9 +17,102 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794590569">
+<link rel="stylesheet" href="app.css?v=1794591096">
 </head>
 <body class="fx">
+<div id="bootfx" aria-hidden="true">
+  <canvas id="bfxRain"></canvas>
+  <div class="bfx-floor"><i></i></div>
+  <div class="bfx-scan"></div>
+  <div class="bfx-crt"></div>
+  <div class="bfx-hud tl"><b>DYLAN.SYS</b><span id="bfxBuild">build ----</span><span id="bfxClock">--:--:--</span></div>
+  <div class="bfx-hud tr"><span>NODE <b id="bfxNode">----</b></span><span>LINK <b id="bfxLink">wait</b></span><span>MEM <b id="bfxMem">0x0000</b></span></div>
+  <div class="bfx-brk a"></div><div class="bfx-brk b"></div><div class="bfx-brk c"></div><div class="bfx-brk d"></div>
+  <div class="bfx-core">
+    <svg class="bfx-rings" viewBox="0 0 400 400">
+      <circle class="r1" cx="200" cy="200" r="190"/>
+      <circle class="r2" cx="200" cy="200" r="172"/>
+      <circle class="r3" cx="200" cy="200" r="158"/>
+      <circle class="prog" id="bfxProg" cx="200" cy="200" r="182"/>
+      <g class="ticks" id="bfxTicks"></g>
+    </svg>
+    <div class="bfx-logo">
+      <div class="im c" style="background-image:url(icons/icon-512.png?v=2)"></div>
+      <div class="im p" style="background-image:url(icons/icon-512.png?v=2)"></div>
+      <div class="im m" style="background-image:url(icons/icon-512.png?v=2)"></div>
+      <div class="bfx-sweep"></div>
+    </div>
+  </div>
+  <div class="bfx-title"><span id="bfxTitle" data-text="SYSTEM">SYSTEM</span></div>
+  <div class="bfx-pct"><span id="bfxPct">000</span><small>%</small></div>
+  <div class="bfx-bar"><i id="bfxBar"></i></div>
+  <pre class="bfx-log" id="bfxLog"></pre>
+  <div class="bfx-skip">tap to skip</div>
+</div>
+<script>
+(function(){
+  var el=document.getElementById('bootfx');if(!el)return;
+  var fxOff=false;try{fxOff=localStorage.getItem('ds3:fx')==='false'}catch(e){}
+  var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var lite=fxOff||reduced; if(lite)el.classList.add('lite');
+  var t0=performance.now(),MIN=lite?350:2300,done=false,closing=false,target=6,shown=0,raf=0;
+  var $=function(i){return document.getElementById(i)};
+  var hex=function(n){var s='';for(var i=0;i<n;i++)s+='0123456789ABCDEF'[Math.random()*16|0];return s};
+  $('bfxBuild').textContent='build '+String('1794591096').slice(-6);
+  $('bfxNode').textContent=(navigator.platform||'web').toUpperCase().slice(0,10);
+  // ticks
+  var g=$('bfxTicks'),ns='http://www.w3.org/2000/svg';
+  for(var i=0;i<72;i++){var l=document.createElementNS(ns,'line'),a=i/72*Math.PI*2,r1=i%6?146:138;
+    l.setAttribute('x1',200+Math.cos(a)*r1);l.setAttribute('y1',200+Math.sin(a)*r1);l.setAttribute('x2',200+Math.cos(a)*152);l.setAttribute('y2',200+Math.sin(a)*152);
+    l.style.animationDelay=(i*12)+'ms';g.appendChild(l)}
+  // hex rain
+  var cv=$('bfxRain'),cx=cv.getContext('2d'),W,H,cols,drops,F=14;
+  function size(){var d=Math.min(devicePixelRatio||1,2);W=cv.width=innerWidth*d;H=cv.height=innerHeight*d;F=14*d;cols=Math.ceil(W/F);drops=[];for(var i=0;i<cols;i++)drops.push(Math.random()*-H/F)}
+  size();addEventListener('resize',size);
+  function rain(){if(lite)return;cx.fillStyle='rgba(5,5,7,0.22)';cx.fillRect(0,0,W,H);cx.font=F+'px monospace';
+    for(var i=0;i<cols;i++){var y=drops[i]*F;if(y>0){var c=Math.random();cx.fillStyle=c<.04?'#fff':c<.55?'rgba(255,46,136,.75)':'rgba(0,229,255,.6)';cx.fillText('0123456789ABCDEF<>/#$'[Math.random()*21|0],i*F,y)}
+      drops[i]+=0.55+((i*7)%5)*0.18;if(y>H&&Math.random()>.96)drops[i]=Math.random()*-20}}
+  // log
+  var log=$('bfxLog'),lines=[],q=[],qBusy=false,maxL=innerWidth<600?5:9;
+  function render(s,cls){lines.push('<span class="'+(cls||'')+'">'+s+'</span>');if(lines.length>maxL)lines.shift();log.innerHTML=lines.join('\n')}
+  function pump(){if(!q.length){qBusy=false;return}qBusy=true;var x=q.shift();render(x[0],x[1]);setTimeout(pump,lite?0:115)}
+  function addLine(s,cls,now){if(now){render(s,cls);return}q.push([s,cls]);if(!qBusy)pump()}
+  var script=[[0,'BIOS dylan.sys rev '+hex(4)+' ............ [ OK ]'],[120,'crt.init 60hz · scanlines · dither'],[260,'mount /today /gym /journal /stack /money'],[420,'load shader.glitch '+hex(8)],[560,'heap 0x'+hex(6)+' alloc ok'],[700,'auth.session · checking keychain'],[880,'net.link supabase.co · tls1.3']];
+  script.forEach(function(s){addLine('<b>&gt;</b> '+s[1])});
+  // title scramble
+  var T=$('bfxTitle'),word='SYSTEM',ch='!<>-_\\/[]{}=+*^?#ΔΞ01';
+  function scr(p){var o='';for(var i=0;i<word.length;i++)o+=i<p*word.length?word[i]:ch[Math.random()*ch.length|0];T.textContent=o}
+  var titleT0=t0+350;
+  function tick(now){raf=requestAnimationFrame(tick);rain();
+    var e=now-t0;
+    var cap=Math.min(target,done?100:Math.min(95,6+e/MIN*70));shown+=(Math.max(cap,shown)-shown)*0.12;if(done&&e>MIN)shown+=(100-shown)*0.25;
+    var p=Math.min(100,shown);$('bfxPct').textContent=('00'+Math.floor(p)).slice(-3);$('bfxBar').style.transform='scaleX('+(p/100)+')';
+    $('bfxProg').style.strokeDashoffset=1143.5*(1-p/100);
+    if(now>titleT0)scr(Math.min(1,(now-titleT0)/700));
+    if(Math.random()<.3)$('bfxMem').textContent='0x'+hex(4);
+    var d=new Date();$('bfxClock').textContent=d.toTimeString().slice(0,8)+'.'+('00'+d.getMilliseconds()).slice(-3);
+    if(done&&e>MIN&&p>99.4&&!q.length&&!closing)close();
+  }
+  raf=requestAnimationFrame(tick);
+  function close(fast){if(closing)return;closing=true;
+    addLine('<b>&gt;</b> handoff → ui ............ [ OK ]','ok',true);
+    el.classList.add('out');if(fast)el.classList.add('fast');
+    var strips=document.createElement('div');strips.className='bfx-strips';
+    for(var i=0;i<14;i++){var s=document.createElement('i');s.style.top=(i/14*100)+'%';s.style.height=(100/14+0.3)+'%';s.style.setProperty('--d',(i%2?1:-1));s.style.animationDelay=(Math.abs(i-7)*22)+'ms';strips.appendChild(s)}
+    el.appendChild(strips);
+    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},lite||fast?250:720);
+    setTimeout(function(){cancelAnimationFrame(raf);el.remove()},lite||fast?600:1200)}
+  window.BOOTFX={
+    step:function(msg,pct,ok){if(closing)return;if(pct)target=Math.max(target,pct);if(msg)addLine((ok===false?'<b class="er">!</b> ':'<b>&gt;</b> ')+msg+(ok===false?'':' <em>[ OK ]</em>'),ok===false?'er':'');if(/supabase|link/i.test(msg||''))$('bfxLink').textContent='up'},
+    done:function(msg){if(done)return;done=true;target=100;if(msg)addLine('<b>&gt;</b> '+msg,'ok')},
+    skip:function(){close(true)}
+  };
+  setTimeout(function(){el.addEventListener('pointerdown',function(){if(done)close(true)})},500);
+  setTimeout(function(){if(!closing){done=true;target=100}},9000); // failsafe
+  document.body.classList.add('booting');
+})();
+</script>
+
 <canvas id="noise" width="160" height="90" aria-hidden="true"></canvas>
 <div class="scan" aria-hidden="true"></div>
 <div class="vign" aria-hidden="true"></div>
@@ -253,9 +346,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794590569"</script>
-<script src="config.js?v=1794590569"></script>
+<script>window.APP_V="1794591096"</script>
+<script src="config.js?v=1794591096"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794590569"></script>
+<script src="app.js?v=1794591096"></script>
 </body>
 </html>
