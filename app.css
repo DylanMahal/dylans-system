@@ -669,21 +669,28 @@ body.booting{overflow:hidden}
 /* own boot video */
 .bfx-vid{position:absolute;inset:0;display:none;z-index:8;background:#000}
 #bootfx.vidmode .bfx-vid{display:block}
-#bootfx.vidmode>*:not(.bfx-vid):not(.bfx-off){visibility:hidden}
+#bootfx.vidmode>*:not(.bfx-vid):not(.bfx-off):not(.tv-line):not(.tv-dot){visibility:hidden}
 #bfxV{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 /* phone held upright: turn the video sideways so it plays landscape, edge to edge */
 @media (orientation:portrait){#bfxV{inset:auto;left:50%;top:50%;width:100vh;height:100vw;width:100dvh;height:100dvw;transform:translate(-50%,-50%) rotate(90deg)}}
-/* TV power-off: picture squashes to a bright line, line shrinks to a dot, dot fades */
+/* TV power-off (1.1s): flicker + vertical roll, picture collapses into a white-hot line, line shrinks to a dot, dot burns out */
 #bootfx.tvoff{background:#000}
-#bootfx.tvoff .bfx-vid{animation:tvOff .62s cubic-bezier(.55,0,.1,1) forwards;transform-origin:50% 50%}
-@keyframes tvOff{
-  0%{transform:scale(1,1);filter:brightness(1) contrast(1)}
-  8%{transform:scale(1.02,1.04);filter:brightness(1.6) contrast(1.3)}
-  30%{transform:scale(1.04,.012);filter:brightness(5) contrast(2) saturate(0)}
-  58%{transform:scale(.004,.012);filter:brightness(9) saturate(0)}
-  100%{transform:scale(.004,.012);filter:brightness(9) saturate(0);opacity:0}}
-#bootfx.tvoff .bfx-vid::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.25) 0 1px,transparent 1px 3px);mix-blend-mode:screen;animation:tvStatic .62s steps(1) forwards}
-@keyframes tvStatic{0%{opacity:.9}12%{opacity:0}}
-#bootfx.tvoff .bfx-off{visibility:visible;left:50%;top:50%;width:14px;height:14px;border-radius:50%;background:#fff;box-shadow:0 0 24px 10px #fff,0 0 70px 24px rgba(160,220,255,.75);transform:translate(-50%,-50%) scale(0);opacity:0;animation:tvDot .62s ease-out forwards}
-@keyframes tvDot{0%,48%{opacity:0;transform:translate(-50%,-50%) scale(.2)}58%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(.15)}}
-#bootfx.tvoff.gone{transition:opacity .45s ease-out}
+.tv-line,.tv-dot{position:absolute;left:50%;top:50%;pointer-events:none;opacity:0;z-index:12}
+#bootfx.vidmode .tv-line,#bootfx.vidmode .tv-dot{visibility:visible}
+.tv-line{width:100vw;height:3px;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 12px 3px #fff,0 0 40px 10px rgba(170,215,255,.85),0 0 90px 30px rgba(120,180,255,.35)}
+.tv-dot{width:16px;height:16px;border-radius:50%;background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 20px 8px #fff,0 0 60px 22px rgba(170,215,255,.9),0 0 120px 50px rgba(120,180,255,.35)}
+#bootfx.tvoff .bfx-vid{animation:tvPic 1.1s cubic-bezier(.6,0,.2,1) forwards;transform-origin:50% 50%}
+@keyframes tvPic{
+  0%{transform:none;filter:none}
+  4%{transform:translateY(-3%);filter:brightness(1.8) contrast(1.6)}
+  8%{transform:translateY(2%) skewX(-2deg);filter:brightness(1.2) contrast(1.4) hue-rotate(20deg)}
+  12%{transform:none;filter:brightness(2.2) contrast(1.8) saturate(0)}
+  34%{transform:scale(1.06,.004);filter:brightness(8) saturate(0)}
+  36%,100%{transform:scale(1.06,.004);opacity:0}}
+#bootfx.tvoff .bfx-vid::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(255,255,255,.35) 0 2px,rgba(0,0,0,.4) 2px 4px);mix-blend-mode:overlay;animation:tvStatic 1.1s steps(2) forwards}
+@keyframes tvStatic{0%{opacity:1}30%{opacity:.6}36%{opacity:0}}
+#bootfx.tvoff .tv-line{animation:tvLine 1.1s cubic-bezier(.7,0,.3,1) forwards}
+@keyframes tvLine{0%,30%{opacity:0;width:104vw;height:6px}34%{opacity:1;width:104vw;height:5px}46%{opacity:1;width:104vw;height:3px}70%{opacity:1;width:6px;height:3px}72%,100%{opacity:0;width:6px}}
+#bootfx.tvoff .tv-dot{animation:tvDot 1.1s ease-out forwards}
+@keyframes tvDot{0%,68%{opacity:0;transform:translate(-50%,-50%) scale(.3)}73%{opacity:1;transform:translate(-50%,-50%) scale(1.25)}86%{opacity:1;transform:translate(-50%,-50%) scale(.8)}100%{opacity:0;transform:translate(-50%,-50%) scale(.1)}}
+#bootfx.tvoff.gone{transition:opacity .5s ease-out}
