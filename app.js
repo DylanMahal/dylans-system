@@ -70,7 +70,7 @@ function applyFx(){document.body.classList.toggle('fx',FX);document.body.classLi
 applyFx();
 $('fxBtn').onclick=()=>{FX=!FX;LS.set('fx',FX);applyFx();if(FX)glitchAll()};
 const noise=$('noise'),nctx=noise.getContext('2d');const nimg=nctx.createImageData(160,90);
-setInterval(()=>{if(!FX||document.hidden)return;const d=nimg.data;for(let i=0;i<d.length;i+=4){const v=Math.random()*255|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255}nctx.putImageData(nimg,0,0)},90);
+setInterval(()=>{if(!FX||document.hidden)return;const d=nimg.data;for(let i=0;i<d.length;i+=4){const v=Math.random()*255|0;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255}nctx.putImageData(nimg,0,0)},130);
 const pc=$('parts'),px=pc.getContext('2d');let parts=[],praf=0;
 function sizeP(){pc.width=innerWidth*devicePixelRatio;pc.height=innerHeight*devicePixelRatio}
 sizeP();addEventListener('resize',sizeP);
@@ -345,11 +345,13 @@ let EDIT=false;
 function setEdit(on){EDIT=on;document.body.classList.toggle('edit-on',on);$('editPill').hidden=!on;if(on){glitchAll();try{navigator.vibrate&&navigator.vibrate(18)}catch(e){}}}
 $('editPill').onclick=()=>setEdit(false);
 /* edit mode: long-press (touch) or right-click (mouse) on anything editable */
-(function(){let t=null,sx=0,sy=0,fired=false;
+(function(){let t=null,sx=0,sy=0,fired=false,swallow=0;
+  /* the tap that ends a long-press must not also tick/open the thing under the finger */
+  ['click','pointerup','mouseup'].forEach(ev=>addEventListener(ev,e=>{if(Date.now()<swallow){e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();if(ev==='click')swallow=0}},true));
   const EDITABLE='.it,.tr,.trk,.tgt,.blk,.panel,.exp,.row';
   const trigger=(target)=>{if(target.closest('input,textarea,select,#sheet,.drawer,.modal,#v-gym,#v-journal'))return false;if(!target.closest('#main'))return false;
     const wasOn=EDIT;if(!EDIT)setEdit(true);const row=target.closest('.it,.tr,.trk,.tgt,[data-key]');const ed=row&&row.querySelector('.ed,[data-edit],[data-editx],[data-tedit]');if(ed&&wasOn)ed.click();return true};
-  addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const tg=e.target;sx=e.touches[0].clientX;sy=e.touches[0].clientY;fired=false;clearTimeout(t);t=setTimeout(()=>{fired=trigger(tg)},520)},{passive:true});
+  addEventListener('touchstart',e=>{if(e.touches.length!==1)return;const tg=e.target;sx=e.touches[0].clientX;sy=e.touches[0].clientY;fired=false;clearTimeout(t);t=setTimeout(()=>{fired=trigger(tg);if(fired)swallow=Date.now()+900},520)},{passive:true});
   addEventListener('touchmove',e=>{if(Math.hypot(e.touches[0].clientX-sx,e.touches[0].clientY-sy)>10)clearTimeout(t)},{passive:true});
   addEventListener('touchend',e=>{clearTimeout(t);if(fired){e.preventDefault();fired=false}});
   addEventListener('contextmenu',e=>{if(e.target.closest('input,textarea'))return;if(trigger(e.target))e.preventDefault()});
@@ -925,10 +927,10 @@ const DW_TARGET=260;
 function tmLeft(){return TM.end?Math.max(0,Math.round((TM.end-Date.now())/1000)):TM.left}
 function tmTotal(){return (TM.phase==='break'?FOCUS.brk:TM.len)*60}
 function logDw(minutes,task){if(minutes<1)return;DAY.dw=(DAY.dw||0)+minutes;persistDay();FOCUS.sessions.unshift({d:DAYK,at:new Date().toISOString(),min:minutes,task:task||FOCUS.task||''});FOCUS.sessions=FOCUS.sessions.slice(0,600);save('tools/focus',FOCUS);if(TOOLV==='focus'&&cur==='tools')renderFocus();toolCardSubs()}
-function renderFocus(){const el=$('t-focus');if(!el)return;
+function renderFocus(){const el=$('t-focus');if(!el)return;const live=YTP&&$('mBox')&&el.contains($('mBox'))?$('mBox').closest('.panel'):null;
   const today=FOCUS.sessions.filter(s=>s.d===DAYK);const dw=DAY.dw||0;
   const days=[...Array(7)].map((_,i)=>addDays(DAYK,i-6));const per=days.map(d=>FOCUS.sessions.filter(s=>s.d===d).reduce((a,s)=>a+s.min,0)+(d===DAYK?0:0));per[6]=Math.max(per[6],dw);const mx=Math.max(DW_TARGET,...per);
-  el.innerHTML=`<div class="focusgrid">
+  const html=`<div class="focusgrid">
   <div class="panel fcard"><div class="ph"><span class="tag" id="fPhase">${TM.phase==='break'?'break':'focus'}</span><span class="row" style="gap:6px"><button class="iconbtn" type="button" id="fPomo" aria-pressed="${FOCUS.pomo}">auto-break ${FOCUS.pomo?'on':'off'}</button><button class="iconbtn" type="button" id="fFull">⤢ focus mode</button></span></div><div class="pb">
     <input class="fintent" id="fTask" placeholder="what are you working on?" value="${esc(FOCUS.task||'')}">
     <div class="fring"><svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" class="rbg"/><circle cx="110" cy="110" r="100" class="rfg" id="fRing"/></svg><div class="ftime num" id="timer">--:--</div></div>
@@ -937,14 +939,20 @@ function renderFocus(){const el=$('t-focus');if(!el)return;
     <div style="margin-top:16px"><div class="dim" style="font-size:11px;margin-bottom:4px">deep work today · ${Math.floor(dw/60)}h ${pad(dw%60)}m of ${Math.floor(DW_TARGET/60)}h ${pad(DW_TARGET%60)}m</div><div class="meter"><span style="width:${Math.min(100,dw/DW_TARGET*100)}%"></span></div></div>
   </div></div>
   <div class="fside">
-    <div class="panel"><div class="ph"><span class="tag">audio deck</span><span class="dim" id="deckSub">${DECKS[deckNow()].sub}</span></div><div class="pb${MUSIC.showVid?' showvid':''}" id="mBox">${musicHTML()}</div></div>
+    <div class="panel"><div class="ph"><span class="tag">audio deck</span></div><div class="pb${MUSIC.showVid?' showvid':''}" id="mBox">${musicHTML()}</div></div>
     <div class="panel"><div class="ph"><span class="tag">ambient</span><span class="dim">generated on device</span></div><div class="pb"><div class="chips" id="ambBtns" style="margin:0 0 8px">${['rain','brown','pink','white','cafe'].map(k=>`<button class="chip" type="button" data-amb="${k}" aria-pressed="${AMB.kind===k}">${k}</button>`).join('')}</div><input type="range" id="ambVol" min="0" max="100" value="${AMB.vol}" class="vol"></div></div>
     <div class="panel"><div class="ph"><span class="tag">last 7 days</span><span class="dim">${today.length} session${today.length===1?'':'s'} today</span></div><div class="pb"><div class="wkbars" style="grid-template-columns:repeat(7,1fr);height:100px">${per.map((v,i)=>`<div class="d"><span class="p num">${v?Math.round(v/6)/10+'h':''}</span><div class="b" style="height:${v/mx*100}%"></div><span class="l">${new Date(days[i]+'T12:00').toLocaleDateString('en-GB',{weekday:'short'}).toLowerCase()}</span></div>`).join('')}</div>
       <div class="flog">${today.map(s=>`<div><span class="num">${new Date(s.at).toTimeString().slice(0,5)}</span><span>${esc(s.task||'focus')}</span><b class="num">${s.min}m</b></div>`).join('')}</div></div></div>
   </div></div>`;
-  drawTimer();bindFocus();
+  if(live){/* swap in everything except the audio deck, so whatever is playing keeps playing */
+    const tmp=document.createElement('div');tmp.innerHTML=html;const fresh=tmp.querySelector('#mBox').closest('.panel');fresh.replaceWith(document.createComment('deck'));
+    const oldGrid=el.querySelector('.focusgrid');const newGrid=tmp.querySelector('.focusgrid');
+    oldGrid.querySelector('.fcard').replaceWith(newGrid.querySelector('.fcard'));
+    const side=oldGrid.querySelector('.fside');[...side.children].forEach(ch=>{if(ch!==live)ch.remove()});[...newGrid.querySelector('.fside').childNodes].forEach(n=>{if(n.nodeType===8)side.appendChild(live);else side.appendChild(n)});
+  }else el.innerHTML=html;
+  drawTimer();bindFocus(!!live);
 }
-function bindFocus(){
+function bindFocus(keepDeck){
   $('tmGo').onclick=()=>{if(TM.end){TM.left=tmLeft();TM.end=null}else{TM.end=Date.now()+TM.left*1000;}LS.set('timer',TM);drawTimer();glitchAll()};
   $('tmReset').onclick=()=>{if(TM.phase==='focus'){const done=Math.floor((TM.len*60-tmLeft())/60);logDw(done)}TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
   $('tmPresets').onclick=e=>{const b=e.target.closest('button');if(!b)return;let m=b.dataset.m;if(m==='custom'){m=parseInt(prompt('Minutes?',TM.len)||'');if(!(m>0))return}TM={len:+m,end:null,left:+m*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
@@ -954,7 +962,7 @@ function bindFocus(){
   $('mBox').onclick=musicClick;vizAttach($('vizC'));
   $('ambBtns').onclick=e=>{const b=e.target.closest('[data-amb]');if(!b)return;ambient(AMB.kind===b.dataset.amb?null:b.dataset.amb);$('ambBtns').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.amb===AMB.kind))};
   $('ambVol').oninput=e=>{AMB.vol=+e.target.value;LS.set('amb',{vol:AMB.vol});if(AMB.g)AMB.g.gain.value=AMB.vol/100*.6};
-  if(deckSrc())ensureYT();
+  if(deckSrc()&&!keepDeck)ensureYT();
 }
 function drawTimer(){const l=tmLeft();const tot=tmTotal();const txt=pad(Math.floor(l/60))+':'+pad(l%60);
   ['timer','fmTime'].forEach(id=>{const t=$(id);if(t){t.textContent=txt;t.classList.toggle('run',!!TM.end)}});
@@ -978,7 +986,10 @@ function openFocusMode(){let fm=$('focusMode');if(!fm){fm=document.createElement
 /* music deck: lofi / asmr (audio + visualiser) · jvscholz (random livestream, video) · mine (other playlists) */
 const SCHOLZ='UULVMwo6hT5hI3R56rO2HYP-wQ'; /* James Scholz — live streams uploads list */
 const DECKS={lofi:{label:'lofi',sub:'your lofi playlist',audio:true},asmr:{label:'asmr',sub:'your asmr picks (private)',audio:true,random:true},scholz:{label:'jvscholz',sub:'random old pomodoro stream',audio:false,random:true},mine:{label:'custom',sub:'your other playlists',audio:true}};
-let VLIST={},VHIST=[];
+let VLIST={},VHIST=[];const DSEEN=new Set();
+function ytPlaying(){try{return !!YTP&&YTP.getPlayerState()===1}catch(e){return false}}
+/* remember exactly where each deck was, so switching away and back carries on */
+function savePos(){try{const s=deckSrc();if(!YTP||!s||s.deck==='mine')return;const v=(YTP.getVideoData()||{}).video_id,t=YTP.getCurrentTime();if(v){DPOS[s.deck]={key:s.key,v,t};LS.set('deckpos',DPOS)}}catch(e){}}
 let YTP=null,ytReady=false,ytLoading=false,ytQ=null,ytTries=0;
 const DPOS=LS.get('deckpos')||{};
 function parseYT(url){try{const u=new URL(url.trim());const list=u.searchParams.get('list');let v=u.searchParams.get('v');if(!v&&/youtu\.be$/.test(u.hostname))v=u.pathname.slice(1);if(!v&&u.pathname.startsWith('/shorts/'))v=u.pathname.split('/')[2];return list?{type:'list',key:list,v}:v?{type:'video',key:v}:null}catch(e){return null}}
@@ -993,7 +1004,7 @@ function musicHTML(){const d=deckNow(),D=DECKS[d],src=deckSrc();
   const om=openMode(d);
   return seg+`<div class="deck ${D.audio?'aud':'vid'}"><div class="dscreen">${D.audio?`<canvas class="viz" id="vizC"></canvas><div class="dhud"><span id="dHudL">> ${esc(D.label)}.stream</span><span id="dHudR" class="num"></span></div>`:''}<div class="mvid${D.audio?' mini':''}" id="mVidBox"><div id="ytFrame"></div></div></div>
     <div class="mmeta"><b id="mTitle">loading…</b><span class="dim" id="mArtist"></span><div class="mprog seek" id="mSeek"><i id="mBar"></i><b id="mKnob"></b></div><div class="row" style="justify-content:space-between"><span class="dim num" id="mTime" style="font-size:10px"></span><span class="dim num" id="mIdx" style="font-size:10px"></span></div>
-    <div class="mctl"><button type="button" data-mc="prev" aria-label="Previous">⏮</button><button type="button" data-mc="play" class="mplay" id="mPlay" aria-label="Play">▶</button><button type="button" data-mc="next" aria-label="Next">⏭</button>${d!=='mine'?`<button type="button" data-mc="rnd" aria-label="Random" title="random">⤨</button>`:`<button type="button" data-mc="shuf" aria-pressed="${MUSIC.shuffle}" aria-label="Shuffle">⤮</button>`}<input type="range" min="0" max="100" value="${MUSIC.vol}" id="mVol" class="vol" aria-label="Volume"></div>
+    <div class="mctl"><button type="button" data-mc="prev" aria-label="Previous">⏮</button><button type="button" data-mc="play" class="mplay" id="mPlay" aria-label="Play">▶</button><button type="button" data-mc="next" aria-label="Next">⏭</button>${d==='mine'?`<button type="button" data-mc="shuf" aria-pressed="${MUSIC.shuffle}" aria-label="Shuffle">⤮</button>`:''}<input type="range" min="0" max="100" value="${MUSIC.vol}" id="mVol" class="vol" aria-label="Volume"></div>
     <div class="mskip"><button type="button" data-sk="-10">−10s</button><button type="button" data-sk="30">+30s</button><button type="button" data-sk="120">+2m</button><button type="button" data-sk="300">+5m</button></div>
     ${d!=='mine'?`<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><span class="dim" style="font-size:10px">on open:</span><div class="seg mini" id="dkOpen"><button type="button" data-om="resume" aria-pressed="${om==='resume'}">resume</button><button type="button" data-om="random" aria-pressed="${om==='random'}">random</button></div>${D.audio?`<button class="iconbtn" type="button" id="dkVid">${MUSIC.showVid?'hide':'show'} video</button>`:''}${d==='lofi'&&src.type!=='vids'?`<button class="iconbtn" type="button" id="dkEdit">change playlist</button>`:''}</div>`:''}</div></div>`+mine}
 function addStation(){openEditor({title:'add playlist',fields:[{k:'url',label:'YouTube Music / YouTube link'},{k:'name',label:'name (optional)'}],values:{url:'',name:''},isNew:true,
@@ -1002,7 +1013,7 @@ function addStation(){openEditor({title:'add playlist',fields:[{k:'url',label:'Y
 function musicRender(play,mode){if(!$('mBox'))return;try{YTP&&YTP.destroy()}catch(e){}YTP=null;ytReady=false;if($('deckSub'))$('deckSub').textContent=DECKS[deckNow()].sub;$('mBox').innerHTML=musicHTML();$('mBox').classList.toggle('showvid',!!MUSIC.showVid);vizAttach($('vizC'));ensureYT(play,mode)}
 function musicClick(e){const b=e.target.closest('button');if(!b)return;
   if(b.dataset.sk&&YTP){try{const t=YTP.getCurrentTime()+(+b.dataset.sk);YTP.seekTo(Math.max(0,Math.min(t,YTP.getDuration()-1)),true)}catch(x){}return}
-  if(b.dataset.deck){if(b.dataset.deck===deckNow())return;MUSIC.deck=b.dataset.deck;save('tools/music',MUSIC);musicRender(true);return}
+  if(b.dataset.deck){if(b.dataset.deck===deckNow())return;const was=ytPlaying();savePos();MUSIC.deck=b.dataset.deck;save('tools/music',MUSIC);musicRender(was,DSEEN.has(MUSIC.deck)?'resume':undefined);return}
   if(b.id==='mAdd')return addStation();
   if(b.id==='dkSave'){const p=parseYT($('dkUrl').value||'');if(!p||p.type!=='list'){flash('paste_a_playlist_link');return}MUSIC.decks={...(MUSIC.decks||{}),[deckNow()]:p.key};delete DPOS[deckNow()];LS.set('deckpos',DPOS);save('tools/music',MUSIC);musicRender(false);return}
   if(b.id==='dkEdit'){const d=deckNow();const old=(MUSIC.decks||{})[d];MUSIC.decks={...MUSIC.decks};delete MUSIC.decks[d];musicRender(false);if(old)$('dkUrl').value='https://music.youtube.com/playlist?list='+old;MUSIC.decks[d]=old;return}
@@ -1012,7 +1023,7 @@ function musicClick(e){const b=e.target.closest('button');if(!b)return;
   if(b.dataset.mdel){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='?';return}MUSIC.list=MUSIC.list.filter(x=>x.id!==b.dataset.mdel);if(MUSIC.cur===b.dataset.mdel)MUSIC.cur=null;save('tools/music',MUSIC);musicRender(false);return}
   const c=b.dataset.mc;if(!c||!YTP)return;
   if(c==='play')ytToggle();
-  if(c==='next'){if(ytVids())vidStep(1);else YTP.nextVideo&&YTP.nextVideo()}
+  if(c==='next'){if(DECKS[deckNow()].random)ytRandom();else if(ytVids())vidStep(1);else YTP.nextVideo&&YTP.nextVideo()}
   if(c==='prev'){try{if(YTP.getCurrentTime()>8)YTP.seekTo(0,true);else if(ytVids())vidBack();else YTP.previousVideo()}catch(x){}}
   if(c==='rnd')ytRandom();
   if(c==='shuf'){MUSIC.shuffle=!MUSIC.shuffle;YTP.setShuffle&&YTP.setShuffle(MUSIC.shuffle);b.setAttribute('aria-pressed',MUSIC.shuffle);save('tools/music',MUSIC)}}
@@ -1028,7 +1039,7 @@ function ytKick(){clearTimeout(ytKick.t);ytKick.t=setTimeout(()=>{try{const st=Y
 function ensureYT(play,mode){const s=deckSrc();if(!s||!$('ytFrame'))return;
   if(window.YT&&window.YT.Player){ytLoad(s,play,mode);return}ytQ=[play,mode];if(ytLoading)return;ytLoading=true;window.onYouTubeIframeAPIReady=()=>{ytLoading=false;const s2=deckSrc();if(s2&&$('ytFrame'))ytLoad(s2,ytQ[0],ytQ[1])};const sc=document.createElement('script');sc.src='https://www.youtube.com/iframe_api';document.head.appendChild(sc)}
 function ytLoad(s,play,mode){if(!window.YT||!window.YT.Player||!$('ytFrame'))return ensureYT(play,mode);
-  const pos=DPOS[s.deck];mode=mode||(s.type==='list'&&s.deck!=='mine'?openMode(s.deck):null);if(mode==='resume'&&!(pos&&pos.key===s.key))mode=DECKS[s.deck].random?'random':null;
+  DSEEN.add(s.deck);const pos=DPOS[s.deck];mode=mode||(s.type==='list'&&s.deck!=='mine'?openMode(s.deck):null);if(mode==='resume'&&!(pos&&pos.key===s.key))mode=DECKS[s.deck].random?'random':null;
   const pv={controls:0,playsinline:1,rel:0,modestbranding:1,iv_load_policy:3,disablekb:1};if(s.type==='list'){pv.listType='playlist';pv.list=s.key}
   let vStart=0;if(s.type==='vids'){let v=mode==='resume'&&pos&&s.ids.includes(pos.v)?pos.v:null;if(v)vStart=Math.max(0,(pos.t||0)-3);else v=s.ids[Math.floor(Math.random()*s.ids.length)];s={...s,type:'video',key:v,vids:true};VHIST=[v];pv.start=Math.floor(vStart)}
   ytTries=0;const opts={width:'100%',height:'100%',playerVars:pv};if(s.type==='video')opts.videoId=s.key;YTP=new YT.Player('ytFrame',{...opts,events:{
@@ -1914,6 +1925,7 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
   <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:12px"><label class="dim">started<input class="inp" type="date" id="meS" value="${it.start||''}"></label><label class="dim">finished<input class="inp" type="date" id="meF" value="${it.fin||''}"></label><label class="dim" style="display:flex;gap:6px;align-items:center;margin-top:18px"><input type="checkbox" id="meFav" ${it.fav?'checked':''} style="width:auto;display:inline"> favourite</label></div>
   <div class="tag" style="margin:12px 0 6px">review</div><textarea class="inp" id="meRev" rows="4" placeholder="what did you think?">${esc(it.review||'')}</textarea>
   <label class="dim">tags (comma separated)<input class="inp" id="meTags" value="${esc((it.tags||[]).join(', '))}"></label>
+  ${epBlock(k,it)}
   <div class="tag" style="margin:14px 0 6px">diary · ${(it.log||[]).length} ${K.verb==='watch'?'watch':'read'}${(it.log||[]).length===1?'':'es'}</div>
   <div class="row" style="gap:8px;flex-wrap:wrap;align-items:end"><label class="dim">date<input class="inp" type="date" id="meLd" value="${DAYK}"></label><label class="dim" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="meRe" ${(it.log||[]).length?'checked':''} style="width:auto;display:inline"> re${K.verb}</label><button class="btn" type="button" id="meLog">log ${K.verb==='watch'?'watched':'read'}</button></div>
   <div class="hsets" style="margin-top:8px">${(it.log||[]).map((l,i)=>`<span class="set">${esc(nice(l.d).toLowerCase())}${l.re?' ↻':''}${l.r!=null&&l.r!==''?' · '+stars(l.r,max):''} <button class="iconbtn" type="button" data-ldi="${i}" style="padding:0 4px">✕</button></span>`).join('')}</div>
@@ -1929,11 +1941,23 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
     if(b.dataset.ldi!=null){it.log.splice(+b.dataset.ldi,1);persist();mEntry(k,key);return}
     if(b.dataset.li){if(b.dataset.li==='new'){const n=prompt('List name?');if(!n)return;MEDIA[k].lists=[...(MEDIA[k].lists||[]),{id:rid(),name:n.trim(),keys:[key]}]}else{const l=MEDIA[k].lists.find(x=>x.id===b.dataset.li);l.keys=l.keys.includes(key)?l.keys.filter(x=>x!==key):[...l.keys,key]}persist();mEntry(k,key);return}
     if(b.id==='meDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}delete MEDIA[k].items[key];(MEDIA[k].lists||[]).forEach(l=>l.keys=l.keys.filter(x=>x!==key));saveMedia(k);closeSheet();renderMedia();return}
+    if(b.dataset.epr){$('meEpR').value=b.dataset.epr;sb.querySelectorAll('[data-epr]').forEach(x=>x.classList.toggle('on',x===b));return}
+    if(b.dataset.epo){const e=(it.eps||{})[b.dataset.epo]||{};$('meEpN').value=b.dataset.epo;$('meEpR').value=e.r||'';$('meEpNote').value=e.note||'';sb.querySelectorAll('[data-epr]').forEach(x=>x.classList.toggle('on',+x.dataset.epr===+e.r));$('meEpN').scrollIntoView({block:'center',behavior:'smooth'});return}
+    if(b.dataset.epd){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='?';return}delete it.eps[b.dataset.epd];persist();mEntry(k,key);return}
+    if(b.id==='meEpSave'){const n=parseInt($('meEpN').value);if(!(n>0)){flash('which_'+EPU(k));return}const r=$('meEpR').value===''?null:+$('meEpR').value,note=$('meEpNote').value.trim();
+      it.eps={...(it.eps||{}),[n]:{r,note,d:((it.eps||{})[n]||{}).d||DAYK}};if(K.unit&&(+it.prog||0)<n&&(!it.total||n<=it.total)){it.prog=n;if(it.st==='plan'||!it.st){it.st='cur';it.start=it.start||DAYK}}persist();flash(EPU(k)+'_'+n+'_saved');mEntry(k,key);setTimeout(()=>{const el=$('meEpList');el&&el.scrollIntoView({block:'center'})},60);return}
     if(b.id==='meOk'){closeSheet()}};
   let tt=null;sb.oninput=e=>{const id=e.target.id;clearTimeout(tt);tt=setTimeout(()=>{
     if(id==='mePg'){it.prog=+e.target.value||0}if(id==='meTot'){it.total=+e.target.value||null}if(id==='meS')it.start=e.target.value;if(id==='meF')it.fin=e.target.value;if(id==='meRev')it.review=e.target.value;
     if(id==='meTags')it.tags=e.target.value.split(',').map(x=>x.trim()).filter(Boolean);if(id==='meFav')it.fav=e.target.checked;persist()},400)};sb.onchange=sb.oninput}
 
+/* ---- per-episode / per-chapter ratings + notes ---- */
+const EPU=k=>k==='anime'?'episode':'chapter';
+function epBlock(k,it){if(k==='movies')return '';const U=EPU(k),eps=it.eps||{},ns=Object.keys(eps).map(Number).sort((a,b)=>b-a);const next=Math.max(1,+it.prog||1);
+  return `<div class="tag" style="margin:14px 0 6px">${U}s · ${ns.length} rated</div>
+  <div class="epbox"><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap"><span class="dim">${U}</span><input class="inp num" id="meEpN" value="${next}" inputmode="numeric" style="width:72px;text-align:center"><input type="hidden" id="meEpR" value=""><div class="rates" style="flex:1">${[...Array(10)].map((_,i)=>`<button type="button" class="rb" data-epr="${i+1}">${i+1}</button>`).join('')}</div></div>
+  <textarea class="inp" id="meEpNote" rows="2" placeholder="thoughts on this ${U}…" style="margin-top:8px"></textarea><div class="row" style="justify-content:flex-end;margin-top:6px"><button class="btn p" type="button" id="meEpSave">save ${U}</button></div></div>
+  <div class="eplist" id="meEpList">${ns.map(n=>{const e=eps[n];return `<div class="eprow"><button type="button" class="epmain" data-epo="${n}"><b class="num">${U==='episode'?'EP':'CH'} ${n}</b>${e.r?`<span class="epr num">${e.r}/10</span>`:''}<span class="dim">${esc((e.note||'').slice(0,90))}${(e.note||'').length>90?'…':''}</span></button><button class="iconbtn" type="button" data-epd="${n}">✕</button></div>`}).join('')}</div>`}
 /* ---- diary (Letterboxd style) ---- */
 function mDiary(k){const rows=[];mItems(k).forEach(it=>(it.log||[]).forEach(l=>rows.push({it,l})));rows.sort((a,b)=>a.l.d<b.l.d?1:-1);const max=MK[k].stars;let lastM='';
   $('mBody').innerHTML=`<div class="mdiary">${rows.map(({it,l})=>{const m=l.d.slice(0,7);const head=m!==lastM?`<div class="mdm">${new Date(l.d+'T12:00').toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</div>`:'';lastM=m;
@@ -1947,6 +1971,25 @@ function mLists(k){const L=MEDIA[k].lists||[];
     if(b.dataset.lren){const l=L.find(x=>x.id===b.dataset.lren);const n=prompt('Rename list',l.name);if(n){l.name=n.trim();saveMedia(k);mLists(k)}return}
     if(b.dataset.ldel){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}MEDIA[k].lists=L.filter(x=>x.id!==b.dataset.ldel);saveMedia(k);mLists(k);return}
     if(b.dataset.mkey)mEntry(k,b.dataset.mkey)}}
+/* ---- wrapped: your top 5, best episodes, year highlights ---- */
+function mWrapped(k,all,logs,yr,genres,months){const max=MK[k].stars,U=k==='movies'?null:EPU(k);
+  const top=all.filter(x=>x.rating!=null&&x.rating!=='').sort((a,b)=>(+b.rating-+a.rating)||((b.fav?1:0)-(a.fav?1:0))||((b.upd||'')>(a.upd||'')?1:-1)).slice(0,5);
+  const eps=U?all.flatMap(it=>Object.entries(it.eps||{}).filter(([n,e])=>e.r).map(([n,e])=>({it,n:+n,e}))).sort((a,b)=>b.e.r-a.e.r||((b.e.d||'')>(a.e.d||'')?1:-1)).slice(0,5):[];
+  const yrLogs=logs.filter(o=>o.l.d.startsWith(String(yr)));const g=Object.entries(genres).sort((a,b)=>b[1]-a[1])[0];
+  const bm=months.indexOf(Math.max(...months));const re=all.map(it=>({it,c:(it.log||[]).length})).sort((a,b)=>b.c-a.c)[0];
+  const epsYr=U?all.reduce((a,it)=>a+Object.values(it.eps||{}).filter(e=>(e.d||'').startsWith(String(yr))).length,0):0;
+  if(!top.length&&!eps.length&&!yrLogs.length)return `<div class="wrapped empty"><b>${yr} wrapped</b><span class="dim">Rate a few ${MK[k].label} and your wrapped builds itself here.</span></div>`;
+  return `<div class="wrapped"><div class="wrhead"><span class="wrk">${yr}</span><b>${MK[k].label} wrapped</b></div>
+  <div class="wrgrid">
+    ${top.length?`<div class="wrcard wrtop"><span class="wrl">your top ${top.length}</span>${top.map((it,i)=>`<button type="button" class="wrrow" data-mkey="${esc(it.key)}"><i class="num">${i+1}</i>${poster(it,'msp')}<span><b>${esc(it.title)}</b><span class="dim">${esc(String(it.year||''))}</span></span>${stars(it.rating,max)}</button>`).join('')}</div>`:''}
+    ${eps.length?`<div class="wrcard wreps"><span class="wrl">highest rated ${U}s ever</span>${eps.map((o,i)=>`<button type="button" class="wrrow" data-mkey="${esc(o.it.key)}"><i class="num">${i+1}</i>${poster(o.it,'msp')}<span><b>${esc(o.it.title)}</b><span class="dim">${U==='episode'?'EP':'CH'} ${o.n}${o.e.note?' · '+esc(o.e.note.slice(0,40)):''}</span></span><span class="epr num">${o.e.r}/10</span></button>`).join('')}</div>`:''}
+    <div class="wrcard wrnums">
+      <div><span class="wrl">finished in ${yr}</span><b class="num">${yrLogs.length}</b></div>
+      ${U?`<div><span class="wrl">${U}s rated in ${yr}</span><b class="num">${epsYr}</b></div>`:''}
+      ${g?`<div><span class="wrl">#1 genre</span><b class="wrs">${esc(g[0])}</b></div>`:''}
+      ${yrLogs.length?`<div><span class="wrl">busiest month</span><b class="wrs">${new Date(yr,bm,1).toLocaleDateString('en-GB',{month:'long'}).toLowerCase()}</b></div>`:''}
+      ${re&&re.c>1?`<div><span class="wrl">most re${MK[k].verb==='watch'?'watched':'read'}</span><b class="wrs">${esc(re.it.title)} ×${re.c}</b></div>`:''}
+    </div></div></div>`}
 /* ---- stats ---- */
 function mStats(k){const all=mItems(k);const done=all.filter(x=>x.st==='done');const max=MK[k].stars;const yr=new Date().getFullYear();
   const logs=all.flatMap(it=>(it.log||[]).map(l=>({it,l})));const thisYear=logs.filter(o=>o.l.d.startsWith(String(yr)));
@@ -1955,10 +1998,12 @@ function mStats(k){const all=mItems(k);const done=all.filter(x=>x.st==='done');c
   const genres={};done.concat(all.filter(x=>x.st==='cur')).forEach(x=>(x.genres||[]).forEach(g=>genres[g]=(genres[g]||0)+1));const gl=Object.entries(genres).sort((a,b)=>b[1]-a[1]).slice(0,10);const gmx=Math.max(1,...gl.map(x=>x[1]));
   const months=[...Array(12)].map((_,i)=>logs.filter(o=>o.l.d.startsWith(`${yr}-${pad(i+1)}`)).length);const mmx=Math.max(1,...months);
   const units=all.reduce((a,x)=>a+(+x.prog||0),0);const hours=k==='anime'?Math.round(all.reduce((a,x)=>a+(+x.prog||0)*(x.dur||24),0)/60):null;
-  $('mBody').innerHTML=`<div class="statcards"><div><span class="dim">completed</span><b class="num">${done.length}</b></div><div><span class="dim">in ${yr}</span><b class="num">${thisYear.length}</b></div><div><span class="dim">avg rating</span><b class="num">${avg==null?'—':kgs(Math.round(avg*10)/10)}<small>${max===10?' /10':' ★'}</small></b></div>${MK[k].unit?`<div><span class="dim">${MK[k].units}</span><b class="num">${units.toLocaleString('en-GB')}</b></div>`:''}${hours!=null?`<div><span class="dim">hours watched</span><b class="num">${hours}</b></div>`:''}<div><span class="dim">plan to ${MK[k].verb}</span><b class="num">${all.filter(x=>x.st==='plan').length}</b></div></div>
+  const W=mWrapped(k,all,logs,yr,genres,months);
+  $('mBody').innerHTML=W+`<div class="statcards"><div><span class="dim">completed</span><b class="num">${done.length}</b></div><div><span class="dim">in ${yr}</span><b class="num">${thisYear.length}</b></div><div><span class="dim">avg rating</span><b class="num">${avg==null?'—':kgs(Math.round(avg*10)/10)}<small>${max===10?' /10':' ★'}</small></b></div>${MK[k].unit?`<div><span class="dim">${MK[k].units}</span><b class="num">${units.toLocaleString('en-GB')}</b></div>`:''}${hours!=null?`<div><span class="dim">hours watched</span><b class="num">${hours}</b></div>`:''}<div><span class="dim">plan to ${MK[k].verb}</span><b class="num">${all.filter(x=>x.st==='plan').length}</b></div></div>
   <div class="statsplit"><div class="panel"><div class="ph"><span class="tag">${yr} by month</span></div><div class="pb"><div class="wkbars" style="grid-template-columns:repeat(12,1fr)">${months.map((v,i)=>`<div class="d"><span class="p num">${v||''}</span><div class="b" style="height:${v/mmx*100}%"></div><span class="l">${'jfmamjjasond'[i]}</span></div>`).join('')}</div></div></div>
   <div class="panel"><div class="ph"><span class="tag">ratings</span><span class="dim">${rated.length} rated</span></div><div class="pb"><div class="wkbars" style="grid-template-columns:repeat(10,1fr)">${dist.map((v,i)=>`<div class="d"><span class="p num">${v||''}</span><div class="b" style="height:${v/dmx*100}%;background:var(--cyan)"></div><span class="l">${max===10?buckets[i]:(buckets[i]%1?'½':buckets[i])}</span></div>`).join('')}</div></div></div></div>
-  <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">top genres</span></div><div class="pb"><div class="mbars">${gl.map(([g,v])=>`<div><span>${esc(g)}</span><i style="--w:${v/gmx*100}%"></i><b class="num">${v}</b></div>`).join('')||'<span class="dim">Add a few titles to see your taste.</span>'}</div></div></div>`}
+  <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">top genres</span></div><div class="pb"><div class="mbars">${gl.map(([g,v])=>`<div><span>${esc(g)}</span><i style="--w:${v/gmx*100}%"></i><b class="num">${v}</b></div>`).join('')||'<span class="dim">Add a few titles to see your taste.</span>'}</div></div></div>`;
+  $('mBody').onclick=e=>{const b=e.target.closest('[data-mkey]');if(b)mEntry(k,b.dataset.mkey)}}
 initMediaNav();
 
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
