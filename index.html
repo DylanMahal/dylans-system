@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794601561">
+<link rel="stylesheet" href="app.css?v=1794601986">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -302,39 +302,14 @@
   <!-- TOOLS -->
   <section class="view" id="v-tools" aria-label="Tools">
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/tools"><span class="slash">/</span>tools</h2><span class="sub" id="toolsSub"></span></div></div>
-    <div class="week-grid">
-      <div class="panel"><div class="ph"><span class="tag">focus timer</span><span id="dwToday"></span></div><div class="pb">
-        <div class="timer num" id="timer">90:00</div>
-        <div class="meter"><span id="tmBar" style="width:0"></span></div>
-        <div class="bigbtns" style="margin-top:14px"><button class="btn p" type="button" id="tmGo">start</button><button class="btn" type="button" id="tmReset">stop + log</button></div>
-        <div class="seg" role="group" aria-label="Timer length" style="margin-top:12px;width:fit-content" id="tmPresets">
-          <button type="button" data-m="90">90</button><button type="button" data-m="80">80</button><button type="button" data-m="75">75</button><button type="button" data-m="25">25</button><button type="button" data-m="10">10</button>
-        </div>
-        <div style="margin-top:14px"><div class="dim" style="font-size:11px;margin-bottom:4px" id="dwLbl"></div><div class="meter"><span id="dwBar"></span></div></div>
-      </div></div>
-      <div class="panel"><div class="ph"><span class="tag">leetcode · this week</span><span id="lcWeek"></span></div><div class="pb">
-        <div class="timer num" id="lcNum">0</div>
-        <div class="slots" id="slots"></div>
-        <div class="bigbtns"><button class="btn p" type="button" id="lcAdd">+1 solved</button><button class="btn" type="button" id="lcSub">−1</button></div>
-      </div></div>
-      <div class="grid" style="align-content:start">
-        <div class="panel"><div class="ph"><span class="tag">water · today</span><button class="ed" type="button" id="waterTgtEd">target</button></div><div class="pb">
-          <div class="counter"><b class="num" id="waterN">0</b><div class="bigbtns"><button class="btn p" type="button" id="waterAdd">+ glass</button><button class="btn" type="button" id="waterSub">−</button></div></div>
-          <div class="pips" id="waterPips"></div>
-        </div></div>
-        <div class="panel"><div class="ph"><span class="tag">inbox checks · today</span><span id="msgN"></span></div><div class="pb"><p class="dim" style="font-size:12px;margin:0 0 10px">Your Day Plan v2 rule: only check messages at these three times. Tap each one when you've done it.</p>
-          <div class="msgs" id="msgs"></div>
-        </div></div>
-      </div>
+    <div class="toolcards" id="toolSeg">
+      <button type="button" data-t="focus"><i>⧗</i><b>focus</b><span id="tcFocus">timer · music · sound</span></button>
+      <button type="button" data-t="protocols"><i>◈</i><b>protocols</b><span id="tcProto">doses · sites · inventory</span></button>
+      <button type="button" data-t="leetcode"><i>λ</i><b>leetcode</b><span id="tcLeet">problems · notes</span></button>
     </div>
-    <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">boot video</span><span id="bvStat" class="dim"></span></div><div class="pb">
-      <p class="dim" style="font-size:12px;margin:0 0 10px">Plays full screen every time the app opens. Stored privately in your account; each device keeps its own copy.</p>
-      <div class="bigbtns"><label class="btn p" style="cursor:pointer">upload new<input type="file" id="bvFile" accept="video/mp4,video/*" hidden></label><button class="btn" type="button" id="bvRefresh">re-download here</button><button class="btn" type="button" id="bvDel">remove</button></div>
-    </div></div>
-    <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">pins + cycles</span><span>tap “done today” after each dose</span></div><div class="pb">
-      <div class="cards" id="trackers"></div>
-      <div class="sugg" id="trkSugg"></div>
-    </div></div>
+    <div id="t-focus"></div>
+    <div id="t-protocols" hidden></div>
+    <div id="t-leetcode" hidden></div>
   </section>
 
   <!-- WEEK -->
@@ -408,9 +383,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794601561"</script>
-<script src="config.js?v=1794601561"></script>
+<script>window.APP_V="1794601986"</script>
+<script src="config.js?v=1794601986"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794601561"></script>
+<script src="app.js?v=1794601986"></script>
 </body>
 </html>
