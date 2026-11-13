@@ -1744,6 +1744,7 @@ addEventListener('keydown',e=>{
   if(e.key==='x'&&document.activeElement.classList.contains('it')){toggle(document.activeElement);return}
 });
 
+document.addEventListener('click',e=>{if(e.target.closest&&e.target.closest('#promptBtn'))openPal()});
 
 /* ================= BOOT: sign in, then load ================= */
 let booted=false,loginBusy=false;
