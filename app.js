@@ -484,9 +484,9 @@ watch('gym/active',d=>{ACTIVE=d&&d.ex?d:null;if(cur==='gym')renderGym()});
 watch('gym/routines',d=>{ROUTINES={list:[],...(d||{})};if(cur==='gym')renderGym()});
 watchPrefix('gym/w-',(evt,path,data)=>{const id=path.slice(6);WORKOUTS=WORKOUTS.filter(w=>w.id!==id);if(evt!=='DELETE'&&data)WORKOUTS.unshift(data);WORKOUTS.sort((a,b)=>(b.startedAt||b.date)<(a.startedAt||a.date)?-1:1);if(cur==='gym')renderGym()});
 let activeT=null;function saveActive(){clearTimeout(activeT);activeT=setTimeout(()=>{if(ACTIVE)save('gym/active',ACTIVE);else removeDoc('gym/active')},300)}
-function history(n,beforeId){return WORKOUTS.filter(w=>w.id!==beforeId).map(w=>({w,x:(w.ex||[]).find(x=>norm(x.n)===norm(n))})).filter(o=>o.x&&o.x.sets.some(s=>s.done!==false&&+s.r>0))}
-function prevSets(n){const h=history(n,ACTIVE&&ACTIVE.id)[0];return h?h.x.sets.filter(s=>s.done!==false):[]}
-function bests(n,beforeId){let kg=0,e=0,vol=0;history(n,beforeId).forEach(o=>o.x.sets.forEach(s=>{if(s.t==='w'||s.done===false)return;kg=Math.max(kg,+s.kg||0);e=Math.max(e,e1(s));vol=Math.max(vol,(+s.kg||0)*(+s.r||0))}));return {kg,e,vol}}
+function exHistory(n,beforeId){return WORKOUTS.filter(w=>w.id!==beforeId).map(w=>({w,x:(w.ex||[]).find(x=>norm(x.n)===norm(n))})).filter(o=>o.x&&o.x.sets.some(s=>s.done!==false&&+s.r>0))}
+function prevSets(n){const h=exHistory(n,ACTIVE&&ACTIVE.id)[0];return h?h.x.sets.filter(s=>s.done!==false):[]}
+function bests(n,beforeId){let kg=0,e=0,vol=0;exHistory(n,beforeId).forEach(o=>o.x.sets.forEach(s=>{if(s.t==='w'||s.done===false)return;kg=Math.max(kg,+s.kg||0);e=Math.max(e,e1(s));vol=Math.max(vol,(+s.kg||0)*(+s.r||0))}));return {kg,e,vol}}
 function setLabel(sets,i){const s=sets[i];if(s.t==='w')return 'W';if(s.t==='d')return 'D';if(s.t==='f')return 'F';let n=0;for(let j=0;j<=i;j++)if(!sets[j].t||sets[j].t==='n')n++;return String(n)}
 function stats(w){let vol=0,n=0;(w.ex||[]).forEach(x=>x.sets.forEach(s=>{if(s.done){n++;vol+=(+s.kg||0)*(+s.r||0)}}));return {vol,n}}
 
@@ -536,7 +536,7 @@ function wCard(w){const st=w.nsets!=null?{vol:w.vol,n:w.nsets}:stats(w);const du
   <div class="wex">${(w.ex||[]).map(x=>{const best=x.sets.filter(s=>s.done!==false&&s.t!=='w').sort((a,b)=>e1(b)-e1(a))[0];return `<div><span>${x.sets.filter(s=>s.done!==false).length} × ${esc(x.n)}</span><span class="dim num">${best?kgs(best.kg)+'kg × '+best.r:''}</span></div>`}).join('')}</div></div>`}
 function startWorkout(r){
   ACTIVE={id:new Date().toISOString().replace(/[:.]/g,'-'),name:r?r.name:(gymTypeFor()==='lower'?'Lower':'Upper'),routineId:r?r.id:null,startedAt:new Date().toISOString(),
-    ex:r?r.ex.map(x=>{const prev=history(x.n)[0];const ps=prev?prev.x.sets.filter(s=>s.done!==false):[];return {n:x.n,rest:x.rest??120,note:x.note||'',sets:Array.from({length:x.sets||3},(_,i)=>({t:(ps[i]&&ps[i].t)||'n',kg:'',r:'',done:false}))}}):[]};
+    ex:r?r.ex.map(x=>{const prev=exHistory(x.n)[0];const ps=prev?prev.x.sets.filter(s=>s.done!==false):[];return {n:x.n,rest:x.rest??120,note:x.note||'',sets:Array.from({length:x.sets||3},(_,i)=>({t:(ps[i]&&ps[i].t)||'n',kg:'',r:'',done:false}))}}):[]};
   saveActive();renderGym();flash('workout_started');staggerIn($('g-workout'));
 }
 function mut(fn){fn();saveActive();renderWorkout();}
@@ -545,7 +545,7 @@ $('g-workout').addEventListener('click',e=>{
   if(d.act==='empty')return startWorkout(null);
   if(d.start)return startWorkout(ROUTINES.list.find(r=>r.id===d.start));
   if(d.act==='newroutine'){GYMV='routines';renderGym();return editRoutine(null)}
-  if(d.act==='addex')return pickExercise(n=>mut(()=>{const prev=history(n)[0];const ps=prev?prev.x.sets.filter(s=>s.done!==false):[];ACTIVE.ex.push({n,rest:120,note:'',sets:Array.from({length:Math.max(1,Math.min(ps.length||3,6))},(_,i)=>({t:(ps[i]&&ps[i].t)||'n',kg:'',r:'',done:false}))})}));
+  if(d.act==='addex')return pickExercise(n=>mut(()=>{const prev=exHistory(n)[0];const ps=prev?prev.x.sets.filter(s=>s.done!==false):[];ACTIVE.ex.push({n,rest:120,note:'',sets:Array.from({length:Math.max(1,Math.min(ps.length||3,6))},(_,i)=>({t:(ps[i]&&ps[i].t)||'n',kg:'',r:'',done:false}))})}));
   if(d.act==='discard'){if(t.dataset.arm){ACTIVE=null;saveActive();renderGym();glitchAll()}else{t.dataset.arm=1;t.textContent='tap again';setTimeout(()=>{if(t.isConnected){delete t.dataset.arm;t.textContent='discard'}},2500)}return}
   if(d.act==='finish')return finishWorkout();
   if(d.exinfo)return openExercise(d.exinfo);
@@ -678,7 +678,7 @@ function renderLibrary(){
   $('libList').onclick=e=>{const b=e.target.closest('[data-lib]');if(b)openExercise(b.dataset.lib)};
 }
 function openExercise(n){
-  const h=history(n).reverse();const info=exInfo(n);
+  const h=exHistory(n).reverse();const info=exInfo(n);
   const pts=h.map(o=>Math.max(...o.x.sets.filter(s=>s.t!=='w').map(e1),0)).filter(v=>v>0);
   const b=bests(n);
   openSheet(n,`<div class="dim" style="margin-bottom:10px">${esc(info.muscle)}${info.equip?' · '+esc(info.equip):''}</div>
