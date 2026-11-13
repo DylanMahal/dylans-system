@@ -650,3 +650,16 @@ body.booting{overflow:hidden}
 #bootfx.lite .bfx-term,#bootfx.lite .bfx-line{display:none}
 #bootfx.lite *{animation-duration:.01s!important;transition-duration:.01s!important}
 @media (max-width:600px){.bfx-core{top:40%}.bfx-word{top:calc(40% + 28vmin + 30px)}.bfx-status{top:calc(40% + 28vmin + 30px + 4.6vmin + 18px);font-size:9px;letter-spacing:.3em}.bfx-meter{top:calc(40% + 28vmin + 30px + 4.6vmin + 46px)}.bfx-term{font-size:11px}}
+
+/* fast boot timings */
+#bootfx .bfx-term{transition-duration:.08s}
+#bootfx.phC .bfx-ring .ring{animation-duration:.28s;animation-delay:0s}
+#bootfx.phC .bfx-core{animation-duration:.32s}
+.bfx-word{transition-duration:.5s}
+.bfx-status span.in,.bfx-log span{animation-duration:.18s}
+.bfx-ring .prog,#bfxDotG,.bfx-meter,.bfx-core{transition-duration:.15s}
+#bootfx.flare .bfx-core{animation-duration:.14s}
+#bootfx.off>*:not(.bfx-off){animation-duration:.38s}
+#bootfx.off .bfx-off{animation-duration:.4s}
+#bootfx.gone{transition-duration:.3s}
+#bootfx.phC .bfx-core::before{transition-duration:.3s}

@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794593256">
+<link rel="stylesheet" href="app.css?v=1794593486">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -46,7 +46,7 @@
   var fxOff=false;try{fxOff=localStorage.getItem('ds3:fx')==='false'}catch(e){}
   var lite=fxOff||matchMedia('(prefers-reduced-motion: reduce)').matches;if(lite)el.classList.add('lite');
   var $=function(i){return document.getElementById(i)};
-  var t0=performance.now(),MIN=lite?400:10200,done=false,closing=false,target=4,shown=0,raf=0;
+  var SPD=lite?1:5.4,t0=performance.now(),MIN=lite?400:10200,done=false,closing=false,target=4,shown=0,raf=0;
   document.body.classList.add('booting');window.__bfxT0=t0;
 
   /* GPU background: star field, plasma core, lensing, flash, shockwave */
@@ -102,10 +102,10 @@
 
   /* phase A: typed command */
   var cmd='dylan@stack:~$ ./boot --system',ci=0;
-  function typeCmd(){if(ci<=cmd.length){$('bfxCmd').innerHTML=cmd.slice(0,ci).replace('dylan@stack','<b>dylan@stack</b>');ci++;setTimeout(typeCmd,lite?0:(ci<15?38:46))}}
-  setTimeout(typeCmd,lite?0:250);
-  setTimeout(function(){el.classList.add('phB')},lite?0:1450);
-  setTimeout(function(){el.classList.add('phC')},lite?0:4380);
+  function typeCmd(){var tc=$('bfxCmd');if(!tc)return;if(ci<=cmd.length){tc.innerHTML=cmd.slice(0,ci).replace('dylan@stack','<b>dylan@stack</b>');ci++;setTimeout(typeCmd,lite?0:(ci<15?38:46)/SPD)}}
+  setTimeout(typeCmd,lite?0:250/SPD);
+  setTimeout(function(){el.classList.add('phB')},lite?0:1450/SPD);
+  setTimeout(function(){el.classList.add('phC')},lite?0:4380/SPD);
 
   /* face decoder */
   var fc=$('bfxFace'),fx=fc.getContext('2d'),img=new Image(),imgOk=false,off=document.createElement('canvas'),ox=off.getContext('2d');
@@ -128,32 +128,32 @@
   function setSub(t){if(t===curSub)return;curSub=t;var s=$('bfxSub');s.classList.remove('in');void s.offsetWidth;s.textContent=t;s.classList.add('in')}
   var log=$('bfxLog'),q=[],qBusy=false,maxL=4;
   function render(s){var sp=document.createElement('span');sp.innerHTML=s;log.appendChild(sp);while(log.children.length>maxL)log.removeChild(log.firstChild)}
-  function pump(){if(!q.length){qBusy=false;return}qBusy=true;render(q.shift());setTimeout(pump,lite?0:420)}
+  function pump(){if(!q.length){qBusy=false;return}qBusy=true;render(q.shift());setTimeout(pump,lite?0:70)}
   var logOn=false;function addLine(s){q.push(s);if(logOn&&!qBusy)pump()}
   ['kernel · dylan.sys','crt · 60hz · gamma 2.2','mount /today /gym /journal /stack'].forEach(addLine);
-  setTimeout(function(){logOn=true;if(!qBusy)pump()},lite?0:4800);
+  setTimeout(function(){logOn=true;if(!qBusy)pump()},lite?0:4800/SPD);
 
-  function tick(now){raf=requestAnimationFrame(tick);var e=now-t0;
+  function tick(now){raf=requestAnimationFrame(tick);var e=(now-t0)*SPD;
     gpu(e);face(e);wordTick(e);
     for(var si=subs.length-1;si>=0;si--)if(e>=subs[si][0]){setSub(done&&e>MIN-300?'ready':subs[si][1]);break}
-    var cap=Math.min(target,Math.max(0,(e-4300)/(MIN-4300))*100,done?100:97);shown+=(Math.max(cap,shown)-shown)*.08;if(done&&e>MIN)shown+=(100-shown)*.2;
+    var cap=Math.min(target,Math.max(0,(e-4300)/(MIN-4300))*100,done?100:97);shown+=(Math.max(cap,shown)-shown)*.35;if(done&&e>MIN)shown+=(100-shown)*.5;
     var p=Math.min(100,shown);$('bfxPct').textContent=p>=99.5?'OK':('0'+Math.floor(p)).slice(-2);$('bfxBar').style.transform='scaleX('+(p/100)+')';
     $('bfxProg').style.strokeDashoffset=1231.5*(1-p/100);$('bfxDotG').setAttribute('transform','rotate('+(p*3.6)+' 200 200)');
-    if(done&&e>MIN&&p>99.4&&!q.length&&!closing)close();
+    if(done&&e>MIN&&p>99.4&&!closing)close();
   }
   raf=requestAnimationFrame(tick);
 
   function close(fast){if(closing)return;closing=true;
-    if(fast||lite)el.classList.add('fast');else{burst=18;el.classList.add('flare')}
-    setTimeout(function(){el.classList.add('off')},fast||lite?0:520);
-    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},fast||lite?220:1250);
-    setTimeout(function(){cancelAnimationFrame(raf);el.remove()},fast||lite?700:1900)}
+    if(fast||lite)el.classList.add('fast');else{burst=5;el.classList.add('flare')}
+    setTimeout(function(){el.classList.add('off')},fast||lite?0:140);
+    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},fast||lite?200:520);
+    setTimeout(function(){cancelAnimationFrame(raf);el.remove()},fast||lite?600:950)}
   window.BOOTFX={
     step:function(msg,pct,ok){if(closing)return;if(pct)target=Math.max(target,pct);if(msg)addLine(msg+(ok===false?' <em class="er">· cached</em>':' <em>· ok</em>'))},
     done:function(){if(done)return;done=true;target=100},
     skip:function(){close(true)}
   };
-  setTimeout(function(){el.addEventListener('pointerdown',function(){if(done)close(true)})},1200);
+  setTimeout(function(){el.addEventListener('pointerdown',function(){if(done)close(true)})},300);
   setTimeout(function(){if(!closing){done=true;target=100}},12000);
 })();
 </script>
@@ -391,9 +391,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794593256"</script>
-<script src="config.js?v=1794593256"></script>
+<script>window.APP_V="1794593486"</script>
+<script src="config.js?v=1794593486"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794593256"></script>
+<script src="app.js?v=1794593486"></script>
 </body>
 </html>
