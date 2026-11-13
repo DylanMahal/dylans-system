@@ -668,10 +668,5 @@ body.booting{overflow:hidden}
 .bfx-vid{position:absolute;inset:0;display:none;z-index:8;background:#000}
 #bootfx.vidmode .bfx-vid{display:block}
 #bootfx.vidmode>*:not(.bfx-vid):not(.bfx-off){visibility:hidden}
-#bfxVbg{position:absolute;inset:-8%;width:116%;height:116%;object-fit:cover;filter:blur(28px) brightness(.45) saturate(1.2);transform:scale(1.05)}
-#bfxV{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
-.bfx-snd{position:absolute;right:calc(env(safe-area-inset-right) + 16px);top:calc(env(safe-area-inset-top) + 14px);appearance:none;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#eee;font:10px var(--pix);letter-spacing:.12em;padding:7px 11px;cursor:pointer;backdrop-filter:blur(6px);z-index:2}
-.bfx-snd.on{border-color:var(--pk);color:var(--pk)}
-.bfx-vbar{position:absolute;left:0;right:0;bottom:0;height:2px;background:rgba(255,255,255,.1);z-index:2}
-.bfx-vbar i{position:absolute;inset:0;background:linear-gradient(90deg,var(--cy),var(--pk));transform-origin:0 50%;transform:scaleX(0);box-shadow:0 0 8px var(--pk)}
+#bfxV{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 #bootfx.vidmode.off .bfx-vid{animation:bfxCrtOff .38s cubic-bezier(.7,0,.3,1) forwards}
