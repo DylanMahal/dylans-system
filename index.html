@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794608878">
+<link rel="stylesheet" href="app.css?v=1794609224">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -166,7 +166,7 @@
 
   // own video: old-TV power-off, synced to the cut (the power-off sound is baked into the clip)
   function tvOff(){if(closing)return;closing=true;el.classList.add('tvoff');
-    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},1150);
+    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting');document.body.classList.add('poweron');setTimeout(function(){document.body.classList.remove('poweron')},1100)},1100);
     setTimeout(function(){cancelAnimationFrame(raf);try{V.pause()}catch(e){}el.remove()},1800)}
   function close(fast){if(closing)return;try{dg('close fast:'+!!fast)}catch(e){}closing=true;
     if(fast||lite)el.classList.add('fast');else{burst=5;el.classList.add('flare')}
@@ -399,7 +399,8 @@
 <div class="login" id="login" hidden><div class="loginbg"></div><form class="loginbox" id="loginForm"><div id="loginBox"><div class="tag pink">dylan@stack:~$ login</div><h1 class="glitch" data-text="SYSTEM">SYSTEM</h1>
 <label>email<input class="inp" id="lEmail" type="email" autocomplete="username" required></label><label>password<input class="inp" id="lPass" type="password" autocomplete="current-password" required></label>
 <button class="btn p" type="submit">sign in</button><p class="dim" id="loginMsg" aria-live="polite"></p></div></form></div>
-<div class="edgefx" aria-hidden="true"><i class="ec tl"></i><i class="ec tr"></i><i class="ec bl"></i><i class="ec br"></i></div>
+<div class="edgefx" aria-hidden="true"><i class="ec tl"></i><i class="ec tr"></i></div>
+<div class="ticker" aria-hidden="true"><div class="run" id="tick"></div></div>
 <div class="flash" id="flash" aria-hidden="true"><span id="flashTxt"></span></div>
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Details" aria-hidden="true"></aside>
@@ -415,9 +416,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794608878"</script>
-<script src="config.js?v=1794608878"></script>
+<script>window.APP_V="1794609224"</script>
+<script src="config.js?v=1794609224"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794608878"></script>
+<script src="app.js?v=1794609224"></script>
 </body>
 </html>

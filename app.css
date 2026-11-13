@@ -841,13 +841,29 @@ img{-webkit-user-drag:none}
 /* screen edges: pink/red neon outskirts instead of the bottom ticker */
 .edgefx{position:fixed;inset:0;pointer-events:none;z-index:24}
 .edgefx::before{content:"";position:absolute;inset:0;box-shadow:inset 0 0 0 1px rgba(255,42,109,.16),inset 0 -70px 80px -70px rgba(255,42,109,.45),inset 0 0 120px -60px rgba(255,59,59,.35);animation:edgebreath 7s ease-in-out infinite}
-.edgefx::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:linear-gradient(90deg,transparent 0,#ff2a6d 15%,#ff3b3b 35%,transparent 50%,#ff2a6d 65%,#ff3b3b 85%,transparent 100%);background-size:200% 100%;animation:edgesweep 9s linear infinite;box-shadow:0 0 16px 1px rgba(255,42,109,.55)}
+.edgefx::after{content:"";position:absolute;left:0;right:0;bottom:31px;height:1px;z-index:26;background:linear-gradient(90deg,transparent 0,#ff2a6d 15%,#ff3b3b 35%,transparent 50%,#ff2a6d 65%,#ff3b3b 85%,transparent 100%);background-size:200% 100%;animation:edgesweep 9s linear infinite;box-shadow:0 0 16px 1px rgba(255,42,109,.55)}
 .edgefx .ec{position:absolute;width:18px;height:18px;border:2px solid #ff2a6d;opacity:.75;filter:drop-shadow(0 0 6px #ff2a6d)}
 .edgefx .tl{top:6px;left:6px;border-right:0;border-bottom:0}.edgefx .tr{top:6px;right:6px;border-left:0;border-bottom:0}
 .edgefx .bl{bottom:6px;left:6px;border-right:0;border-top:0}.edgefx .br{bottom:6px;right:6px;border-left:0;border-top:0}
 @keyframes edgesweep{to{background-position:-200% 0}}
 @keyframes edgebreath{0%,100%{opacity:.75}50%{opacity:1}}
 .nofx .edgefx::before,.nofx .edgefx::after{animation:none}
-@media (min-width:901px){body{padding-bottom:16px}}
-@media (max-width:900px){.edgefx::after,.edgefx .bl,.edgefx .br{display:none}.edgefx .tl,.edgefx .tr{top:calc(env(safe-area-inset-top) + 4px)}
+@media (max-width:900px){.edgefx::after{display:none}.edgefx .tl,.edgefx .tr{top:calc(env(safe-area-inset-top) + 4px)}
   .bnav{border-top:0}.bnav::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,#ff2a6d 25%,#ff3b3b 50%,#ff2a6d 75%,transparent);box-shadow:0 0 12px rgba(255,42,109,.7)}}
+
+/* quotes banner: no label, neon pink/red outskirts that fade into the text */
+.ticker{border-top:0;background:linear-gradient(90deg,rgba(255,42,109,.3),transparent 14%,transparent 86%,rgba(255,59,59,.3)),#050505;z-index:25}
+.ticker::before,.ticker::after{content:"";position:absolute;top:0;bottom:0;width:90px;z-index:2;pointer-events:none}
+.ticker::before{left:0;background:linear-gradient(90deg,rgba(255,42,109,.55),transparent);box-shadow:inset 3px 0 0 #ff2a6d}
+.ticker::after{right:0;background:linear-gradient(-90deg,rgba(255,59,59,.55),transparent);box-shadow:inset -3px 0 0 #ff3b3b}
+.ticker .run{-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.ticker{position:fixed}
+/* audio deck: "show video" turns the screen into the full video, like the jvscholz tab */
+#mBox.showvid .deck.aud .dscreen{height:auto;aspect-ratio:16/9;border:0;background:#000}
+#mBox.showvid .deck.aud .dscreen::after,#mBox.showvid .deck.aud .viz,#mBox.showvid .deck.aud .dhud{display:none}
+#mBox.showvid .mvid.mini{position:absolute;inset:0;right:auto;bottom:auto;width:100%;height:100%;opacity:1;border:1px solid var(--line2);pointer-events:auto;filter:none}
+/* boot → app: the screen powers back on from the TV line */
+@keyframes pwron{0%{transform:scaleY(.006) scaleX(.7);filter:brightness(4) saturate(0);opacity:.9}35%{transform:scaleY(.04) scaleX(1);filter:brightness(2.5)}70%{transform:scaleY(1.02);filter:brightness(1.3) contrast(1.2)}100%{transform:none;filter:none;opacity:1}}
+body.poweron .bar,body.poweron main{animation:pwron .75s cubic-bezier(.25,.9,.2,1) both;transform-origin:50% 50vh}
+body.poweron .ticker,body.poweron .bnav,body.poweron .edgefx{animation:fadein .6s .35s both}
+@keyframes fadein{from{opacity:0}to{opacity:1}}
