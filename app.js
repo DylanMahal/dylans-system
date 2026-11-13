@@ -79,8 +79,9 @@ function burstEl(el,n,big){const r=el.getBoundingClientRect();burst(r.left+r.wid
 function stepP(){const r=devicePixelRatio;px.clearRect(0,0,pc.width,pc.height);parts=parts.filter(p=>p.life>0);for(const p of parts){p.x+=p.vx;p.y+=p.vy;p.vy+=.18;p.vx*=.98;p.life-=.022;px.globalAlpha=Math.max(p.life,0);px.fillStyle=p.c;px.fillRect(Math.round(p.x*r),Math.round(p.y*r),p.sz*r,p.sz*r)}praf=parts.length?requestAnimationFrame(stepP):0}
 function glitchAll(){if(!FX)return;const m=$('main');m.classList.remove('glitchall');void m.offsetWidth;m.classList.add('glitchall')}
 function shake(){if(!FX)return;document.body.classList.remove('shake');void document.body.offsetWidth;document.body.classList.add('shake')}
-function flash(t){if(!FX)return;$('flashTxt').textContent=t;const f=$('flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on')}
-(function loopGlitch(){setTimeout(()=>{if(FX&&!document.hidden)glitchAll();loopGlitch()},14000+Math.random()*16000)})();
+function flash(t){return; /* no pop-ups: everything happens quietly in the background */
+  if(!FX)return;$('flashTxt').textContent=t;const f=$('flash');f.classList.remove('on');void f.offsetWidth;f.classList.add('on')}
+(function loopGlitch(){setTimeout(()=>{if(FX&&!document.hidden)glitchAll();loopGlitch()},55000+Math.random()*15000)})();
 const SCR='!<>-_\\/[]{}—=+*^?#01ABCDEF';
 function scramble(el,final,dur=520){final=String(final);if(!FX){el.textContent=final;return}const t0=performance.now();(function f(t){const p=Math.min((t-t0)/dur,1);let s='';for(let i=0;i<final.length;i++){s+=(i/final.length<p||final[i]===' ')?final[i]:SCR[Math.random()*SCR.length|0]}el.textContent=s;if(p<1)requestAnimationFrame(f)})(t0)}
 const cx=$('curx'),cxy=$('curxy');
@@ -234,7 +235,7 @@ async function loadEdits(){const rows=await listDocs('edits/');const p={};rows.f
 function patch(key,fields,ctx){const cur=EDITS.p[key]||{};const n={...cur,...fields,...(ctx?{_ctx:ctx}:{})};delete n._err;delete n._lost;if(!key.includes(':n:')&&key!=='inc:'){const w=cur._was||identityOf(key);if(w)n._was=w}EDITS.p[key]=n;saveEdits();rebuild()}
 function dropPatch(key){delete EDITS.p[key];saveEdits();rebuild()}
 function ago(iso){if(!iso)return '';const m=Math.round((Date.now()-new Date(iso))/60000);return m<1?'just now':m<60?m+'m ago':m<1440?Math.round(m/60)+'h ago':Math.round(m/1440)+'d ago'}
-function renderPend(){const b=$('pendBtn');if(!b)return;const n=Object.keys(EDITS.p).length;const st=typeof XLSTATE==='undefined'?'off':XLSTATE;b.className='pendbtn on xl-'+st;
+function renderPend(){const b=$('pendBtn');if(!b)return;b.hidden=true;return;const n=Object.keys(EDITS.p).length;const st=typeof XLSTATE==='undefined'?'off':XLSTATE;b.className='pendbtn on xl-'+st;
   b.textContent=st==='live'?(n?`XL ⟳ ${n}`:'XL ● live'):st==='err'?`XL ! ${n||''}`.trim():(n?`XL · ${n} waiting for laptop`:'XL · laptop off');b.title=st==='off'?'App is the main copy. Excel catches up next time your laptop is on.':'Excel sync: click for details'}
 
 /* ================= MODEL ================= */
@@ -279,7 +280,7 @@ function rebuild(){
   // stack status vs v2
   const v2=new Map();plans.weekday.forEach(b=>b.items.forEach(i=>{const k=norm(i.item);if(!v2.has(k))v2.set(k,{status:'active',times:[]});v2.get(k).times.push(i.time)}));
   Object.entries(extra.weekday).forEach(([sec,rows])=>{const s=/^AS NEEDED/.test(sec)?'asneeded':/^(PAUSED|NOT STARTED)/.test(sec)?'paused':null;if(!s)return;rows.forEach(r=>{const n=norm(r.item);if(!v2.has(n))v2.set(n,{status:s,times:[]});else if(s==='paused')v2.get(n).status='paused'})});
-  M.stack.forEach(s=>{const v=v2.get(norm(s.name));s.status=v?v.status:'notinplan';s.times=v?[...new Set(v.times.filter(Boolean))]:[];s.cau=cautionsFor(s.name)});
+  M.stack.forEach(s=>{const v=v2.get(norm(s.name));s.status=v?v.status:'notinplan';if(typeof STOVR!=='undefined'&&STOVR.map[norm(s.name)])s.status=STOVR.map[norm(s.name)];s.times=v?[...new Set(v.times.filter(Boolean))]:[];s.cau=cautionsFor(s.name)});
   M.liveBudget=M.stack.filter(s=>s.inb&&s.status!=='paused').reduce((a,s)=>a+(s.monthly||0),0);
   M.targets=(extra.weekday['DAILY TARGETS – review Sundays 19:00']||[]);
   if(booted)renderAllViews();
@@ -422,7 +423,7 @@ function openBlock(bi,scroll){const el=$('blk-'+bi);if(!el)return;el.classList.a
 $('filtSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;filt=b.dataset.f;$('filtSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));applyFilter()};
 function applyFilter(){document.querySelectorAll('#v-today .it').forEach(el=>{const c=el.dataset.cmp==='1';el.classList.toggle('flt',filt==='cmp'&&!c||filt==='rtn'&&c)})}
 function tog(id,cls,key){$(id).onclick=function(){const on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on);$('v-today').classList.toggle(cls,on);LS.set(key,on)};if(LS.get(key)){$(id).setAttribute('aria-pressed',true);$('v-today').classList.add(cls)}}
-tog('hideDone','hidedone','hideDone');tog('infoBtn','showinfo','info');
+tog('hideDone','hidedone','hideDone');document.body.classList.add('showinfo');
 $('pWd').onclick=()=>{planKind='weekday';planForced=true;firstNow=true;renderToday();glitchAll()};
 $('pWe').onclick=()=>{planKind='weekend';planForced=true;firstNow=true;renderToday();glitchAll()};
 let resetArm=0;$('resetDay').onclick=function(){if(Date.now()-resetArm<2500){DAY.ticks={};applyTicks();persistDay();this.textContent='reset';glitchAll();resetArm=0}else{resetArm=Date.now();this.textContent='tap again';setTimeout(()=>{this.textContent='reset'},2500)}};
@@ -1454,12 +1455,11 @@ let stF='active',catF=null,sortK='monthly',sortD=-1;
 const stFilter=k=>s=>k==='all'||(k==='inb'?s.inb:k==='opt'?!s.inb:k==='edited'?s.edited:s.status===k);
 function renderStack(){
   const st=M.stack;const c=s=>st.filter(x=>x.status===s).length;
-  $('stackSub').textContent=`${st.length} rows · status from your daily plan`;
+  $('stackSub').textContent=`${st.length} compounds`;
   $('stackKv').innerHTML=[['budget',gbp(M.stackBudget,2),'/month · in budget = Yes'],['live budget',gbp(M.liveBudget,2),'/month · minus paused in v2'],['optional',gbp(M.stackOpt,2),'/month · in budget = No'],['in plan',String(c('active')),`${c('asneeded')} as needed · ${c('paused')} paused`]]
     .map(([k,v,s],i)=>`<div class="panel"><div class="ph"><span class="tag">${k}</span></div><div class="pb"><span class="v num ${i===1?'pink':''}" data-scr="${esc(v)}">${v}</span><span class="s">${s}</span></div></div>`).join('');
   const pb=st.filter(s=>s.inb&&s.status==='paused'&&s.monthly>0);
-  $('stackWarn').innerHTML=pb.length?`<div class="panel"><div class="pb warn" style="font-size:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px">⚠ ${pb.map(s=>esc(s.name)+' ('+gbp(s.monthly,2)+')').join(', ')} ${pb.length>1?'are':'is'} paused in your plan but still in budget.</span><button class="btn p" type="button" id="fixPaused">set to not in budget</button></div></div>`:'';
-  if(pb.length)$('fixPaused').onclick=()=>{pb.forEach(s=>{EDITS.p[s.key]={...(EDITS.p[s.key]||{}),inb:false,_was:s.name}});saveEdits();rebuild();flash('queued');};
+  $('stackWarn').innerHTML='';
   const sts=[['all','all'],['active','in plan'],['asneeded','as needed'],['paused','paused'],['notinplan','not in plan'],['inb','in budget'],['opt','optional'],['edited','edited Δ']];
   $('stChips').innerHTML=sts.map(([k,l])=>`<button class="chip" type="button" data-s="${k}" aria-pressed="${stF===k}">${l}<span class="c">${st.filter(stFilter(k)).length}</span></button>`).join('');
   $('catChips').innerHTML=STACK_CATS.map(cc=>`<button class="chip" type="button" data-c="${esc(cc)}" aria-pressed="${catF===cc}"><i style="background:${STC[cc]}"></i>${esc(cc.split(' / ')[0].toLowerCase())}<span class="c">${st.filter(s=>s.cat===cc).length}</span></button>`).join('');
@@ -1486,12 +1486,12 @@ function openDrawer(key){
   const wk=s.monthly?s.monthly*12/52:0;
   $('drawer').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center"><span class="tag" style="color:${STC[s.cat]||'#7a7a7a'}">${esc(s.cat||'')}</span><span class="row"><button class="btn p" type="button" id="dEdit">edit</button><button class="iconbtn" type="button" id="dClose">esc ✕</button></span></div>
   <h3 class="glitch" data-text="${esc(s.name)}">${esc(s.name)}</h3>
-  <span class="st ${s.status}" style="display:inline-block;margin-bottom:16px">${STATUSL[s.status]}${s.inb?' · in budget':' · optional'}${s.edited?' · Δ edited':''}</span>
-  <dl>${row('dose',s.dose)}${row('route',s.route)}${row('schedule',s.sched)}${row('taken at',s.times.join(', '))}${row('source',s.src)}${row('pack price',isNum(s.price)?gbp(s.price,2):s.price)}${row('units / pack',s.units)}${row('used / week',s.perweek)}${row('weekly',wk?gbp(wk,2):'')}${row('monthly',s.monthly?gbp(s.monthly,2):'')}${row('yearly',s.monthly?gbp(s.monthly*12,0):'')}${row('sheet row',s.row?'Stack!'+s.row:'new')}</dl>
+  <div class="chips" id="dSt" style="margin:0 0 6px">${['active','asneeded','paused','notinplan'].map(x=>`<button class="chip" type="button" data-dst="${x}" aria-pressed="${s.status===x}">${STATUSL[x]}</button>`).join('')}</div><span class="dim" style="display:block;font-size:11px;margin-bottom:14px">${s.inb?'in budget':'optional'}${s.edited?' · edited':''}</span>
+  <dl>${row('dose',s.dose)}${row('route',s.route)}${row('schedule',s.sched)}${row('taken at',s.times.join(', '))}${row('source',s.src)}${row('pack price',isNum(s.price)?gbp(s.price,2):s.price)}${row('units / pack',s.units)}${row('used / week',s.perweek)}${row('weekly',wk?gbp(wk,2):'')}${row('monthly',s.monthly?gbp(s.monthly,2):'')}${row('yearly',s.monthly?gbp(s.monthly*12,0):'')}</dl>
   ${s.notes?`<div class="sect"><span class="tag">notes</span>${esc(s.notes)}</div>`:''}
   ${s.cau.length?`<div class="sect"><span class="tag">interactions & cautions · from your plan</span>${s.cau.map(c=>`<div class="ca">${esc(c)}</div>`).join('')}</div>`:''}
   ${s.monthly&&M.rate?`<div class="sect"><span class="tag">costs you</span><span style="font-size:22px;font-weight:800" class="num">${(s.monthly/M.rate).toFixed(1)} h</span> <span class="dim">of work a month</span></div>`:''}`;
-  $('drawer').classList.add('on');$('drawer').setAttribute('aria-hidden','false');$('scrim').classList.add('on');$('dClose').onclick=closeDrawer;$('dEdit').onclick=()=>editStack(s);$('dClose').focus();
+  $('drawer').classList.add('on');$('drawer').setAttribute('aria-hidden','false');$('scrim').classList.add('on');$('dClose').onclick=closeDrawer;$('dEdit').onclick=()=>editStack(s);$('dSt').onclick=e=>{const b=e.target.closest('[data-dst]');if(!b)return;setStackStatus(s.name,b.dataset.dst);openDrawer(key)};$('dClose').focus();
 }
 function closeDrawer(){$('drawer').classList.remove('on');$('drawer').setAttribute('aria-hidden','true');$('scrim').classList.remove('on')}
 $('scrim').onclick=()=>{closeDrawer();closeSheet()};
@@ -1517,6 +1517,15 @@ function findName(k){const [a,b]=k.split(':');const row=+b;if(a==='wd'||a==='we'
   if(a==='xp'){const e=D.expenses.find(x=>x.row===row);return e&&e.name}return null}
 
 
+/* status lives in the app now (not the Excel plan): tap a status in a compound's panel to change it */
+let STOVR={map:{}};
+async function loadStackStatus(){const d=await load('stack/status');STOVR={map:{},...(d||{})};
+  if(!STOVR.v&&(M.stack||[]).length){/* first run: anything sitting "paused" but still counted in budget becomes "not in plan" */
+    (M.stack||[]).filter(s=>s.status==='paused'&&s.inb).forEach(s=>STOVR.map[norm(s.name)]='notinplan');STOVR.v=1;save('stack/status',STOVR)}
+  rebuild()}
+function setStackStatus(name,st){STOVR.map[norm(name)]=st;save('stack/status',STOVR);rebuild()}
+watch('stack/status',d=>{if(d){STOVR={map:{},...d};rebuild()}});
+
 /* ================= MONEY ================= */
 const CATC={'Investment & Savings':'#ff2a6d','Personal & Other':'#ffb000','Stack':'#57f5a8','Food':'#e6e6e6','Subscriptions':'#05d9e8','Cat':'#b18cff'};
 let billCat=null;
@@ -1535,7 +1544,7 @@ function renderMoney(){
   const sv=M.expenses.filter(e=>e.cat==='Investment & Savings').sort((a,b)=>b.m-a.m);
   $('saveTot').textContent=gbp(M.save,2)+'/mo';
   $('saves').innerHTML=sv.map(billRow).join('')+`<div class="dim" style="font-size:12px;margin-top:8px">Yearly deposits are shown as their monthly share.</div>`;
-  $('rateLbl').textContent=gbp(M.rate,2)+'/h take-home';calc();
+  $('rateLbl').textContent=gbp(M.rate,2)+'/h take-home';calc();renderActuals();
 }
 function billRow(e){return `<div class="bill"><span>${esc(e.name)}${e.edited?'<span class="delta">Δ</span>':''}${e.inb===false?' <span class="dim" style="font-size:11px">(not in budget)</span>':''}<br><span class="s">${esc([e.prov&&e.prov!=='x'?e.prov:null,e.freq&&e.freq!=='x'?e.freq:null,e.day?'on the '+e.day:null,e.notes].filter(Boolean).join(' · '))}</span></span><span class="s num">${e.y?gbp(e.y)+'/yr':''} <button class="ed" type="button" data-xe="${esc(e.key)}">✎</button></span><span class="co num">${e.m?gbp(e.m,2):'<span class="dim">—</span>'}</span></div>`}
 function calc(){const v=parseFloat($('calcIn').value)||0;const h=M.rate?v/M.rate:0;$('calcOut').textContent=h>=1?`${h.toFixed(1)} h`:`${Math.round(h*60)} min`;$('calcNote').textContent=`That's ${(h/(M.inc.hours/21.7)).toFixed(2)} working days at your take-home rate.`}
@@ -1545,6 +1554,23 @@ $('cats').onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();e.ta
 document.getElementById('v-money').addEventListener('click',e=>{const b=e.target.closest('[data-xe]');if(b)editExp(M.expenses.find(x=>x.key===b.dataset.xe))});
 $('addBill').onclick=()=>addExp(billCat&&billCat!=='Investment & Savings'?billCat:'Subscriptions');$('addSave').onclick=()=>addExp('Investment & Savings');
 
+
+/* ---- actual vs budget, kept in the app (doc money/actuals: {months:{'YYYY-MM':{cat:amount}}}) ---- */
+let ACT={months:{}},AVM=new Date().toISOString().slice(0,7);
+async function loadActuals(){const d=await load('money/actuals');ACT={months:{},...(d||{})}}
+watch('money/actuals',d=>{if(d){ACT={months:{},...d};if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest('#avBody'))renderActuals()}});
+function avShift(n){const [y,m]=AVM.split('-').map(Number);const d=new Date(y,m-1+n,1);AVM=d.getFullYear()+'-'+pad(d.getMonth()+1);renderActuals()}
+function renderActuals(){const el=$('avBody');if(!el||!M.cats)return;
+  $('avMon').textContent=new Date(AVM+'-01T12:00').toLocaleDateString('en-GB',{month:'short',year:'numeric'}).toLowerCase();
+  const cats=Object.entries(M.cats).filter(([c])=>c!=='Investment & Savings').sort((a,b)=>b[1]-a[1]);const mon=ACT.months[AVM]||{};
+  const tb=cats.reduce((a,[,b])=>a+b,0),ta=cats.reduce((a,[c])=>a+(+mon[c]||0),0),logged=cats.some(([c])=>mon[c]!=null&&mon[c]!=='');
+  const hist=[...Array(6)].map((_,i)=>{const [y,m]=AVM.split('-').map(Number);const d=new Date(y,m-6+i,1);const k=d.getFullYear()+'-'+pad(d.getMonth()+1);const mm=ACT.months[k]||{};return {k,a:cats.reduce((s,[c])=>s+(+mm[c]||0),0)}});const hmx=Math.max(tb,...hist.map(h=>h.a))||1;
+  el.innerHTML=`<div class="av">${cats.map(([c,b])=>{const a=mon[c];const has=a!=null&&a!=='';const pct=has?Math.min(150,(+a)/(b||1)*100):0;const over=has&&+a>b;
+    return `<div class="avr"><span class="avn">${esc(c==='Personal & Other'?'personal':c.toLowerCase())}</span><span class="avbar"><i class="${over?'over':''}" style="width:${Math.min(100,pct)}%;background:${over?'var(--bad)':CATC[c]||'var(--cyan)'}"></i></span><input class="inp num avin" data-avc="${esc(c)}" inputmode="decimal" placeholder="£${Math.round(b)}" value="${has?a:''}"><span class="avd num ${over?'bad':has?'ok':'dim'}">${has?(over?'+':'−')+gbp(Math.abs(+a-b),0):gbp(b,0)}</span></div>`}).join('')}
+    <div class="avtot"><span>${logged?`spent <b class="num">${gbp(ta,0)}</b> of <b class="num">${gbp(tb,0)}</b> budgeted`:'type what you actually spent in each category this month'}</span>${logged?`<b class="num ${ta>tb?'bad':'ok'}">${ta>tb?'over by '+gbp(ta-tb,0):gbp(tb-ta,0)+' under'}</b>`:''}</div>
+    <div class="avhist">${hist.map(h=>`<div class="${h.k===AVM?'on':''}"><span class="b" style="height:${h.a/hmx*100}%;${h.a>tb?'background:var(--bad)':''}"></span><span class="l">${new Date(h.k+'-01T12:00').toLocaleDateString('en-GB',{month:'short'}).toLowerCase()}</span></div>`).join('')}<i class="avline" style="bottom:${tb/hmx*100}%"></i></div></div>`;
+  el.oninput=e=>{const c=e.target.dataset.avc;if(!c)return;const v=e.target.value.replace(/[£,\s]/g,'');ACT.months[AVM]={...(ACT.months[AVM]||{}),[c]:v===''?null:+v};clearTimeout(renderActuals.t);renderActuals.t=setTimeout(()=>{save('money/actuals',ACT);const f=document.activeElement&&document.activeElement.dataset.avc;renderActuals();if(f){const n=el.querySelector(`[data-avc="${CSS.escape(f)}"]`);if(n){n.focus();n.setSelectionRange(n.value.length,n.value.length)}}},700)}}
+$('avPrev').onclick=()=>avShift(-1);$('avNext').onclick=()=>avShift(1);
 
 /* ================= EXCEL SYNC ================= */
 const HS='host:stack-sync';
@@ -1721,7 +1747,7 @@ function renderAllViews(){renderToday();renderStack();renderMoney();renderTarget
 let palItems=[],palSel=0;
 function palIndex(){
   const a=VIEWS.map(([v])=>({l:'/'+v,s:'view',run:()=>go(v)}));
-  a.push({l:'edit mode',s:EDIT?'on':'off',run:()=>setEdit(!EDIT)},{l:'pending edits → excel',s:Object.keys(EDITS.p).length+' queued',run:openPendDrawer},{l:'add compound',s:'stack',run:()=>{go('stack');addStack()}},{l:'add bill',s:'money',run:()=>{go('money');addExp()}},{l:'log blood pressure',s:'body',run:()=>{go('today');setTimeout(()=>{$('bodyCheck').scrollIntoView({behavior:'smooth',block:'center'});$('bpS').focus()},300)}},{l:'log weight',s:'body',run:()=>{go('today');setTimeout(()=>{$('bodyCheck').scrollIntoView({behavior:'smooth',block:'center'});$('wtIn').focus()},300)}},{l:'start focus timer',s:'tools',run:()=>{TOOLV='focus';go('tools');renderTools();setTimeout(()=>{if(!TM.end&&$('tmGo'))$('tmGo').click()},200)}},{l:'write in journal',s:'journal',run:()=>{go('journal')}},{l:'start workout',s:'gym',run:()=>{go('gym');if(!ACTIVE)startWorkout(null)}},{l:'boot video',s:'settings',run:openBootVideo},{l:'focus timer',s:'tools',run:()=>{TOOLV='focus';go('tools');renderTools()}},{l:'log a dose',s:'protocols',run:()=>{TOOLV='protocols';go('tools');renderTools()}},{l:'log a leetcode problem',s:'leetcode',run:()=>{TOOLV='leetcode';go('tools');renderTools();setTimeout(()=>pickProblem(s=>openProblem(s,true)),300)}},{l:'sign out',s:'account',run:signOut});
+  a.push({l:'edit mode',s:EDIT?'on':'off',run:()=>setEdit(!EDIT)},{l:'add compound',s:'stack',run:()=>{go('stack');addStack()}},{l:'add bill',s:'money',run:()=>{go('money');addExp()}},{l:'log blood pressure',s:'body',run:()=>{go('today');setTimeout(()=>{$('bodyCheck').scrollIntoView({behavior:'smooth',block:'center'});$('bpS').focus()},300)}},{l:'log weight',s:'body',run:()=>{go('today');setTimeout(()=>{$('bodyCheck').scrollIntoView({behavior:'smooth',block:'center'});$('wtIn').focus()},300)}},{l:'start focus timer',s:'tools',run:()=>{TOOLV='focus';go('tools');renderTools();setTimeout(()=>{if(!TM.end&&$('tmGo'))$('tmGo').click()},200)}},{l:'write in journal',s:'journal',run:()=>{go('journal')}},{l:'start workout',s:'gym',run:()=>{go('gym');if(!ACTIVE)startWorkout(null)}},{l:'boot video',s:'settings',run:openBootVideo},{l:'focus timer',s:'tools',run:()=>{TOOLV='focus';go('tools');renderTools()}},{l:'log a dose',s:'protocols',run:()=>{TOOLV='protocols';go('tools');renderTools()}},{l:'log a leetcode problem',s:'leetcode',run:()=>{TOOLV='leetcode';go('tools');renderTools();setTimeout(()=>pickProblem(s=>openProblem(s,true)),300)}},{l:'sign out',s:'account',run:signOut});
   visibleItems().forEach(i=>a.push({l:i.item,s:(i.time||'')+' · today',run:()=>{go('today');const el=document.querySelector(`#v-today [data-k="${CSS.escape(i.tk)}"]`);if(el){el.closest('.blk').classList.add('open');el.scrollIntoView({block:'center',behavior:FX?'smooth':'auto'});el.focus();FX&&el.animate([{background:'rgba(255,42,109,.4)'},{background:'transparent'}],{duration:1200})}}}));
   M.stack.forEach(s=>a.push({l:s.name,s:'stack · '+STATUSL[s.status],run:()=>{go('stack');openDrawer(s.key)}}));
   M.expenses.forEach(e=>a.push({l:e.name,s:'money · '+(e.m?gbp(e.m,2):'—'),run:()=>{go('money');billCat=e.cat;renderMoney()}}));
@@ -1778,7 +1804,7 @@ async function startApp(session){
   await loadEdits();BFX('edit queue synced',48);
   const ok=await loadGridsFromDb(true);BFX(ok?'sheets pulled · stack/money/plan':'sheets: using local cache',ok?66:66,ok?undefined:false);
   $('nodata').hidden=ok||!!GMETA.at;
-  rebuild();booted=true;renderPend();renderStack();renderMoney();renderTargets();
+  rebuild();booted=true;await Promise.all([loadStackStatus(),loadActuals()]);renderPend();renderStack();renderMoney();renderTargets();
   cur=null;go(location.hash.slice(1)||'today',true);
   BFX('ui compiled · '+(cur||'today'),78);
   await loadDay();await loadTools();loadBody();BFX('day state + tools restored',90);

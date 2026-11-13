@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794610613">
+<link rel="stylesheet" href="app.css?v=1794611498">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -207,7 +207,7 @@
   <span class="prompt" id="promptBtn" role="button" tabindex="0" title="search" style="cursor:pointer">dylan@<b>system</b>:~$<span class="caret"></span></span>
   <nav class="tabs" aria-label="Views" id="tabs"></nav>
   <div class="meta">
-    <button class="pendbtn" id="pendBtn" type="button" title="Edits waiting to go into the Excel sheet"></button>
+    <button class="pendbtn" id="pendBtn" type="button" hidden></button>
     <span class="sync" id="sync" title="Where your data is saved"><i></i><span id="syncTxt">local</span></span>
     <button class="iconbtn" id="fxBtn" type="button" aria-pressed="true" title="Effects on or off (f)">FX</button>
   </div>
@@ -247,7 +247,7 @@
         <button type="button" data-f="rtn" aria-pressed="false">routine</button>
       </div>
       <button class="iconbtn" type="button" id="hideDone" aria-pressed="false">hide done</button>
-      <button class="iconbtn" type="button" id="infoBtn" aria-pressed="false">notes + cautions</button>
+      
       <span class="sp"></span>
       <div class="seg" role="group" aria-label="Plan">
         <button type="button" id="pWd" aria-pressed="false">weekday</button>
@@ -373,7 +373,7 @@
 
   <!-- MONEY -->
   <section class="view" id="v-money" aria-label="Money">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/money"><span class="slash">/</span>money</h2><span class="sub">monthly · Expenses + Expenses Summary</span></div></div>
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/money"><span class="slash">/</span>money</h2><span class="sub">monthly budget</span></div></div>
     <div class="kv" id="moneyKv"></div>
     <div class="money-grid">
       <div class="grid">
@@ -385,7 +385,7 @@
         <div class="panel"><div class="ph"><span class="tag">price → hours of work</span><span id="rateLbl"></span></div><div class="pb">
           <div class="calc"><span class="dim">£</span><input id="calcIn" type="number" inputmode="decimal" min="0" step="0.01" value="40" aria-label="Price in pounds"><span class="dim">=</span><span class="res num" id="calcOut"></span></div>
           <p class="dim" style="margin:10px 0 0;font-size:12px" id="calcNote"></p></div></div>
-        <div class="panel"><div class="ph"><span class="tag">actual vs budget</span><span>not logged</span></div><div class="pb dim">No months in the log yet. Fill in October's totals on the Actual vs Budget sheet and this panel can compare them.</div></div>
+        <div class="panel"><div class="ph"><span class="tag">actual vs budget</span><span class="row" style="gap:6px"><button class="iconbtn" type="button" id="avPrev">‹</button><b id="avMon" style="min-width:86px;text-align:center"></b><button class="iconbtn" type="button" id="avNext">›</button></span></div><div class="pb" id="avBody"></div></div>
       </div>
     </div>
   </section>
@@ -416,9 +416,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794610613"</script>
-<script src="config.js?v=1794610613"></script>
+<script>window.APP_V="1794611498"</script>
+<script src="config.js?v=1794611498"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794610613"></script>
+<script src="app.js?v=1794611498"></script>
 </body>
 </html>

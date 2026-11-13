@@ -895,3 +895,21 @@ body.poweron .ticker,body.poweron .bnav,body.poweron .edgefx{animation:fadein .6
 .wrnums{display:grid;grid-template-columns:1fr 1fr;gap:10px}.wrnums>div{display:flex;flex-direction:column;gap:2px}
 .wrnums b.num{font-size:34px;font-weight:800;line-height:1}.wrnums .wrs{font-size:15px}
 .wrnums{align-content:start}
+
+/* actual vs budget */
+.av{display:flex;flex-direction:column;gap:6px}
+.avr{display:grid;grid-template-columns:90px 1fr 84px 64px;gap:8px;align-items:center;font-size:12px}
+.avn{color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avbar{position:relative;height:8px;background:var(--line)}.avbar i{position:absolute;left:0;top:0;bottom:0;transition:width .4s}
+.avin{padding:4px 6px!important;text-align:right;font-size:12px}
+.avd{text-align:right;font-size:11px}.avd.ok{color:var(--ok)}.avd.bad,.avtot .bad{color:var(--bad)}.avtot .ok{color:var(--ok)}
+.avtot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:8px;margin-top:4px;font-size:12px;color:var(--dim)}.avtot b{color:var(--fg)}
+.avhist{position:relative;display:grid;grid-template-columns:repeat(6,1fr);gap:6px;height:70px;margin-top:10px;align-items:end}
+.avhist>div{display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;gap:3px}.avhist .b{width:100%;background:var(--cyan);min-height:1px}.avhist .on .b{background:var(--pink)}.avhist .l{font-size:9px;color:var(--dim)}
+.avline{position:absolute;left:0;right:0;height:0;border-top:1px dashed rgba(255,255,255,.35);margin-bottom:14px}
+/* tall portrait monitor: everything a bit bigger and the top sections stack, so the extra height gets used */
+@media (min-width:901px) and (max-aspect-ratio:4/5){
+  main,.bar{zoom:1.14}
+  .ticker{zoom:1.1}
+  .banner{min-height:150px}
+}
