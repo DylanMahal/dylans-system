@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794601986">
+<link rel="stylesheet" href="app.css?v=1794602195">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -299,6 +299,18 @@
   </section>
 
 
+  <!-- MEDIA -->
+  <section class="view" id="v-media" aria-label="Media">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/media"><span class="slash">/</span>media</h2><span class="sub">anime · movies · manga · books</span></div></div>
+    <div class="toolcards four" id="mediaCards">
+      <button type="button" data-mk="anime"><i>◐</i><b>anime</b><span></span></button>
+      <button type="button" data-mk="movies"><i>▶</i><b>movies</b><span></span></button>
+      <button type="button" data-mk="manga"><i>❏</i><b>manga</b><span></span></button>
+      <button type="button" data-mk="books"><i>▤</i><b>books</b><span></span></button>
+    </div>
+    <div id="v-media-body"></div>
+  </section>
+
   <!-- TOOLS -->
   <section class="view" id="v-tools" aria-label="Tools">
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/tools"><span class="slash">/</span>tools</h2><span class="sub" id="toolsSub"></span></div></div>
@@ -383,9 +395,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794601986"</script>
-<script src="config.js?v=1794601986"></script>
+<script>window.APP_V="1794602195"</script>
+<script src="config.js?v=1794602195"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794601986"></script>
+<script src="app.js?v=1794602195"></script>
 </body>
 </html>
