@@ -1259,7 +1259,7 @@ async function startApp(session){
   BFX('ui compiled · '+(cur||'today'),78);
   await loadDay();await loadTools();BFX('day state + tools restored',90);
   startRealtime();startAgentLink();loadArtImages();flushOutbox();
-  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');
+  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,4000);
   schedWidget();setInterval(publishWidget,10*60*1000);
 }
 function flushOutbox(){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('ds3:outbox:'))ks.push(k.slice(11))}ks.forEach(p=>{const v=LS.get(p);if(v!=null)save(p,v,true);localStorage.removeItem('ds3:outbox:'+p)})}catch(e){}}
@@ -1284,15 +1284,24 @@ if('serviceWorker' in navigator&&location.protocol==='https:'){
 }
 // belt and braces: if the server has a newer build than the one running, reload once
 async function checkVersion(){try{const t=await (await fetch('index.html?_='+Date.now(),{cache:'no-store'})).text();const m=t.match(/APP_V="(\d+)"/);
-  if(m&&window.APP_V&&m[1]!==window.APP_V&&!sessionStorage.getItem('ds-reloaded-'+m[1])){sessionStorage.setItem('ds-reloaded-'+m[1],'1');if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(k=>caches.delete(k)))}location.reload()}}catch(e){}}
+  if(m&&window.APP_V&&m[1]!==window.APP_V&&!sessionStorage.getItem('ds-reloaded-'+m[1])){sessionStorage.setItem('ds-reloaded-'+m[1],'1');if(window.caches){const ks=await caches.keys();await Promise.all(ks.filter(k=>k!=='ds-media').map(k=>caches.delete(k)))}location.reload()}}catch(e){}}
 if(location.protocol==='https:')setTimeout(checkVersion,1500);
 boot();
+
+/* own boot video: lives in private storage (vault/<uid>/boot.mp4); each device keeps a copy in its own cache */
+async function cacheBootVideo(){try{if(!window.caches||!SB||!UID)return;
+  const {data:list}=await SB.storage.from('vault').list(UID,{search:'boot.mp4'});const f=(list||[]).find(x=>x.name==='boot.mp4');
+  const c=await caches.open('ds-media');
+  if(!f){await c.delete('bootvid');LS.set('bootvidStamp',null);return}
+  const stamp=f.updated_at||f.created_at||String(f.metadata&&f.metadata.size);if(LS.get('bootvidStamp')===stamp&&await c.match('bootvid'))return;
+  const {data:blob,error}=await SB.storage.from('vault').download(UID+'/boot.mp4');if(error||!blob)return;
+  await c.put('bootvid',new Response(blob,{headers:{'Content-Type':'video/mp4'}}));LS.set('bootvidStamp',stamp)}catch(e){console.warn('boot video',e)}}
 
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
 const CACHE='system-__V__';
 const SHELL=['./','index.html','app.css?v=__V__','app.js?v=__V__','config.js?v=__V__','vendor/supabase.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=='ds-media').map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET')return;
   if(u.hostname.endsWith('supabase.co'))return; // never cache data or auth
   if(u.origin===location.origin){

@@ -1,8 +1,8 @@
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
-const CACHE='system-1794593486';
-const SHELL=['./','index.html','app.css?v=1794593486','app.js?v=1794593486','config.js?v=1794593486','vendor/supabase.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
+const CACHE='system-1794594594';
+const SHELL=['./','index.html','app.css?v=1794594594','app.js?v=1794594594','config.js?v=1794594594','vendor/supabase.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=='ds-media').map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET')return;
   if(u.hostname.endsWith('supabase.co'))return; // never cache data or auth
   if(u.origin===location.origin){
