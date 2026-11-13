@@ -1140,6 +1140,7 @@ async function loadGridsFromDb(force){
    Any device turns the queued edits into concrete Excel row operations and stores them in sync/ops.
    The Windows agent applies them through Excel, deletes the edits it applied, uploads fresh sheets
    and writes a heartbeat to agent/status. */
+function resArr(x){return Array.isArray(x)?x:(x&&typeof x==='object'?(('id' in x||'ok' in x)?[x]:Object.values(x)):[])}
 let XLSTATE='off',XLMSG='',AGENT=null,SYNCRES=null,pubT=null,lastOpsJson='';
 function setXL(s,msg){XLSTATE=s;XLMSG=msg||'';renderPend()}
 function schedulePublishOps(){clearTimeout(pubT);pubT=setTimeout(publishOps,900)}
@@ -1155,14 +1156,14 @@ function agentState(){
   const age=(Date.now()-new Date(AGENT.at))/1000;
   if(age>150)return setXL('off',`Laptop agent last seen ${ago(AGENT.at)}.`);
   if(AGENT.ok===false)return setXL('err',AGENT.msg||'The laptop agent reported a problem.');
-  const errs=SYNCRES&&SYNCRES.results?SYNCRES.results.filter(r=>!r.ok&&EDITS.p[String(r.id).split('#')[0]]):[];
+  const errs=SYNCRES&&SYNCRES.results?resArr(SYNCRES.results).filter(r=>!r.ok&&EDITS.p[String(r.id).split('#')[0]]):[];
   if(errs.length){errs.forEach(r=>{const k=String(r.id).split('#')[0];if(EDITS.p[k])EDITS.p[k]._err=r.error||'failed'});return setXL('err',`${errs.length} edit${errs.length>1?'s':''} couldn't be written. Open the queue to see why.`)}
   setXL('live');
 }
 async function startAgentLink(){
   AGENT=await load('agent/status');SYNCRES=await load('sync/result');agentState();
   watch('agent/status',d=>{AGENT=d;agentState()});
-  watch('sync/result',d=>{SYNCRES=d;agentState();if(d&&d.results&&d.results.some(r=>r.ok))flash('excel_synced')});
+  watch('sync/result',d=>{SYNCRES=d;agentState();if(d&&d.results&&resArr(d.results).some(r=>r&&r.ok))flash('excel_synced')});
   watch('sheet/meta',m=>{if(m&&m.at&&(!GMETA.at||m.at>GMETA.at))loadGridsFromDb()});
   watchPrefix('edits/',(evt,path,data)=>{const k=path.slice(6);if(evt==='DELETE'){if(k in EDITS.p){delete EDITS.p[k];delete EDITS_SAVED[k];LS.set('edits:all',EDITS.p);rebuild();renderPend()}}else{EDITS.p[k]=data;EDITS_SAVED[k]=clone(data);rebuild();renderPend()}});
   setInterval(agentState,30000);
