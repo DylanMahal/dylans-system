@@ -1776,7 +1776,7 @@ async function startApp(session){
   BFX('ui compiled · '+(cur||'today'),78);
   await loadDay();await loadTools();loadBody();BFX('day state + tools restored',90);
   startRealtime();startAgentLink();loadArtImages();flushOutbox();
-  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,600);
+  setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,600);setTimeout(()=>{try{const d=localStorage.getItem('ds3:bootdiag');if(d)save('debug/boot',JSON.parse(d))}catch(e){}},4000);
   schedWidget();setInterval(publishWidget,10*60*1000);
 }
 function flushOutbox(){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('ds3:outbox:'))ks.push(k.slice(11))}ks.forEach(p=>{const v=LS.get(p);if(v!=null)save(p,v,true);localStorage.removeItem('ds3:outbox:'+p)})}catch(e){}}

@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794607976">
+<link rel="stylesheet" href="app.css?v=1794608112">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -140,15 +140,18 @@
   /* own boot video (kept in this device's private cache, never in the public repo) */
   var VID=false,vEnded=false,V=$('bfxV'),muted=false;
   function unmute(){if(!muted)return;muted=false;V.muted=false;V.volume=1;var r=V.play();if(r&&r.catch)r.catch(function(){muted=true;V.muted=true})}
-  function startVideo(url){VID=true;el.classList.add('vidmode');V.src=url;SPD=1;t0=performance.now();V.muted=false;
+  function startVideo(url){dg('startVideo');V.addEventListener('playing',function(){dg('playing')});V.addEventListener('error',function(){dg('vERR:'+(V.error&&V.error.code))});VID=true;el.classList.add('vidmode');V.src=url;SPD=1;t0=performance.now();V.muted=false;
     var pl=V.play();
+    if(pl&&pl.catch)pl.catch(function(e){dg('play1:'+e.name)});
     if(pl&&pl.catch)pl.catch(function(){muted=true;V.muted=true;var r=V.play();if(r&&r.catch)r.catch(function(){})});
     V.addEventListener('ended',function(){vEnded=true});V.addEventListener('error',function(){vEnded=true});
     // iPhone/iPad only allow sound after a tap; taps here only turn sound on, they never skip the video
     ['touchend','click','keydown'].forEach(function(t){el.addEventListener(t,function(ev){ev.stopImmediatePropagation();unmute()},true)})}
-  var vchk=false;
-  if(!lite&&window.caches&&(location.protocol==='https:'||location.hostname==='localhost')){vchk=true;setTimeout(function(){vchk=false},6000);
-    try{caches.open('ds-media').then(function(c){return c.match('bootvid')}).then(function(r){if(!r){vchk=false;return null}return r.blob()}).then(function(b){vchk=false;if(b&&b.size>1000&&!closing)startVideo(URL.createObjectURL(b))}).catch(function(){vchk=false})}catch(e){vchk=false}}
+  var vchk=false,DG={t:new Date().toISOString(),ua:navigator.userAgent.slice(0,90),fxOff:fxOff,quick:quick,rm:matchMedia('(prefers-reduced-motion: reduce)').matches,proto:location.protocol,caches:!!window.caches,ev:[]};
+  function dg(x){DG.ev.push(Math.round(performance.now()-t0)+':'+x);try{localStorage.setItem('ds3:bootdiag',JSON.stringify(DG))}catch(e){}}
+  dg('start');
+  if(!quick&&!fxOff&&window.caches&&(location.protocol==='https:'||location.hostname==='localhost')){vchk=true;setTimeout(function(){vchk=false},6000);
+    try{caches.open('ds-media').then(function(c){return c.match('bootvid')}).then(function(r){dg('match:'+!!r);if(!r){vchk=false;return null}return r.blob()}).then(function(b){vchk=false;dg('blob:'+(b?b.size:0)+' closing:'+closing);if(b&&b.size>1000&&!closing)startVideo(URL.createObjectURL(b))}).catch(function(e){dg('err:'+e);vchk=false})}catch(e){vchk=false}}
 
   function tick(now){raf=requestAnimationFrame(tick);var e=(now-t0)*SPD;
     if(VID){var d=V.duration||13.2,ct=V.currentTime||0;if(!closing&&(ct>=d-1.26||vEnded))tvOff();return}
@@ -165,7 +168,7 @@
   function tvOff(){if(closing)return;closing=true;el.classList.add('tvoff');
     setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},1150);
     setTimeout(function(){cancelAnimationFrame(raf);try{V.pause()}catch(e){}el.remove()},1800)}
-  function close(fast){if(closing)return;closing=true;
+  function close(fast){if(closing)return;try{dg('close fast:'+!!fast)}catch(e){}closing=true;
     if(fast||lite)el.classList.add('fast');else{burst=5;el.classList.add('flare')}
     setTimeout(function(){el.classList.add('off')},fast||lite?0:140);
     setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},fast||lite?200:520);
@@ -399,9 +402,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794607976"</script>
-<script src="config.js?v=1794607976"></script>
+<script>window.APP_V="1794608112"</script>
+<script src="config.js?v=1794608112"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794607976"></script>
+<script src="app.js?v=1794608112"></script>
 </body>
 </html>
