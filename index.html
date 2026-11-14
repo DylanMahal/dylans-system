@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794620546">
+<link rel="stylesheet" href="app.css?v=1794621389">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -294,6 +294,8 @@
   <!-- JOURNAL -->
   <section class="view" id="v-journal" aria-label="Journal">
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/journal"><span class="slash">/</span>journal</h2><span class="sub" id="jStreak"></span></div></div>
+    <div class="seg" id="jTabs" style="margin:0 0 12px;display:flex"><button type="button" data-jt="journal" style="flex:1">journal</button><button type="button" data-jt="notes" style="flex:1">notes</button><button type="button" data-jt="tasks" style="flex:1">tasks</button></div>
+    <div id="jPaneJ">
     <div class="jgrid">
       <div class="jside"><input class="inp" id="jQ" type="search" placeholder="search entries + #tags" autocomplete="off"><div class="jlist" id="jList"></div></div>
       <div class="jeditor panel" id="jEditor">
@@ -319,6 +321,9 @@
         </div>
       </div>
     </div>
+    </div>
+    <div id="jPaneN" hidden></div>
+    <div id="jPaneT" hidden></div>
   </section>
 
 
@@ -330,8 +335,12 @@
   </section>
   <section class="view" id="v-sleep" aria-label="Sleep">
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/sleep"><span class="slash">/</span>sleep</h2><span class="sub" id="sleepSub"></span></div></div>
-    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="last" style="flex:1">last night</button><button type="button" data-sv="history" style="flex:1">history</button><button type="button" data-sv="stats" style="flex:1">stats</button><button type="button" data-sv="setup" style="flex:1">setup</button></div>
+    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="recovery" style="flex:1">recovery</button><button type="button" data-sv="last" style="flex:1">last night</button><button type="button" data-sv="history" style="flex:1">history</button><button type="button" data-sv="stats" style="flex:1">stats</button><button type="button" data-sv="setup" style="flex:1">setup</button></div>
     <div id="sleepBody"></div>
+  </section>
+  <section class="view" id="v-streaks" aria-label="Streaks">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/streaks"><span class="slash">/</span>streaks</h2><span class="sub" id="habSub"></span></div></div>
+    <div id="habBody"></div>
   </section>
   <section class="view" id="v-media" aria-label="Media">
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/media"><span class="slash">/</span>media</h2><span class="sub">anime · movies · manga · books</span></div></div>
@@ -430,9 +439,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794620546"</script>
-<script src="config.js?v=1794620546"></script>
+<script>window.APP_V="1794621389"</script>
+<script src="config.js?v=1794621389"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794620546"></script>
+<script src="app.js?v=1794621389"></script>
 </body>
 </html>

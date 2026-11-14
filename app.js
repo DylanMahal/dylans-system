@@ -1740,7 +1740,7 @@ async function startAgentLink(){
 }
 
 /* ================= ROUTER ================= */
-const VIEWS=[['today','today','◉'],['week','week','▦'],['gym','gym','▲'],['food','food','◍'],['sleep','sleep','☾'],['journal','journal','✎'],['tools','tools','⧗'],['media','media','◐'],['stack','stack','◈'],['money','money','£']];
+const VIEWS=[['today','today','◉'],['week','week','▦'],['streaks','streaks','✦'],['gym','gym','▲'],['food','food','◍'],['sleep','sleep','☾'],['journal','journal','✎'],['tools','tools','⧗'],['media','media','◐'],['stack','stack','◈'],['money','money','£']];
 $('tabs').innerHTML=VIEWS.map(([v,l],i)=>`<button type="button" data-v="${v}"><span class="k">${i+1}</span>${l}</button>`).join('');
 $('bnav').innerHTML=VIEWS.map(([v,l,ic])=>`<button type="button" data-v="${v}"><i>${ic}</i><span>${l}</span></button>`).join('')+'<span class="bnind" id="bnind"></span>';
 let cur=null;
@@ -1755,7 +1755,7 @@ function go(v,fromHash,dirHint){
   if(FX&&m.animate){m.animate([{transform:`translateX(${dir*48}px)`,opacity:.1,filter:'hue-rotate(80deg) contrast(1.6)'},{transform:`translateX(${-dir*6}px)`,opacity:1,filter:'none',offset:.7},{transform:'none',opacity:1}],{duration:380,easing:'cubic-bezier(.2,.9,.1,1)'});m.classList.remove('switching');void m.offsetWidth;m.classList.add('switching')}
   const h=$('v-'+v).querySelector('.banner h2.glitch');if(h&&FX){const node=h.lastChild;scramble({set textContent(t){node.textContent=t}},h.dataset.text.slice(1),500)}
   artMount(v);
-  if(v==='week')renderWeek();if(v==='gym')loadGym();if(v==='tools')renderTools();if(v==='media')renderMedia();if(v==='food')loadFood();if(v==='sleep')loadSleep();if(v==='journal'){if(jLoaded)renderJEditor();else loadJournal()}
+  if(v==='week')renderWeek();if(v==='gym')loadGym();if(v==='tools')renderTools();if(v==='media')renderMedia();if(v==='food')loadFood();if(v==='sleep')loadSleep();if(v==='journal')setJTab(JTAB);if(v==='streaks')loadHabits();
   if(v==='money'||v==='stack')document.querySelectorAll(`#v-${v} [data-scr]`).forEach(el=>scramble(el,el.dataset.scr,700));
   window.scrollTo(0,0);setTimeout(()=>staggerIn($('v-'+v)),20);
 }
@@ -1833,7 +1833,7 @@ async function startApp(session){
   await loadDay();await loadTools();loadBody();BFX('day state + tools restored',90);
   startRealtime();startAgentLink();loadArtImages();flushOutbox();
   setSync(ONLINE?'on':'',ONLINE?'synced':'offline');BFX('realtime channel open',96);BFXdone('system ready');setTimeout(cacheBootVideo,600);
-  schedWidget();setInterval(publishWidget,10*60*1000);setTimeout(()=>{if(typeof pushSync==='function')pushSync()},6000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&typeof pushSync==='function'){NQ=null;pushSync()}});
+  schedWidget();setInterval(publishWidget,10*60*1000);setTimeout(()=>{Promise.all([loadHabits(),loadTasks()]).catch(()=>{}).then(()=>{if(typeof pushSync==='function')pushSync()})},4000);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&typeof pushSync==='function'){NQ=null;pushSync()}});
 }
 function flushOutbox(){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('ds3:outbox:'))ks.push(k.slice(11))}ks.forEach(p=>{const v=LS.get(p);if(v!=null)save(p,v,true);localStorage.removeItem('ds3:outbox:'+p)})}catch(e){}}
 async function refreshAfterResume(){if(!booted)return;await loadGridsFromDb();await loadEdits();rebuild();const p='days/d-'+DAYK;const d=await load(p);if(d){DAY={ticks:{},water:0,msg:{},dw:0,...d};applyTicks();renderTools()}AGENT=await load('agent/status');agentState();if(cur==='gym')loadGym(true);if(cur==='journal')loadJournal()}
@@ -2304,12 +2304,13 @@ const SSND=[['rise','rising chime'],['classic','classic beeps'],['siren','siren'
 const STAGS=['gym','caffeine late','alcohol','late meal','screens in bed','stressed','melatonin','magnesium','nap','fasted cardio'];
 const SPHRASE=['I am awake and I am getting up now','Discipline is doing it when you do not feel like it','Get out of bed and win the morning','Everybody wants it until it is time to wake up'];
 const SFN='https://ucnwefjblxqbmmwdbqhw.supabase.co/functions/v1/sleep-in';
-let SSET=null,SNIGHTS={},SV=LS.get('sleepv')||'last',sleepLoaded=false,SCFG=null;
+let SHEALTH={};let SSET=null,SNIGHTS={},SV=LS.get('sleepv')||'recovery',sleepLoaded=false,SCFG=null;
 const fmtHM=m=>{m=Math.round(m||0);return Math.floor(m/60)+'h '+pad(m%60)+'m'};
 async function loadSleep(){if(sleepLoaded){renderSleep();return}
-  const [s,rows,c]=await Promise.all([load('sleep/settings'),listDocs('sleep/w-'),load('sleep/cfg')]);
+  const [s,rows,c,hr]=await Promise.all([load('sleep/settings'),listDocs('sleep/w-'),load('sleep/cfg'),listDocs('health/d-')]);hr.forEach(r=>{if(r.data)SHEALTH[r.path.slice(9)]=r.data});
   SSET={wake:'07:30',bed:'23:00',goal:8,miss:'math',diff:2,shakes:30,snd:'rise',code:'',...(s||{})};SCFG=c||{};
   rows.forEach(r=>{if(r.data)SNIGHTS[r.path.slice(8)]=r.data});sleepLoaded=true;renderSleep()}
+watchPrefix('health/d-',(evt,path,data)=>{const k=path.slice(9);if(evt==='DELETE')delete SHEALTH[k];else if(data)SHEALTH[k]=data;if(cur==='sleep'&&SV==='recovery')renderSleep()});
 watchPrefix('sleep/w-',(evt,path,data)=>{const k=path.slice(8);if(evt==='DELETE')delete SNIGHTS[k];else if(data)SNIGHTS[k]=data;if(cur==='sleep'&&!$('sheet').classList.contains('on'))renderSleep()});
 const saveSS=()=>save('sleep/settings',SSET);
 function sQ(n){if(!n||!n.asleep)return 0;const g=(SSET&&SSET.goal||8)*60,a=n.asleep;const dp=n.deep/a,rp=n.rem/a;
@@ -2317,7 +2318,7 @@ function sQ(n){if(!n||!n.asleep)return 0;const g=(SSET&&SSET.goal||8)*60,a=n.asl
 function renderSleep(){if(!sleepLoaded){loadSleep();return}
   document.querySelectorAll('#sleepSeg [data-sv]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sv===SV));
   const last=Object.keys(SNIGHTS).sort().pop();$('sleepSub').textContent=last?`${esc(nice(last).toLowerCase())} · ${fmtHM(SNIGHTS[last].asleep)} · ${sQ(SNIGHTS[last])}%`:'apple watch sleep + wake-up missions';
-  ({last:sLast,history:sHistory,stats:sStats,setup:sSetup}[SV]||sLast)()}
+  ({recovery:sRecovery,last:sLast,history:sHistory,stats:sStats,setup:sSetup}[SV]||sRecovery)()}
 document.addEventListener('click',e=>{const b=e.target.closest('#sleepSeg [data-sv]');if(!b)return;SV=b.dataset.sv;LS.set('sleepv',SV);renderSleep()});
 
 /* hypnogram from watch stages */
@@ -2363,7 +2364,9 @@ function sSetup(){const el=$('sleepBody'),S=SSET;const tok=SCFG&&SCFG.token;cons
       <b>Find Health Samples</b> — Type: <i>Sleep Analysis</i>, filter: <i>Start Date is in the last 1 days</i>.<br>
       <b>Repeat with Each</b> → inside it add <b>Text</b>: <code>Start Date|End Date|Value</code> (tap each word to insert the variable from <i>Repeat Item</i>; set both dates' format to <i>ISO 8601</i>).<br>
       After the repeat: <b>Combine Text</b> (Repeat Results) with <i>New Lines</i>.<br>
-      <b>Get Contents of URL</b> — URL below, Method <i>POST</i>, Request Body <i>File</i> → Combined Text.</li>
+      For recovery (Whoop stats) add, before the upload: <b>Find Health Samples</b> → <i>Heart Rate Variability</i>, last 1 day → <b>Calculate Statistics</b> <i>Average</i>; do the same for <i>Resting Heart Rate</i> and <i>Respiratory Rate</i>; and <i>Active Energy</i> + <i>Steps</i> with Start Date <i>is yesterday</i> → <i>Sum</i>.<br>
+      Then one <b>Text</b> action: <code>Combined Text</code> + new lines <code>HRV|Average</code> <code>Resting Heart Rate|Average</code> <code>Respiratory Rate|Average</code> <code>Active Energy|Sum</code> <code>Steps|Sum</code> (insert each statistic as a variable).<br>
+      <b>Get Contents of URL</b> — URL below, Method <i>POST</i>, Request Body <i>File</i> → that Text.</li>
     <li>Shortcuts → <b>Automation</b> → <b>+</b> → <b>Time of Day</b> 10:00 daily (or <b>Alarm → is stopped</b>) → <b>Run Immediately</b> → run <b>Send sleep</b>.</li></ol>
     <div class="dim" style="font-size:11px">your private upload link</div>${tok?`<div class="slurl"><code id="slUrl">${esc(url)}</code><button class="iconbtn" type="button" data-copy="slUrl">copy</button></div>`:'<div class="dim">link not ready — reopen the app in a minute</div>'}</div></div>
   <div class="panel"><div class="ph"><span class="tag">2 · wake-up mission (Alarmy style)</span></div><div class="pb">
@@ -2439,6 +2442,34 @@ function sRegister(){openSheet('register barcode',`<div class="dim" style="margi
   const saveC=c=>{SSET.code=c;saveSS();sScanStop();closeSheet();sTonight()};sScanner($('srV'),c=>{saveC(c);return true});$('srOk').onclick=()=>{const c=$('srC').value.replace(/\s/g,'');if(c)saveC(c)};$('sheetX')&&$('sheetX').addEventListener('click',sScanStop,{once:true})}
 
 
+/* ---------- recovery / strain (Whoop-style) ---------- */
+const sAddD=(k,n)=>{const x=new Date(k+'T12:00');x.setDate(x.getDate()+n);return ymd(x)};
+function sStrain(day){/* strain for a calendar day: active energy arrives the next morning */const h=SHEALTH[sAddD(day,1)]||{};let load=+h.kcal||0;if(!load&&h.steps)load=h.steps*0.04;
+  try{if(typeof WORKOUTS!=='undefined')WORKOUTS.filter(w=>w.date===day).forEach(w=>{const m=w.endedAt&&w.startedAt?(new Date(w.endedAt)-new Date(w.startedAt))/6e4:45;if(!h.kcal)load+=m*5;load+=Math.min(150,(w.vol||0)/100)})}catch(e){}
+  return load?Math.round(21*(1-Math.exp(-load/650))*10)/10:null}
+function sBase(k,f,days=30){const v=[];for(let i=1;i<=days;i++){const d=sAddD(k,-i);const x=f==='asleep'?(SNIGHTS[d]||{}).asleep:(SHEALTH[d]||{})[f];if(x!=null&&!isNaN(+x)&&+x>0)v.push(+x)}if(v.length<3)return null;const m=v.reduce((a,b)=>a+b,0)/v.length;const sd=Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/v.length);return {m,sd,n:v.length}}
+function sNeed(k){const g=(SSET&&SSET.goal||8)*60;const st=sStrain(sAddD(k,-1));let need=g+(st&&st>10?(st-10)*6:0);let debt=0;for(let i=1;i<=3;i++){const n=SNIGHTS[sAddD(k,-i)];if(n&&n.asleep)debt+=Math.max(0,g-n.asleep)}return Math.round(need+Math.min(60,debt*.3))}
+function sRec(k){const h=SHEALTH[k]||{},n=SNIGHTS[k];const need=sNeed(k);const perf=n&&n.asleep?Math.min(100,n.asleep/need*100):null;
+  const bH=sBase(k,'hrv'),bR=sBase(k,'rhr'),bRR=sBase(k,'rr');let s=null,est=false;
+  if(h.hrv){const zH=bH?(h.hrv-bH.m)/Math.max(5,bH.sd):0,zR=h.rhr&&bR?(h.rhr-bR.m)/Math.max(2,bR.sd):0;s=52+22*zH-14*zR+(perf!=null?.35*(perf-80):0);if(h.rr&&bRR&&h.rr>bRR.m+1)s-=8;est=!bH}
+  else if(perf!=null){s=perf*.85;est=true}
+  return s==null?null:{v:Math.round(Math.max(1,Math.min(99,s))),perf:perf!=null?Math.round(perf):null,need,est,h,bH,bR}}
+const sZone=v=>v>=67?['#16ec06','green','your body is primed — push it today','14 – 18']:v>=34?['#ffde00','yellow','maintain — moderate strain','10 – 14']:['#ff0026','red','prioritise rest and recovery','0 – 10'];
+function sRecovery(){const el=$('sleepBody');const k=DAYK;const R=sRec(k)||sRec(sAddD(k,-1));const kk=sRec(k)?k:sAddD(k,-1);const yS=sStrain(sAddD(k,-1));
+  if(!R&&yS==null){el.innerHTML=`<div class="panel"><div class="pb"><b>recovery needs your Watch data</b><div class="dim" style="margin-top:6px">Finish the Shortcut in <b>setup</b> (sleep + the HRV / heart-rate lines). After a few mornings you'll get a daily recovery %, strain and trends like Whoop.</div><button class="btn p" type="button" data-go="setup" style="margin-top:10px">open setup</button></div></div>`;el.onclick=e=>{if(e.target.closest('[data-go]')){SV='setup';renderSleep()}};return}
+  const z=R?sZone(R.v):['#7a7a7a','—','',''];const C=2*Math.PI*78;const n=SNIGHTS[kk];
+  const days=[...Array(30)].map((_,i)=>sAddD(k,-29+i));const recs=days.map(d=>({d,r:sRec(d),s:sStrain(d)}));
+  const line=(vals,col,h=70)=>{const pts=vals.map((v,i)=>v==null?null:[i,v]).filter(Boolean);if(pts.length<2)return '<div class="dim" style="font-size:11px">not enough data yet</div>';const lo=Math.min(...pts.map(p=>p[1])),hi=Math.max(...pts.map(p=>p[1]));const Y=v=>h-6-(v-lo)/Math.max(1,hi-lo)*(h-12);
+    return `<svg class="slgraph" viewBox="0 0 600 ${h}" preserveAspectRatio="none" style="height:${h}px"><polyline points="${pts.map(([i,v])=>`${(i/29*600).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}" fill="none" stroke="${col}" stroke-width="2"/>${pts.map(([i,v])=>`<circle cx="${(i/29*600).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.5" fill="${col}"/>`).join('')}</svg><div class="slaxis dim num"><span>${Math.round(lo)}</span><span>30 days</span><span>${Math.round(hi)}</span></div>`};
+  el.innerHTML=`<div class="wrec panel"><div class="pb"><div class="wring"><svg viewBox="0 0 180 180"><circle cx="90" cy="90" r="78" class="rb"/><circle cx="90" cy="90" r="78" class="rf" style="stroke:${z[0]};stroke-dasharray:${C};stroke-dashoffset:${R?C*(1-R.v/100):C};filter:drop-shadow(0 0 10px ${z[0]})"/></svg><div><span class="dim">recovery${kk!==k?' · yesterday':''}</span><b class="num" style="color:${z[0]}">${R?R.v+'%':'—'}</b><span class="dim">${R&&R.est?'estimated':''}</span></div></div>
+    <div class="wside"><div class="wmsg" style="color:${z[0]}">${esc(z[2])}</div>
+      <div class="wkv num"><div><span>HRV</span><b>${R&&R.h.hrv?Math.round(R.h.hrv)+' ms':'—'}</b><em>${R&&R.bH?`${R.h.hrv>=R.bH.m?'▲':'▼'} avg ${Math.round(R.bH.m)}`:''}</em></div><div><span>resting HR</span><b>${R&&R.h.rhr?Math.round(R.h.rhr)+' bpm':'—'}</b><em>${R&&R.bR?`${R.h.rhr<=R.bR.m?'▼':'▲'} avg ${Math.round(R.bR.m)}`:''}</em></div><div><span>sleep performance</span><b>${R&&R.perf!=null?R.perf+'%':'—'}</b><em>${n?fmtHM(n.asleep)+' of '+fmtHM(R?R.need:0):''}</em></div><div><span>resp. rate</span><b>${R&&R.h.rr?R.h.rr.toFixed(1):'—'}</b><em></em></div></div></div></div></div>
+  <div class="grid2"><div class="panel"><div class="ph"><span class="tag">strain</span><span class="dim">0 – 21</span></div><div class="pb"><div class="wstrain"><div><span class="dim">yesterday</span><b class="num">${yS!=null?yS.toFixed(1):'—'}</b></div><div><span class="dim">today's target</span><b class="num" style="color:${z[0]}">${R?z[3]:'—'}</b></div></div><div class="wsbar"><i style="width:${(yS||0)/21*100}%"></i>${R?`<em style="left:${parseInt(z[3])/21*100}%;width:${(parseInt(z[3].split('–')[1])-parseInt(z[3]))/21*100}%"></em>`:''}</div><div class="dim" style="font-size:11px;margin-top:6px">from active energy, steps and logged gym sessions</div></div></div>
+    <div class="panel"><div class="ph"><span class="tag">sleep coach</span></div><div class="pb fins"><div>▸ tonight you need <b>${fmtHM(sNeed(sAddD(k,1)))}</b></div><div>▸ for a ${SSET.wake} wake-up, be asleep by <b>${(()=>{const [h,m]=SSET.wake.split(':').map(Number);let t=(h*60+m-sNeed(sAddD(k,1))+1440)%1440;return pad(Math.floor(t/60))+':'+pad(t%60)})()}</b></div>${n?`<div>▸ last night: deep ${fmtHM(n.deep)}, REM ${fmtHM(n.rem)}, awake ${Math.round(n.awake||0)} min</div>`:''}</div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">recovery · 30 days</span></div><div class="pb"><div class="wbars">${recs.map(o=>`<div title="${o.d}"><span style="height:${o.r?o.r.v:0}%;background:${o.r?sZone(o.r.v)[0]:'transparent'}"></span><i style="height:${o.s!=null?o.s/21*100:0}%"></i></div>`).join('')}</div><div class="dim" style="font-size:11px;margin-top:6px">bars = recovery · blue = strain</div></div></div>
+  <div class="grid2"><div class="panel"><div class="ph"><span class="tag">HRV</span></div><div class="pb">${line(days.map(d=>(SHEALTH[d]||{}).hrv),'#05d9e8')}</div></div><div class="panel"><div class="ph"><span class="tag">resting heart rate</span></div><div class="pb">${line(days.map(d=>(SHEALTH[d]||{}).rhr),'#ff2a6d')}</div></div></div>`;
+  el.onclick=null}
+
 /* ================= NOTIFICATIONS (web push) =================
    The app keeps a queue of upcoming notifications in kv "push/q"; a Supabase cron (every 15 s) sends whatever is due
    to this device's push subscription ("push/subs"), even when the app is closed. Works on iPhone/iPad for the home-screen app. */
@@ -2458,13 +2489,15 @@ async function nQueue(){if(NQ)return NQ;NQ=(await load('push/q'))||{items:[]};re
 async function pushOne(tag,at,title,body,url){if(!NSET.on)return;const q=await nQueue();q.items=q.items.filter(i=>i.tag!==tag);if(at&&at>Date.now()+3000)q.items.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body,url:url||'./'});save('push/q',q,true)}
 async function pushCancel(tag){if(!NSET.on)return;const q=await nQueue();const n=q.items.length;q.items=q.items.filter(i=>i.tag!==tag);if(q.items.length!==n)save('push/q',q,true)}
 const atMin=(dayKey,mins)=>{const d=new Date(dayKey+'T00:00');return d.getTime()+mins*60e3+5*3600e3*0};
-async function pushSync(){if(!NSET.on)return;const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|item|dose|bed|leet|water):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
+async function pushSync(){if(!NSET.on)return;const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|item|dose|bed|leet|water|habit|task):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
   const push=(tag,at,title,body,url)=>{if(at>now+5000&&at<H)add.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body,url:url||'./'})};
   const days=[DAYK,ymd(new Date(new Date(DAYK+'T12:00').getTime()+864e5))];
   days.forEach((dk,di)=>{const base=new Date(dk+'T00:00').getTime();const dow=new Date(dk+'T12:00').getDay();const kind=(dow===0||dow===6)?'weekend':'weekday';
     if(nOn('plan')&&typeof M!=='undefined'&&M.plans&&M.plans[kind])M.plans[kind].forEach(b=>{const n=b.items.length;push('plan:'+dk+':'+b.bi,base+b.s*60e3,b.short||b.title,`${pad(Math.floor(b.s/60)%24)}:${pad(b.s%60)}–${pad(Math.floor(b.e/60)%24)}:${pad(b.e%60)} · ${n} item${n===1?'':'s'}`,'./#today')});
     if(typeof M!=='undefined'&&M.plans&&M.plans[kind])M.plans[kind].forEach(b=>b.items.forEach(it=>{const lead=NITEMS.m[it.key];if(lead==null||it.t==null)return;if(it.days&&!it.days.has(DOW[dow]))return;if(di===0&&typeof DAY!=='undefined'&&DAY.ticks&&DAY.ticks[it.tk])return;
       push('item:'+dk+':'+it.key,base+(it.t-lead)*60e3,(lead?`in ${lead} min · `:'')+it.item,[it.time,it.dose,it.notes&&it.notes.slice(0,80)].filter(Boolean).join(' · '),'./#today')}));
+    if(typeof HAB!=='undefined')HAB.list.filter(h=>h.remind&&!h.arch).forEach(h=>{if(!hDue(h,dk))return;if(di===0&&hDone(h,dk))return;const [rh,rm]=h.remind.split(':').map(Number);push('habit:'+dk+':'+h.id,base+(rh*60+rm)*60e3,`${h.ic||''} ${h.n}`,h.type==='neg'?'stay strong today':`keep the streak going${hStreak(h).n?` — ${hStreak(h).n} ${hStreak(h).unit}s`:''}`,'./#streaks')});
+    if(typeof TASKS!=='undefined'&&di===0)TASKS.list.filter(t=>!t.done&&t.d&&t.tm).forEach(t=>{const [th,tm]=t.tm.split(':').map(Number);push('task:'+t.id,new Date(t.d+'T00:00').getTime()+(th*60+tm)*60e3,'✓ '+t.t,t.note||'task due','./#journal')});
     if(nOn('dose')&&typeof PROTO!=='undefined'&&typeof scheduledOn==='function')PROTO.list.forEach(c=>{if(!scheduledOn(c,dk))return;(c.times||[]).forEach((t,i)=>{const m=/^(\d{1,2}):(\d{2})$/.exec(t);if(!m)return;if(di===0&&typeof logsFor==='function'&&logsFor(c.id,dk)[i])return;push('dose:'+dk+':'+c.id+':'+i,base+(+m[1]*60+ +m[2])*60e3,c.name+' due',[c.dose,c.unit].filter(Boolean).join(' ')||'log your dose','./#tools')})});
     if(nOn('leet')){const n=leetDue();if(n&&di===0)push('leet:'+dk,base+9*36e5,`${n} LeetCode review${n>1?'s':''} due`,'spaced repetition — keep the streak','./#tools')}
     if(nOn('water'))[13,17].forEach(h=>push('water:'+dk+':'+h,base+h*36e5,'drink some water','check your water for today','./#food'));
@@ -2490,6 +2523,211 @@ load('push/items').then(d=>{if(d)NITEMS={m:{},...d}}).catch(()=>{});
 watch('push/items',d=>{if(d)NITEMS={m:{},...d}});
 async function setItemNotify(key,lead){if(lead==null)delete NITEMS.m[key];else NITEMS.m[key]=lead;save('push/items',NITEMS,true);
   if(lead!=null&&!NSET.on){openNotify();return}pushSync()}
+
+/* ================= STREAKS (Streaks-app style habits) =================
+   docs: habits/list {list:[habit]} · habits/log {d:{'YYYY-MM-DD':{habitId:count}}}
+   habit: {id,n,ic,col,type:'daily'|'week'|'days'|'neg',per(times/week),days:[0-6],q(target per day),unit,remind:'HH:MM',created,arch} */
+const HCOLS=['#ff2a6d','#05d9e8','#9b5cff','#57f5a8','#ffb000','#ff6b3d','#4da3ff','#e6e6e6'];
+const HICONS='💪 🏋️ 🏃 🚶 🧘 💧 🥗 🍎 💊 🧴 🦷 🛏️ 📖 ✍️ 💻 🧠 🎯 🧹 🐈 ☀️ 🌙 🚿 🧊 📵 🚭 🍺 🍬 ☕ 🎧 🙏 💸 📞 🪥 ✂️ 👔 🔥 ⭐ ✅'.split(' ');
+let HAB={list:[]},HLOG={d:{}},habLoaded=false,HSEL=null;
+async function loadHabits(){if(habLoaded){renderHabits();return}const [l,g]=await Promise.all([load('habits/list'),load('habits/log')]);HAB={list:[],...(l||{})};HLOG={d:{},...(g||{})};habLoaded=true;renderHabits()}
+watch('habits/list',d=>{if(d){HAB={list:[],...d};if(cur==='streaks')renderHabits()}});
+watch('habits/log',d=>{if(d){HLOG={d:{},...d};if(cur==='streaks'&&!hHold)renderHabits()}});
+const hSave=()=>save('habits/list',HAB),hSaveLog=()=>{save('habits/log',HLOG);hWidget()};
+const hCnt=(h,d)=>((HLOG.d[d]||{})[h.id])||0;
+const hTarget=h=>Math.max(1,+h.q||1);
+const hDone=(h,d)=>h.type==='neg'?hCnt(h,d)===0:hCnt(h,d)>=hTarget(h);
+const hDue=(h,d)=>{const dow=new Date(d+'T12:00').getDay();return h.type==='days'?(h.days||[]).includes(dow):true};
+const hAdd=(d,n)=>{const x=new Date(d+'T12:00');x.setDate(x.getDate()+n);return ymd(x)};
+const hWeekStart=d=>{const x=new Date(d+'T12:00');const k=(x.getDay()+6)%7;x.setDate(x.getDate()-k);return ymd(x)};
+function hWeekCount(h,d){const s=hWeekStart(d);let n=0;for(let i=0;i<7;i++){const k=hAdd(s,i);if(k>DAYK)break;if(hCnt(h,k)>=hTarget(h))n++}return n}
+/* streak: days (or weeks for x-per-week habits) in a row; today doesn't break it until it's over */
+function hStreak(h){const start=h.created||'2000-01-01';
+  if(h.type==='week'){const per=+h.per||3;const ok=w=>{let c=0;for(let i=0;i<7;i++){const k=hAdd(w,i);if(k<=DAYK&&hCnt(h,k)>=hTarget(h))c++}return c>=per};let n=0,w=hWeekStart(DAYK);if(ok(w))n++;w=hAdd(w,-7);while(w>=hWeekStart(start)&&ok(w)){n++;w=hAdd(w,-7)}return {n,unit:'wk'}}
+  let n=0,d=DAYK;if(!hDone(h,d)||!hDue(h,d))d=hAdd(d,-1);
+  for(let i=0;i<2000&&d>=start;i++){if(!hDue(h,d)){d=hAdd(d,-1);continue}if(hDone(h,d)){n++;d=hAdd(d,-1)}else break}return {n,unit:'day'}}
+function hBest(h){const start=h.created||DAYK;let best=0,cur=0;for(let d=start;d<=DAYK;d=hAdd(d,1)){if(!hDue(h,d))continue;if(hDone(h,d)){cur++;best=Math.max(best,cur)}else if(d!==DAYK)cur=0}return Math.max(best,hStreak(h).n)}
+function hRate(h,days=30){let due=0,ok=0;for(let i=0;i<days;i++){const d=hAdd(DAYK,-i);if(d<(h.created||'0'))break;if(!hDue(h,d))continue;if(i===0&&!hDone(h,d))continue;due++;if(hDone(h,d))ok++}return due?Math.round(ok/due*100):0}
+function renderHabits(){if(!habLoaded){loadHabits();return}const el=$('habBody');const L=HAB.list.filter(h=>!h.arch);
+  const today=L.filter(h=>hDue(h,DAYK));const done=today.filter(h=>hDone(h,DAYK)).length;
+  $('habSub').textContent=L.length?`${done}/${today.length} today · ${Math.max(0,...L.map(h=>hStreak(h).n))} best current streak`:'build streaks that stick';
+  el.innerHTML=`<div class="hgrid">${L.map(hTile).join('')}<button type="button" class="htile hnew" id="hNew"><span class="hring"><b>＋</b></span><span class="hn">new habit</span></button></div>
+    ${L.length?`<div class="dim" style="font-size:11px;text-align:center;margin-top:10px">hold a habit to complete it · tap for stats</div>`:''}
+    ${L.length?`<div class="panel" style="margin-top:14px"><div class="ph"><span class="tag">last 12 weeks</span><span class="dim">${Math.round(L.reduce((a,h)=>a+hRate(h,30),0)/Math.max(1,L.length))}% in the last 30 days</span></div><div class="pb">${hHeat(null)}</div></div>`:''}`;
+  hBind()}
+function hTile(h){const c=hCnt(h,DAYK),t=hTarget(h),due=hDue(h,DAYK),ok=hDone(h,DAYK);const st=hStreak(h);const p=h.type==='neg'?(ok?1:0):Math.min(1,c/t);const R=42,C=2*Math.PI*R;
+  return `<button type="button" class="htile${ok?' ok':''}${due?'':' off'}${h.type==='neg'?' neg':''}" data-h="${h.id}" style="--hc:${h.col||HCOLS[0]}"><span class="hring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="${R}" class="hb"/><circle cx="50" cy="50" r="${R}" class="hf" style="stroke-dasharray:${C};stroke-dashoffset:${C*(1-p)}"/><circle cx="50" cy="50" r="${R}" class="hh" style="stroke-dasharray:${C};stroke-dashoffset:${C}"/></svg><b>${esc(h.ic||'⭐')}</b>${t>1&&h.type!=='neg'?`<em class="num">${c}/${t}</em>`:''}</span>
+    <span class="hn">${esc(h.n)}</span><span class="hs num">${st.n?`🔥 ${st.n} ${st.unit}${st.n>1?'s':''}`:h.type==='week'?`${hWeekCount(h,DAYK)}/${h.per||3} this week`:due?'start today':'rest day'}</span></button>`}
+let hHold=null,hFired=0;
+function hBind(){const el=$('habBody');
+  el.onclick=e=>{if(e.target.closest('#hNew'))return hEdit(null);const t=e.target.closest('[data-h]');if(!t)return;if(Date.now()-hFired<700)return;hDetail(t.dataset.h)};
+  const start=(t,x)=>{if(hHold)return;const h=HAB.list.find(z=>z.id===t.dataset.h);if(!h)return;const ring=t.querySelector('.hh');const C=2*Math.PI*42;
+    ring.style.transition='none';ring.style.strokeDashoffset=C;void ring.offsetWidth;ring.style.transition='stroke-dashoffset .6s linear';ring.style.strokeDashoffset=0;t.classList.add('holding');
+    hHold={t,x:x&&x.clientX,y:x&&x.clientY,timer:setTimeout(()=>{hFired=Date.now();hHold=null;t.classList.remove('holding');hTick(h,t)},600),ring,C}};
+  const stop=()=>{if(!hHold)return;clearTimeout(hHold.timer);hHold.ring.style.transition='stroke-dashoffset .2s';hHold.ring.style.strokeDashoffset=hHold.C;hHold.t.classList.remove('holding');hHold=null};
+  el.onpointerdown=e=>{const t=e.target.closest('[data-h]');if(t)start(t,e)};el.onpointerup=el.onpointercancel=stop;el.onpointermove=e=>{if(hHold&&hHold.x!=null&&Math.hypot(e.clientX-hHold.x,e.clientY-hHold.y)>12)stop()};
+  el.oncontextmenu=e=>{if(e.target.closest('[data-h]'))e.preventDefault()}}
+function hTick(h,tile){const d=HLOG.d[DAYK]=HLOG.d[DAYK]||{};const t=hTarget(h);
+  if(h.type==='neg'){d[h.id]=(d[h.id]||0)?0:1}else{const c=d[h.id]||0;d[h.id]=c>=t?0:c+1}
+  if(!d[h.id])delete d[h.id];hSaveLog();try{navigator.vibrate&&navigator.vibrate(hDone(h,DAYK)?[20,40,20]:10)}catch(e){}
+  if(hDone(h,DAYK)&&h.type!=='neg'){const r=tile.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,40,true)}
+  renderHabits();if(typeof pushSync==='function')pushSync()}
+function hHeat(h){const weeks=12;const s=hAdd(hWeekStart(DAYK),-7*(weeks-1));const L=h?[h]:HAB.list.filter(x=>!x.arch);let cells='';
+  for(let w=0;w<weeks;w++){cells+='<div class="hcol">';for(let i=0;i<7;i++){const d=hAdd(s,w*7+i);if(d>DAYK){cells+='<i class="fut"></i>';continue}
+    const due=L.filter(x=>hDue(x,d)&&d>=(x.created||'0'));const ok=due.filter(x=>hDone(x,d)).length;const v=due.length?ok/due.length:0;
+    cells+=`<i title="${d} · ${ok}/${due.length}" style="${v?`background:${h?h.col:'var(--pink)'};opacity:${.2+.8*v}`:''}" class="${d===DAYK?'td':''}"></i>`}cells+='</div>'}
+  return `<div class="hheat">${cells}</div>`}
+function hDetail(id){const h=HAB.list.find(z=>z.id===id);if(!h)return;const st=hStreak(h);
+  const hist=[...Array(14)].map((_,i)=>{const d=hAdd(DAYK,-13+i);return `<button type="button" class="hday${hDone(h,d)?' ok':''}${hDue(h,d)?'':' off'}" data-hd="${d}" style="--hc:${h.col}"><span>${new Date(d+'T12:00').toLocaleDateString('en-GB',{weekday:'narrow'})}</span><b>${new Date(d+'T12:00').getDate()}</b></button>`}).join('');
+  openSheet(`${h.ic||''} ${h.n}`,`<div class="hstats num"><div><b style="color:${h.col}">${st.n}</b><span>current ${st.unit}s</span></div><div><b>${hBest(h)}</b><span>best</span></div><div><b>${hRate(h,30)}%</b><span>last 30 days</span></div><div><b>${Object.values(HLOG.d).filter(x=>x[h.id]).length}</b><span>${h.type==='neg'?'slips':'total'}</span></div></div>
+    ${hHeat(h)}<div class="dim" style="font-size:11px;margin:12px 0 6px">last 14 days — tap a day to fix it</div><div class="hdays">${hist}</div>
+    <div class="dim" style="font-size:11px;margin-top:10px">${h.type==='neg'?'avoid it — hold the tile if you slipped':h.type==='week'?`${h.per||3}× a week`:h.type==='days'?'on '+(h.days||[]).map(i=>DOW[i]).join(' '):'every day'}${hTarget(h)>1?` · ${hTarget(h)} ${esc(h.unit||'times')} a day`:''}${h.remind?` · reminder ${h.remind}`:''}</div>
+    <div class="bigbtns" style="margin-top:14px"><button class="btn" type="button" id="hEd">edit</button><span style="flex:1"></span><button class="btn p" type="button" id="hOk">done</button></div>`);
+  $('hOk').onclick=closeSheet;$('hEd').onclick=()=>hEdit(h);
+  $('sheetBody').onclick=e=>{const b=e.target.closest('[data-hd]');if(!b)return;const d=b.dataset.hd;const o=HLOG.d[d]=HLOG.d[d]||{};if(h.type==='neg')o[h.id]=o[h.id]?0:1;else o[h.id]=hDone(h,d)?0:hTarget(h);if(!o[h.id])delete o[h.id];hSaveLog();hDetail(id);renderHabits()}}
+function hEdit(h){const isNew=!h;h=h?clone(h):{id:rid(),n:'',ic:'💪',col:HCOLS[HAB.list.length%HCOLS.length],type:'daily',per:3,days:[1,2,3,4,5],q:1,unit:'',remind:'',created:DAYK};
+  const draw=()=>{$('sheetBody').innerHTML=`<label class="fl">habit<input class="inp" id="heN" value="${esc(h.n)}" placeholder="e.g. gym, skincare, no sugar"></label>
+    <div class="dim" style="font-size:11px;margin:4px 0">icon</div><div class="hicons">${HICONS.map(i=>`<button type="button" data-hi="${i}" class="${h.ic===i?'on':''}">${i}</button>`).join('')}</div>
+    <div class="dim" style="font-size:11px;margin:10px 0 4px">colour</div><div class="hcols">${HCOLS.map(c=>`<button type="button" data-hc="${c}" class="${h.col===c?'on':''}" style="background:${c}"></button>`).join('')}</div>
+    <div class="dim" style="font-size:11px;margin:10px 0 4px">type</div><div class="seg mini">${[['daily','every day'],['days','some days'],['week','x per week'],['neg','break a habit']].map(([k,l])=>`<button type="button" data-ht="${k}" aria-pressed="${h.type===k}">${l}</button>`).join('')}</div>
+    ${h.type==='days'?`<div class="hdow">${[1,2,3,4,5,6,0].map(i=>`<button type="button" data-hw="${i}" class="${(h.days||[]).includes(i)?'on':''}">${DOW[i]}</button>`).join('')}</div>`:''}
+    ${h.type==='week'?`<label class="fl" style="margin-top:8px">times per week<input class="inp num" id="heP" value="${h.per||3}" inputmode="numeric"></label>`:''}
+    ${h.type!=='neg'?`<div class="fgrid4" style="margin-top:8px"><label class="fl">times a day<input class="inp num" id="heQ" value="${h.q||1}" inputmode="numeric"></label><label class="fl">unit (optional)<input class="inp" id="heU" value="${esc(h.unit||'')}" placeholder="glasses, pages…"></label></div>`:''}
+    <label class="fl" style="margin-top:8px">🔔 reminder<input type="time" class="inp" id="heR" value="${h.remind||''}"></label>
+    <div class="bigbtns" style="margin-top:12px">${isNew?'':'<button class="btn d" type="button" id="heDel">delete</button>'}<span style="flex:1"></span><button class="btn p" type="button" id="heOk">${isNew?'add habit':'save'}</button></div>`};
+  openSheet(isNew?'new habit':'edit habit','');draw();
+  const read=()=>{const v=id=>$(id)?$(id).value:null;h.n=(v('heN')||'').trim();if(v('heP')!=null)h.per=Math.max(1,Math.min(7,+v('heP')||3));if(v('heQ')!=null)h.q=Math.max(1,+v('heQ')||1);if(v('heU')!=null)h.unit=v('heU').trim();h.remind=v('heR')||''};
+  $('sheetBody').onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(d.hi||d.hc||d.ht||d.hw){read();if(d.hi)h.ic=d.hi;if(d.hc)h.col=d.hc;if(d.ht)h.type=d.ht;if(d.hw){const i=+d.hw;h.days=(h.days||[]).includes(i)?h.days.filter(x=>x!==i):(h.days||[]).concat(i)}draw();return}
+    if(b.id==='heDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}HAB.list=HAB.list.filter(x=>x.id!==h.id);hSave();closeSheet();renderHabits();return}
+    if(b.id==='heOk'){read();if(!h.n){$('heN').focus();return}const i=HAB.list.findIndex(x=>x.id===h.id);if(i>=0)HAB.list[i]=h;else HAB.list.push(h);hSave();hWidget();closeSheet();renderHabits();if(typeof pushSync==='function')pushSync()}}}
+/* widget feed: a small summary doc any future widget can read */
+function hWidget(){const L=HAB.list.filter(h=>!h.arch);save('widget/streaks',{at:new Date().toISOString(),day:DAYK,items:L.map(h=>({n:h.n,ic:h.ic,col:h.col,streak:hStreak(h).n,unit:hStreak(h).unit,done:hDone(h,DAYK),due:hDue(h,DAYK),c:hCnt(h,DAYK),t:hTarget(h)}))})}
+
+/* ================= JOURNAL tabs: journal · notes (Apple Notes) · tasks (Todoist) =================
+   notes: notes/n-<id> {id,html,folder,pin,created,upd} · notes/folders {list:[name]}
+   tasks: tasks/all {list:[task],projects:[{id,n,col}]}  task {id,t,d,tm,p,proj,rep,note,sub:[{t,x}],done,created} */
+let JTAB=LS.get('jtab')||'journal';
+function setJTab(t){JTAB=t;LS.set('jtab',t);document.querySelectorAll('#jTabs [data-jt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.jt===t));
+  $('jPaneJ').hidden=t!=='journal';$('jPaneN').hidden=t!=='notes';$('jPaneT').hidden=t!=='tasks';
+  if(t==='notes')loadNotes();if(t==='tasks')loadTasks();if(t==='journal'){if(jLoaded)renderJEditor();else loadJournal()}}
+document.addEventListener('click',e=>{const b=e.target.closest('#jTabs [data-jt]');if(b)setJTab(b.dataset.jt)});
+
+/* ---------------- NOTES ---------------- */
+let NOTES={},NFOLD={list:['notes']},notesLoaded=false,NCUR=null,NF=LS.get('nfold')||'all',nSaveT=null;
+async function loadNotes(){if(notesLoaded){renderNotes();return}const [rows,f]=await Promise.all([listDocs('notes/n-'),load('notes/folders')]);
+  rows.forEach(r=>{if(r.data)NOTES[r.data.id]=r.data});NFOLD={list:['notes'],...(f||{})};notesLoaded=true;renderNotes()}
+watchPrefix('notes/n-',(evt,path,data)=>{const id=path.slice(8);if(evt==='DELETE')delete NOTES[id];else if(data){if(NCUR===id&&document.activeElement&&document.activeElement.id==='nEd')return;NOTES[id]=data}if(cur==='journal'&&JTAB==='notes')renderNotes(true)});
+watch('notes/folders',d=>{if(d)NFOLD={list:['notes'],...d}});
+const nText=h=>{const d=document.createElement('div');d.innerHTML=h||'';d.querySelectorAll('li,p,div,h1,h2,h3,br').forEach(x=>x.append(' '));return d.textContent.replace(/\s+/g,' ').trim()};
+const nTitle=n=>{const d=document.createElement('div');d.innerHTML=n.html||'';const f=[...d.childNodes].map(x=>x.textContent.trim()).find(Boolean);return (f||'new note').slice(0,80)};
+function nAgo(t){const d=new Date(t),n=new Date();return ymd(d)===ymd(n)?d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):((n-d)<6*864e5?d.toLocaleDateString('en-GB',{weekday:'long'}):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'})).toLowerCase()}
+function renderNotes(listOnly){const el=$('jPaneN');if(!el)return;const q=(($('nQ')||{}).value||'').toLowerCase();
+  const all=Object.values(NOTES).filter(n=>NF==='all'||n.folder===NF).filter(n=>!q||nText(n.html).toLowerCase().includes(q)).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.upd>a.upd?1:-1));
+  const listHtml=`${all.map(n=>{const t=nTitle(n);const body=nText(n.html).slice(t.length).trim();return `<button type="button" class="nitem${n.id===NCUR?' on':''}" data-n="${n.id}"><b>${n.pin?'📌 ':''}${esc(t)}</b><span class="dim"><span class="num">${nAgo(n.upd)}</span> ${esc(body.slice(0,70))||'no additional text'}</span></button>`}).join('')||'<div class="dim" style="padding:14px 4px">no notes</div>'}`;
+  if(listOnly&&$('nList')){$('nList').innerHTML=listHtml;return}
+  el.innerHTML=`<div class="ngrid${NCUR?' editing':''}"><div class="nside"><div class="row" style="gap:6px"><input class="inp" id="nQ" type="search" placeholder="search notes" value="${esc(q)}" style="flex:1"><button class="btn p" type="button" id="nNew" title="new note">✎</button></div>
+    <div class="chips" id="nFolders" style="margin:8px 0">${['all',...NFOLD.list].map(f=>`<button type="button" class="chip${NF===f?' on':''}" data-nf="${esc(f)}">${esc(f)}</button>`).join('')}<button type="button" class="chip" id="nAddF">+ folder</button></div>
+    <div class="nlistw" id="nList">${listHtml}</div></div>
+    <div class="neditor panel">${NCUR&&NOTES[NCUR]?nEditorHtml(NOTES[NCUR]):'<div class="pb dim nempty">pick a note or start a new one ✎</div>'}</div></div>`;
+  nBind()}
+function nEditorHtml(n){return `<div class="ntool"><button type="button" class="iconbtn nback" id="nBack">‹ notes</button><span class="ntbtns">${[['h','H','heading'],['b','<b>B</b>','bold'],['i','<i>I</i>','italic'],['u','<u>U</u>','underline'],['s','<s>S</s>','strike'],['ul','•','bullets'],['ol','1.','numbers'],['chk','☑','checklist'],['q','❝','quote'],['code','&lt;/&gt;','code'],['hr','—','divider']].map(([k,l,t])=>`<button type="button" data-nc="${k}" title="${t}">${l}</button>`).join('')}</span></div>
+  <div class="nmeta dim num">${new Date(n.upd).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).toLowerCase()} · <select id="nFold" class="nfsel">${NFOLD.list.map(f=>`<option ${n.folder===f?'selected':''}>${esc(f)}</option>`).join('')}</select> <button type="button" class="iconbtn" id="nPin">${n.pin?'unpin':'pin'}</button> <button type="button" class="iconbtn" id="nCopy">copy</button> <button type="button" class="iconbtn" id="nDel">delete</button> <span id="nSaved"></span></div>
+  <div class="ned" id="nEd" contenteditable="true" spellcheck="true">${n.html||'<h2><br></h2>'}</div>`}
+function nBind(){const el=$('jPaneN');
+  el.oninput=e=>{if(e.target.id==='nQ'){clearTimeout(nBind.t);nBind.t=setTimeout(()=>renderNotes(true),150);return}if(e.target.id==='nEd')nDirty()};
+  el.onchange=e=>{if(e.target.id==='nFold'&&NCUR){NOTES[NCUR].folder=e.target.value;nSave()}};
+  el.onclick=e=>{const ck=e.target.closest('.ned ul.chk>li');if(ck&&e.offsetX<26){ck.dataset.c=ck.dataset.c==='1'?'0':'1';nDirty();return}
+    const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(d.n){NCUR=d.n;renderNotes();if(innerWidth>900)setTimeout(()=>{const ed=$('nEd');ed&&ed.focus()},50);return}
+    if(d.nf){NF=d.nf;LS.set('nfold',NF);renderNotes();return}
+    if(b.id==='nNew'){const id=rid()+rid();NOTES[id]={id,html:'<h2><br></h2>',folder:NF==='all'?(NFOLD.list[0]||'notes'):NF,pin:false,created:new Date().toISOString(),upd:new Date().toISOString()};NCUR=id;renderNotes();setTimeout(()=>{const ed=$('nEd');if(ed){ed.focus();const r=document.createRange();r.selectNodeContents(ed.firstChild||ed);r.collapse(true);const s=getSelection();s.removeAllRanges();s.addRange(r)}},40);return}
+    if(b.id==='nAddF'){const f=prompt('new folder name');if(f&&!NFOLD.list.includes(f.trim())){NFOLD.list.push(f.trim());save('notes/folders',NFOLD);NF=f.trim();renderNotes()}return}
+    if(b.id==='nBack'){nFlush();NCUR=null;renderNotes();return}
+    if(!NCUR)return;const n=NOTES[NCUR];
+    if(b.id==='nPin'){n.pin=!n.pin;nSave();renderNotes();return}
+    if(b.id==='nCopy'){navigator.clipboard&&navigator.clipboard.writeText($('nEd').innerText).then(()=>{b.textContent='copied ✓'});return}
+    if(b.id==='nDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}delete NOTES[NCUR];removeDoc('notes/n-'+NCUR);NCUR=null;renderNotes();return}
+    if(d.nc){nCmd(d.nc);return}};
+  el.onmousedown=e=>{if(e.target.closest('[data-nc]'))e.preventDefault()}}
+function nCmd(c){const ed=$('nEd');if(!ed)return;ed.focus();const X=(a,v)=>document.execCommand(a,false,v);
+  if(c==='h'){const blk=(getSelection().anchorNode||{}).parentElement;X('formatBlock',blk&&blk.closest&&blk.closest('h2')?'div':'h2')}
+  else if(c==='b')X('bold');else if(c==='i')X('italic');else if(c==='u')X('underline');else if(c==='s')X('strikeThrough');
+  else if(c==='ul')X('insertUnorderedList');else if(c==='ol')X('insertOrderedList');else if(c==='q')X('formatBlock','blockquote');else if(c==='code')X('formatBlock','pre');else if(c==='hr')X('insertHorizontalRule');
+  else if(c==='chk'){X('insertUnorderedList');const n=getSelection().anchorNode;const ul=n&&(n.nodeType===1?n:n.parentElement).closest('ul');if(ul){ul.classList.toggle('chk');ul.querySelectorAll('li').forEach(li=>{if(!li.dataset.c)li.dataset.c='0'})}}
+  nDirty()}
+function nDirty(){if(!NCUR)return;NOTES[NCUR].html=$('nEd').innerHTML;NOTES[NCUR].upd=new Date().toISOString();if($('nSaved'))$('nSaved').textContent='…';clearTimeout(nSaveT);nSaveT=setTimeout(nSave,600)}
+function nSave(){clearTimeout(nSaveT);if(!NCUR||!NOTES[NCUR])return;const n=NOTES[NCUR];if(!nText(n.html)&&!/<img|<hr/.test(n.html)){removeDoc('notes/n-'+n.id)}else save('notes/n-'+n.id,n,true);if($('nSaved'))$('nSaved').textContent='saved';renderNotes(true)}
+function nFlush(){if(nSaveT)nSave()}
+addEventListener('pagehide',nFlush);
+
+/* ---------------- TASKS ---------------- */
+let TASKS={list:[],projects:[]},tasksLoaded=false,TV=LS.get('tview')||'today';
+const PCOL=['#7a7a7a','#05d9e8','#ffb000','#ff2a6d'];
+async function loadTasks(){if(tasksLoaded){renderTasks();return}const d=await load('tasks/all');TASKS={list:[],projects:[],...(d||{})};tasksLoaded=true;renderTasks()}
+watch('tasks/all',d=>{if(d){TASKS={list:[],projects:[],...d};if(cur==='journal'&&JTAB==='tasks'&&!(document.activeElement&&document.activeElement.id==='tAdd'))renderTasks()}});
+const tSave=()=>{save('tasks/all',TASKS);if(typeof pushSync==='function')pushSync()};
+/* natural language: "gym tmrw 7pm p1 #health every mon" */
+function tParse(s){let t=' '+s+' ',d=null,tm=null,p=4,proj=null,rep=null;const today=new Date(DAYK+'T12:00');const fmt=x=>ymd(x);const add=n=>{const x=new Date(today);x.setDate(x.getDate()+n);return fmt(x)};
+  const DN=['sun','mon','tue','wed','thu','fri','sat'];
+  t=t.replace(/\sp([1-4])\b/i,(m,a)=>{p=+a;return ' '});
+  t=t.replace(/\s#([\w-]+)/,(m,a)=>{const P=TASKS.projects.find(x=>x.n.toLowerCase()===a.toLowerCase());proj=P?P.id:(()=>{const id=rid();TASKS.projects.push({id,n:a,col:HCOLS?HCOLS[TASKS.projects.length%HCOLS.length]:'#05d9e8'});return id})();return ' '});
+  t=t.replace(/\severy\s+(day|weekday|week|month|year|(mon|tue|wed|thu|fri|sat|sun)\w*|(\d+)\s*days?)\b/i,(m,a,dn,n)=>{rep=n?'every '+n+' days':dn?'every '+dn.slice(0,3).toLowerCase():a.toLowerCase()==='day'?'daily':a.toLowerCase()==='weekday'?'weekdays':a.toLowerCase()+'ly';if(!d)d=dn?null:DAYK;return ' '});
+  t=t.replace(/\s(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i,(m,h,mi,ap)=>{h=+h%12+(ap.toLowerCase()==='pm'?12:0);tm=pad(h)+':'+pad(+mi||0);return ' '});
+  t=t.replace(/\s(?:at\s+)(\d{1,2}):(\d{2})\b|\s(\d{1,2}):(\d{2})\b/,(m,a,b,c,e)=>{tm=pad(+(a||c))+':'+(b||e);return ' '});
+  t=t.replace(/\s(today|tonight|tod)\b/i,(m,a)=>{d=DAYK;if(/tonight/i.test(a)&&!tm)tm='20:00';return ' '});
+  t=t.replace(/\s(tomorrow|tmrw|tmr|tom)\b/i,()=>{d=add(1);return ' '});
+  t=t.replace(/\snext\s+week\b/i,()=>{d=add(((8-today.getDay())%7)||7);return ' '});
+  t=t.replace(/\sin\s+(\d+)\s+(day|week)s?\b/i,(m,n,u)=>{d=add(+n*(u.toLowerCase()==='week'?7:1));return ' '});
+  t=t.replace(/\s(?:on\s+|next\s+)?(mon|tue|wed|thu|fri|sat|sun)[a-z]*\b/i,(m,a)=>{const i=DN.indexOf(a.toLowerCase());let k=(i-today.getDay()+7)%7;if(!k)k=7;if(!d)d=add(k);return ' '});
+  t=t.replace(/\s(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\b/,(m,a,b,c)=>{const y=c?(+c<100?2000+ +c:+c):today.getFullYear();const x=new Date(y,+b-1,+a,12);if(!c&&x<today)x.setFullYear(y+1);d=fmt(x);return ' '});
+  if(rep&&!d)d=DAYK;if(tm&&!d)d=DAYK;
+  return {t:t.replace(/\s+/g,' ').trim(),d,tm,p,proj,rep}}
+function tNext(tk){const x=new Date((tk.d||DAYK)+'T12:00');const r=tk.rep||'';const DN=['sun','mon','tue','wed','thu','fri','sat'];
+  if(r==='daily')x.setDate(x.getDate()+1);else if(r==='weekdays'){do x.setDate(x.getDate()+1);while(x.getDay()===0||x.getDay()===6)}else if(r==='weekly')x.setDate(x.getDate()+7);else if(r==='monthly')x.setMonth(x.getMonth()+1);else if(r==='yearly')x.setFullYear(x.getFullYear()+1);
+  else if(/^every \d+ days$/.test(r))x.setDate(x.getDate()+ +r.match(/\d+/)[0]);else if(/^every (\w{3})$/.test(r)){const i=DN.indexOf(r.slice(6));do x.setDate(x.getDate()+1);while(x.getDay()!==i)}else return null;
+  let k=ymd(x);while(k<DAYK){const y=new Date(k+'T12:00');y.setDate(y.getDate()+1);k=ymd(y)}return k}
+function tWhen(tk){if(!tk.d)return '';const diff=Math.round((new Date(tk.d+'T12:00')-new Date(DAYK+'T12:00'))/864e5);const lab=diff===0?'today':diff===1?'tomorrow':diff===-1?'yesterday':diff<0?nice(tk.d).toLowerCase():diff<7?new Date(tk.d+'T12:00').toLocaleDateString('en-GB',{weekday:'long'}).toLowerCase():nice(tk.d).toLowerCase();return lab+(tk.tm?' '+tk.tm:'')}
+function tRow(tk){const P=TASKS.projects.find(x=>x.id===tk.proj);const over=tk.d&&tk.d<DAYK&&!tk.done;const subs=tk.sub||[];
+  return `<div class="trow${tk.done?' done':''}" data-tk="${tk.id}"><button type="button" class="tchk p${tk.p||4}" data-tc="${tk.id}" aria-label="complete"></button><button type="button" class="tmain" data-te="${tk.id}"><b>${esc(tk.t)}</b>${tk.note?`<span class="dim">${esc(tk.note.slice(0,80))}</span>`:''}<span class="tmeta">${tk.d?`<span class="${over?'bad':tk.d===DAYK?'ok':''}">📅 ${esc(tWhen(tk))}</span>`:''}${tk.rep?`<span>↻ ${esc(tk.rep)}</span>`:''}${subs.length?`<span>☑ ${subs.filter(s=>s.x).length}/${subs.length}</span>`:''}${P?`<span style="color:${P.col}"># ${esc(P.n)}</span>`:''}</span></button></div>`}
+function renderTasks(){const el=$('jPaneT');if(!el)return;const L=TASKS.list;const open=L.filter(t=>!t.done);
+  const cnt={inbox:open.filter(t=>!t.proj).length,today:open.filter(t=>t.d&&t.d<=DAYK).length,upcoming:open.filter(t=>t.d&&t.d>DAYK).length};
+  const views=[['today','today',cnt.today],['upcoming','upcoming',cnt.upcoming],['inbox','inbox',cnt.inbox],...TASKS.projects.map(P=>['p:'+P.id,'# '+P.n,open.filter(t=>t.proj===P.id).length]),['done','completed','']];
+  let body='';const sortT=a=>a.sort((x,y)=>(x.d||'9')<(y.d||'9')?-1:(x.d||'9')>(y.d||'9')?1:(x.p||4)-(y.p||4)||((x.tm||'99')<(y.tm||'99')?-1:1));
+  if(TV==='today'){const ov=sortT(open.filter(t=>t.d&&t.d<DAYK)),td=sortT(open.filter(t=>t.d===DAYK));body=(ov.length?`<div class="tgrp bad">overdue</div>${ov.map(tRow).join('')}`:'')+`<div class="tgrp">${esc(nice(DAYK).toLowerCase())} · today</div>${td.map(tRow).join('')||'<div class="dim tempty">nothing due today ✓</div>'}`}
+  else if(TV==='upcoming'){const g={};sortT(open.filter(t=>t.d&&t.d>DAYK)).forEach(t=>(g[t.d]=g[t.d]||[]).push(t));body=Object.entries(g).map(([d,ts])=>`<div class="tgrp">${esc(tWhen({d}))}</div>${ts.map(tRow).join('')}`).join('')||'<div class="dim tempty">nothing scheduled</div>'}
+  else if(TV==='inbox')body=sortT(open.filter(t=>!t.proj)).map(tRow).join('')||'<div class="dim tempty">inbox zero 🎉</div>';
+  else if(TV==='done')body=L.filter(t=>t.done).sort((a,b)=>b.done>a.done?1:-1).slice(0,80).map(tRow).join('')||'<div class="dim tempty">nothing completed yet</div>';
+  else{const pid=TV.slice(2);body=sortT(open.filter(t=>t.proj===pid)).map(tRow).join('')||'<div class="dim tempty">no tasks</div>'}
+  el.innerHTML=`<div class="tgridw"><div class="tside">${views.map(([k,l,c])=>`<button type="button" class="tview${TV===k?' on':''}" data-tv="${esc(k)}"><span>${esc(l)}</span><span class="dim num">${c||''}</span></button>`).join('')}<button type="button" class="tview dim" id="tNewP">+ project</button></div>
+    <div class="tmainw"><form class="tadd" id="tAddF"><input class="inp" id="tAdd" placeholder="add a task — e.g. “gym tmrw 7pm p1 #health”" autocomplete="off" enterkeyhint="done"><button class="btn p" type="submit">add</button></form><div class="dim tprev" id="tPrev"></div><div class="tlist">${body}</div></div></div>`;
+  tBind()}
+function tBind(){const el=$('jPaneT');
+  $('tAddF').onsubmit=e=>{e.preventDefault();const v=$('tAdd').value.trim();if(!v)return;const r=tParse(v);if(!r.t)return;if(!r.d&&TV==='today')r.d=DAYK;if(!r.proj&&TV.startsWith('p:'))r.proj=TV.slice(2);
+    TASKS.list.push({id:rid()+rid(),...r,note:'',sub:[],done:null,created:new Date().toISOString()});tSave();renderTasks();$('tAdd').focus()};
+  $('tAdd').oninput=e=>{const v=e.target.value.trim();if(!v){$('tPrev').textContent='';return}const r=tParse(v);const P=TASKS.projects.find(x=>x.id===r.proj);$('tPrev').textContent=[r.d?'📅 '+tWhen(r):'',r.rep?'↻ '+r.rep:'',r.p<4?'p'+r.p:'',P?'# '+P.n:''].filter(Boolean).join('  ')};
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(d.tv){TV=d.tv;LS.set('tview',TV);renderTasks();return}
+    if(b.id==='tNewP'){const n=prompt('project name');if(n){TASKS.projects.push({id:rid(),n:n.trim(),col:HCOLS[TASKS.projects.length%HCOLS.length]});tSave();renderTasks()}return}
+    if(d.tc){const tk=TASKS.list.find(x=>x.id===d.tc);if(!tk)return;if(tk.done){tk.done=null}else if(tk.rep&&tk.d){const nx=tNext(tk);TASKS.list.push({...clone(tk),id:rid()+rid(),done:new Date().toISOString(),rep:null});tk.d=nx;(tk.sub||[]).forEach(s=>s.x=false)}else tk.done=new Date().toISOString();
+      const row=b.closest('.trow');row.classList.add('pop');try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}setTimeout(()=>{tSave();renderTasks()},260);return}
+    if(d.te)return tEdit(d.te)}}
+function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const draft=clone(tk);draft.sub=draft.sub||[];
+  const draw=()=>{$('sheetBody').innerHTML=`<input class="inp tetitle" id="teT" value="${esc(draft.t)}"><textarea class="inp" id="teN" rows="2" placeholder="description" style="margin-top:8px">${esc(draft.note||'')}</textarea>
+    <div class="fgrid4" style="margin-top:8px"><label class="fl">date<input type="date" class="inp" id="teD" value="${draft.d||''}"></label><label class="fl">time (reminder)<input type="time" class="inp" id="teTm" value="${draft.tm||''}"></label>
+    <label class="fl">repeat<select class="inp" id="teR">${['','daily','weekdays','weekly','monthly','yearly','every mon','every tue','every wed','every thu','every fri','every sat','every sun'].map(r=>`<option value="${r}" ${draft.rep===r?'selected':''}>${r||'never'}</option>`).join('')}</select></label>
+    <label class="fl">project<select class="inp" id="teP"><option value="">inbox</option>${TASKS.projects.map(P=>`<option value="${P.id}" ${draft.proj===P.id?'selected':''}>${esc(P.n)}</option>`).join('')}</select></label></div>
+    <div class="seg mini" id="tePr">${[1,2,3,4].map(p=>`<button type="button" data-tp="${p}" aria-pressed="${(draft.p||4)===p}" style="color:${PCOL[4-p]}">p${p}</button>`).join('')}</div>
+    <div class="dim" style="font-size:11px;margin:12px 0 4px">sub-tasks</div>${draft.sub.map((s,i)=>`<div class="tsub"><button type="button" class="tchk${s.x?' x':''}" data-ts="${i}"></button><input class="inp" data-tsi="${i}" value="${esc(s.t)}"><button type="button" class="iconbtn" data-tsd="${i}">✕</button></div>`).join('')}
+    <button type="button" class="iconbtn" id="teSub" style="margin-top:6px">+ sub-task</button>
+    <div class="bigbtns" style="margin-top:14px"><button class="btn d" type="button" id="teDel">delete</button><span style="flex:1"></span><button class="btn p" type="button" id="teOk">save</button></div>`};
+  openSheet('task','');draw();const sb=$('sheetBody');
+  const read=()=>{draft.t=$('teT').value.trim()||draft.t;draft.note=$('teN').value;draft.d=$('teD').value||null;draft.tm=$('teTm').value||null;draft.rep=$('teR').value||null;draft.proj=$('teP').value||null;sb.querySelectorAll('[data-tsi]').forEach(x=>draft.sub[+x.dataset.tsi].t=x.value)};
+  sb.onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(d.tp){read();draft.p=+d.tp;draw();return}if(d.ts){read();const s=draft.sub[+d.ts];s.x=!s.x;draw();return}if(d.tsd){read();draft.sub.splice(+d.tsd,1);draw();return}
+    if(b.id==='teSub'){read();draft.sub.push({t:'',x:false});draw();const ins=sb.querySelectorAll('[data-tsi]');ins[ins.length-1].focus();return}
+    if(b.id==='teDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}TASKS.list=TASKS.list.filter(x=>x.id!==id);tSave();closeSheet();renderTasks();return}
+    if(b.id==='teOk'){read();draft.sub=draft.sub.filter(s=>s.t.trim());Object.assign(tk,draft);tSave();closeSheet();renderTasks()}}}
 
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
 const CACHE='system-__V__';
