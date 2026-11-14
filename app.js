@@ -1737,7 +1737,7 @@ async function startAgentLink(){
 }
 
 /* ================= ROUTER ================= */
-const VIEWS=[['today','today','◉'],['week','week','▦'],['gym','gym','▲'],['food','food','◍'],['journal','journal','✎'],['tools','tools','⧗'],['media','media','◐'],['stack','stack','◈'],['money','money','£']];
+const VIEWS=[['today','today','◉'],['week','week','▦'],['gym','gym','▲'],['food','food','◍'],['sleep','sleep','☾'],['journal','journal','✎'],['tools','tools','⧗'],['media','media','◐'],['stack','stack','◈'],['money','money','£']];
 $('tabs').innerHTML=VIEWS.map(([v,l],i)=>`<button type="button" data-v="${v}"><span class="k">${i+1}</span>${l}</button>`).join('');
 $('bnav').innerHTML=VIEWS.map(([v,l,ic])=>`<button type="button" data-v="${v}"><i>${ic}</i><span>${l}</span></button>`).join('')+'<span class="bnind" id="bnind"></span>';
 let cur=null;
@@ -1752,7 +1752,7 @@ function go(v,fromHash,dirHint){
   if(FX&&m.animate){m.animate([{transform:`translateX(${dir*48}px)`,opacity:.1,filter:'hue-rotate(80deg) contrast(1.6)'},{transform:`translateX(${-dir*6}px)`,opacity:1,filter:'none',offset:.7},{transform:'none',opacity:1}],{duration:380,easing:'cubic-bezier(.2,.9,.1,1)'});m.classList.remove('switching');void m.offsetWidth;m.classList.add('switching')}
   const h=$('v-'+v).querySelector('.banner h2.glitch');if(h&&FX){const node=h.lastChild;scramble({set textContent(t){node.textContent=t}},h.dataset.text.slice(1),500)}
   artMount(v);
-  if(v==='week')renderWeek();if(v==='gym')loadGym();if(v==='tools')renderTools();if(v==='media')renderMedia();if(v==='food')loadFood();if(v==='journal'){if(jLoaded)renderJEditor();else loadJournal()}
+  if(v==='week')renderWeek();if(v==='gym')loadGym();if(v==='tools')renderTools();if(v==='media')renderMedia();if(v==='food')loadFood();if(v==='sleep')loadSleep();if(v==='journal'){if(jLoaded)renderJEditor();else loadJournal()}
   if(v==='money'||v==='stack')document.querySelectorAll(`#v-${v} [data-scr]`).forEach(el=>scramble(el,el.dataset.scr,700));
   window.scrollTo(0,0);setTimeout(()=>staggerIn($('v-'+v)),20);
 }
@@ -2289,6 +2289,186 @@ function fGoals(){const el=$('foodBody');const P={sex:'m',age:'',hcm:'',kg:curKg
   el.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gm){mode=b.dataset.gm;el.querySelectorAll('[data-gm]').forEach(z=>z.setAttribute('aria-pressed',z===b));macHtml();show();return}
     if(b.id==='gSave'){const n=read();if(!n.age||!n.hcm){(!n.age?$('gAge'):$('gH')).focus();return}const kgChanged=Math.abs(n.kg-curKg())>0.05;FPROF=n;save('food/profile',FPROF);
       if(kgChanged&&typeof WT!=='undefined'){WT.r.push({t:new Date().toISOString(),kg:n.kg});save('body/wt',WT)}FV='log';LS.set('foodv',FV);renderFood()}}}
+
+/* ================= SLEEP (nightstand tracking + smart alarm + wake-up missions) =================
+   A web app can't run while the phone is locked, so this works like Sleep Cycle's "phone on the nightstand" mode:
+   phone on charge, app open, screen kept on (black). It listens (mic) + feels movement (if on the mattress),
+   wakes you in a light phase inside your window, and the alarm won't stop until the mission is done (Alarmy).
+   docs: sleep/settings · sleep/n-YYYY-MM-DD (night ending that morning) */
+const SMISS=[['math','maths'],['shake','shake'],['type','type a phrase'],['scan','scan a barcode']];
+const SSND=[['rise','rising chime'],['classic','classic beeps'],['siren','siren']];
+const STAGS=['gym','caffeine late','alcohol','late meal','screens in bed','stressed','melatonin','magnesium','nap'];
+const SPHRASE=['I am awake and I am getting up now','Discipline is doing it when you do not feel like it','Get out of bed and win the morning','Everybody wants it until it is time to wake up'];
+let SSET=null,SNIGHTS={},SV=LS.get('sleepv')||'tonight',sleepLoaded=false,SN=null;
+async function loadSleep(){if(sleepLoaded){renderSleep();return}
+  const [s,rows]=await Promise.all([load('sleep/settings'),listDocs('sleep/n-')]);
+  SSET={alarm:'07:30',win:30,miss:'math',diff:2,shakes:30,snd:'rise',snooze:1,goal:8,code:'',...(s||{})};
+  rows.forEach(r=>{if(r.data)SNIGHTS[r.path.slice(8)]=r.data});sleepLoaded=true;renderSleep()}
+watchPrefix('sleep/n-',(evt,path,data)=>{const k=path.slice(8);if(evt==='DELETE')delete SNIGHTS[k];else if(data)SNIGHTS[k]=data;if(cur==='sleep'&&!SN)renderSleep()});
+const saveSS=()=>save('sleep/settings',SSET);
+function renderSleep(){if(!sleepLoaded){loadSleep();return}
+  document.querySelectorAll('#sleepSeg [data-sv]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sv===SV));
+  const last=Object.keys(SNIGHTS).sort().pop();$('sleepSub').textContent=last?`last night ${fmtHM(SNIGHTS[last].asleep||0)} · ${SNIGHTS[last].q||0}% quality`:'nightstand tracking + smart alarm';
+  ({tonight:sTonight,history:sHistory,stats:sStats}[SV]||sTonight)()}
+document.addEventListener('click',e=>{const b=e.target.closest('#sleepSeg [data-sv]');if(!b)return;SV=b.dataset.sv;LS.set('sleepv',SV);renderSleep()});
+const fmtHM=m=>{m=Math.round(m||0);return Math.floor(m/60)+'h '+pad(m%60)+'m'};
+
+/* ---------- tonight: set up + start ---------- */
+function sTonight(){const el=$('sleepBody'),S=SSET;const [ah,am]=S.alarm.split(':').map(Number);const now=new Date();const a=new Date();a.setHours(ah,am,0,0);if(a<=now)a.setDate(a.getDate()+1);const hrs=(a-now)/36e5;
+  el.innerHTML=`<div class="panel slhero"><div class="pb"><span class="dim">wake up</span><input type="time" class="sltime num" id="slA" value="${S.alarm}"><span class="dim" id="slIn">in ${Math.floor(hrs)}h ${pad(Math.round(hrs%1*60))}m${S.win?` · smart window ${pad(ah)}:${pad(am)} − ${S.win} min`:''}</span>
+    <button class="btn p slgo" type="button" id="slGo">☾ start sleep</button><span class="dim" style="font-size:11px;text-align:center">put your phone on charge, face down near your pillow, and leave this screen open</span></div></div>
+  <div class="grid2"><div class="panel"><div class="ph"><span class="tag">smart alarm</span></div><div class="pb">
+    <div class="dim" style="font-size:12px;margin-bottom:6px">wake me in a light phase up to this early</div><div class="seg mini" id="slWin">${[0,10,20,30,45].map(w=>`<button type="button" data-slw="${w}" aria-pressed="${S.win===w}">${w?w+' min':'off'}</button>`).join('')}</div>
+    <div class="dim" style="font-size:12px;margin:12px 0 6px">sound</div><div class="seg mini" id="slSnd">${SSND.map(([k,l])=>`<button type="button" data-sls="${k}" aria-pressed="${S.snd===k}">${l}</button>`).join('')}</div><button class="iconbtn" type="button" id="slTest" style="margin-top:8px">▶ preview sound</button>
+    <div class="dim" style="font-size:12px;margin:12px 0 6px">snoozes allowed</div><div class="seg mini">${[0,1,2,3].map(n=>`<button type="button" data-slz="${n}" aria-pressed="${S.snooze===n}">${n||'none'}</button>`).join('')}</div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">wake-up mission</span></div><div class="pb">
+    <div class="seg mini" id="slMis">${SMISS.map(([k,l])=>`<button type="button" data-slm="${k}" aria-pressed="${S.miss===k}">${l}</button>`).join('')}</div>
+    <div style="margin-top:10px" class="dim slmd">${S.miss==='math'?`solve 3 sums to switch the alarm off · difficulty <span class="seg mini" style="display:inline-flex">${[1,2,3].map(d=>`<button type="button" data-sld="${d}" aria-pressed="${S.diff===d}">${['easy','medium','hard'][d-1]}</button>`).join('')}</span>`:S.miss==='shake'?`shake the phone <input class="inp num" id="slShk" value="${S.shakes}" style="width:60px;display:inline-block"> times`:S.miss==='type'?'type a motivational line exactly':`walk to the bathroom and scan your registered barcode (toothpaste, deodorant…) ${S.code?`<b>· registered ${esc(S.code)}</b>`:''} <button class="iconbtn" type="button" id="slReg">${S.code?'change':'register'} barcode</button>`}</div>
+    <button class="iconbtn" type="button" id="slTry" style="margin-top:10px">try the mission</button>
+    <div class="dim" style="font-size:11px;margin-top:10px">after you finish, a wake-up check pops up 3 minutes later — miss it and the alarm goes off again.</div></div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">backup alarm (recommended)</span></div><div class="pb dim" style="font-size:12px">If your phone locks or the app closes overnight, nothing here can ring. As a safety net, set an iPhone alarm for 10 minutes after this one.</div></div>`;
+  el.onchange=e=>{if(e.target.id==='slA'){S.alarm=e.target.value;saveSS();sTonight()}if(e.target.id==='slShk'){S.shakes=Math.max(5,+e.target.value||30);saveSS()}};
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(d.slw!=null){S.win=+d.slw;saveSS();sTonight();return}if(d.sls){S.snd=d.sls;saveSS();sTonight();return}if(d.slz!=null){S.snooze=+d.slz;saveSS();sTonight();return}
+    if(d.slm){S.miss=d.slm;saveSS();sTonight();return}if(d.sld){S.diff=+d.sld;saveSS();sTonight();return}
+    if(b.id==='slTest'){sAlarmSound(true);setTimeout(sAlarmStop,3500);return}
+    if(b.id==='slTry'){sMission(true);return}
+    if(b.id==='slReg'){sRegister();return}
+    if(b.id==='slGo')sStart()}}
+
+/* ---------- the night ---------- */
+let SAC=null,SMIC=null,SAN=null,SWL=null,STK=null,SMOT=0,SMOTN=0;
+async function sStart(){const S=SSET;
+  try{SAC=SAC||new (window.AudioContext||window.webkitAudioContext)();await SAC.resume()}catch(e){}
+  try{if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission)await DeviceMotionEvent.requestPermission()}catch(e){}
+  let mic=true;try{SMIC=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const src=SAC.createMediaStreamSource(SMIC);SAN=SAC.createAnalyser();SAN.fftSize=2048;src.connect(SAN)}catch(e){mic=false}
+  const [ah,am]=S.alarm.split(':').map(Number);const a=new Date();a.setHours(ah,am,0,0);if(a<=new Date())a.setDate(a.getDate()+1);
+  SN={start:new Date().toISOString(),alarm:a.toISOString(),win:S.win,mic,s:[],ev:[],snoozes:0,acc:{n:0,sum:0,pk:0,mv:0,loud:0}};LS.set('sleepNight',SN);
+  addEventListener('devicemotion',sMotion);await sWake();document.addEventListener('visibilitychange',sVis);
+  document.body.classList.add('sleeping');$('sleepNight').hidden=false;sNightDraw();
+  clearInterval(STK);STK=setInterval(sTick,1000)}
+function sMotion(e){const g=e.accelerationIncludingGravity||e.acceleration;if(!g)return;const m=Math.sqrt((g.x||0)**2+(g.y||0)**2+(g.z||0)**2);SMOT=Math.max(SMOT,Math.abs(m-(sMotion.last||m)));sMotion.last=m;
+  if(sShake.on&&Math.abs(m-9.8)>14){const t=Date.now();if(t-sShake.lt>220){sShake.lt=t;sShake.n++;sShake.cb&&sShake.cb()}}}
+const sShake={on:false,n:0,lt:0,cb:null};
+async function sWake(){try{if('wakeLock' in navigator)SWL=await navigator.wakeLock.request('screen')}catch(e){}}
+function sVis(){if(!document.hidden&&SN&&!SN.end)sWake()}
+function sTick(){if(!SN)return;const now=Date.now();
+  if(SAN){const b=new Float32Array(SAN.fftSize);SAN.getFloatTimeDomainData(b);let s=0,pk=0;for(const v of b){s+=v*v;pk=Math.max(pk,Math.abs(v))}const rms=Math.sqrt(s/b.length);const db=Math.max(0,Math.min(100,90+20*Math.log10(rms+1e-6)));
+    SN.acc.sum+=db;SN.acc.pk=Math.max(SN.acc.pk,db);if(db>(SN.base||40)+12)SN.acc.loud++}
+  SN.acc.mv=Math.max(SN.acc.mv,SMOT);SMOT=0;SN.acc.n++;
+  if(SN.acc.n>=30){const A=SN.acc;const avg=A.n?A.sum/A.n:0;SN.base=SN.base?SN.base*.97+Math.min(avg,SN.base+5)*.03:avg;
+    SN.s.push([Math.round((now-new Date(SN.start))/1000),Math.round(avg),Math.round(A.pk),Math.round(Math.min(99,A.mv*20)),A.loud]);
+    if(A.loud>=8)SN.ev.push({t:new Date().toISOString(),k:A.loud>=18?'snore/talk':'noise'});
+    SN.acc={n:0,sum:0,pk:0,mv:0,loud:0};if(SN.s.length%10===0)LS.set('sleepNight',SN)}
+  if(!SN.ringing&&!SN.end){const al=new Date(SN.alarm).getTime();const inWin=SN.win&&now>=al-SN.win*60e3;
+    if(now>=al||(inWin&&sLight())){sRing()}}
+  sNightDraw()}
+function sLight(){const r=SN.s.slice(-4);if(r.length<4)return false;return r.filter(x=>x[3]>12||x[4]>=3).length>=2}
+function sNightDraw(){const o=$('sleepNight');if(!o||o.hidden||!SN)return;const n=new Date();const al=new Date(SN.alarm);
+  if(SN.ringing)return;o.innerHTML=`<div class="snclock num">${pad(n.getHours())}:${pad(n.getMinutes())}</div><div class="sninfo">alarm ${pad(al.getHours())}:${pad(al.getMinutes())}${SN.win?` · smart window ${SN.win} min`:''}</div>
+    <div class="snmeter">${SN.s.slice(-60).map(x=>`<i style="height:${Math.max(4,Math.min(100,(x[3]*2+x[4]*4+Math.max(0,x[1]-(SN.base||40))*3)))}%"></i>`).join('')}</div>
+    <div class="sninfo">${SN.mic?'● listening':'mic off · movement only'} · ${fmtHM((n-new Date(SN.start))/6e4)} in bed</div>${!SAC||SAC.state!=='running'?'<button class="btn p" type="button" id="snArm" style="margin-top:14px">tap to re-arm alarm + mic</button>':''}<button class="snstop" type="button" id="snStop">hold to stop tracking</button>`;
+  if($('snArm'))$('snArm').onclick=async()=>{try{SAC=SAC||new (window.AudioContext||window.webkitAudioContext)();await SAC.resume()}catch(e){}if(SN.mic&&!SMIC){try{SMIC=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const src=SAC.createMediaStreamSource(SMIC);SAN=SAC.createAnalyser();SAN.fftSize=2048;src.connect(SAN)}catch(e){}}sWake();sNightDraw()};
+  const b=$('snStop');let t=null;const down=()=>{t=setTimeout(()=>sFinish(false),1500);b.classList.add('arm')},up=()=>{clearTimeout(t);b.classList.remove('arm')};b.onpointerdown=down;b.onpointerup=b.onpointerleave=up}
+
+/* alarm sound (generated, ramps up over a minute) */
+let SAL=null;
+function sAlarmSound(preview){try{SAC=SAC||new (window.AudioContext||window.webkitAudioContext)();SAC.resume()}catch(e){return}
+  sAlarmStop();const g=SAC.createGain();g.gain.value=preview?.5:.08;g.connect(SAC.destination);if(!preview)g.gain.linearRampToValueAtTime(1,SAC.currentTime+60);
+  const kind=SSET.snd;let i=0;const beep=()=>{if(!SAL)return;const t=SAC.currentTime;
+    if(kind==='classic'){[0,.18,.36,.54].forEach(d=>{const o=SAC.createOscillator(),e=SAC.createGain();o.type='square';o.frequency.value=1760;e.gain.setValueAtTime(.35,t+d);e.gain.setValueAtTime(0,t+d+.1);o.connect(e).connect(g);o.start(t+d);o.stop(t+d+.12)})}
+    else if(kind==='siren'){const o=SAC.createOscillator(),e=SAC.createGain();o.type='sawtooth';o.frequency.setValueAtTime(600,t);o.frequency.linearRampToValueAtTime(1400,t+.6);o.frequency.linearRampToValueAtTime(600,t+1.2);e.gain.value=.3;o.connect(e).connect(g);o.start(t);o.stop(t+1.2)}
+    else{const n=[523.25,659.25,783.99,1046.5,783.99,659.25][i++%6];const o=SAC.createOscillator(),e=SAC.createGain();o.type='triangle';o.frequency.value=n;e.gain.setValueAtTime(.0001,t);e.gain.exponentialRampToValueAtTime(.6,t+.02);e.gain.exponentialRampToValueAtTime(.0001,t+.9);o.connect(e).connect(g);o.start(t);o.stop(t+1)}};
+  SAL={g,t:setInterval(beep,kind==='classic'?1000:kind==='siren'?1200:420)};beep();try{navigator.vibrate&&navigator.vibrate([400,200,400,200,400])}catch(e){}}
+function sAlarmStop(){if(SAL){clearInterval(SAL.t);try{SAL.g.disconnect()}catch(e){}SAL=null}}
+function sRing(){SN.ringing=new Date().toISOString();SN.woke=SN.woke||SN.ringing;LS.set('sleepNight',SN);sAlarmSound(false);sMission(false)}
+
+/* missions: alarm keeps going until it's solved */
+function sMission(test){const o=$('sleepNight');o.hidden=false;document.body.classList.add('sleeping');const S=SSET;const done=()=>{sAlarmStop();sShake.on=false;if(test||(SN&&SN.check)){if(SN&&SN.check)SN=null;o.hidden=true;document.body.classList.remove('sleeping');return}sMorning()};
+  const snz=!test&&SN&&SN.snoozes<S.snooze?`<button class="iconbtn" type="button" id="smSnz">snooze 5 min (${S.snooze-SN.snoozes} left)</button>`:'';
+  const head=`<div class="smhead"><span class="tag pink">${test?'mission test':'wake up'}</span><b class="num">${pad(new Date().getHours())}:${pad(new Date().getMinutes())}</b></div>`;
+  if(test)sAlarmStop();
+  if(S.miss==='math'){const mk=()=>{const d=S.diff;const r=n=>Math.floor(Math.random()*n);let a,b,c,q,ans;if(d===1){a=10+r(40);b=10+r(40);q=`${a} + ${b}`;ans=a+b}else if(d===2){a=12+r(30);b=3+r(9);c=10+r(90);q=`${a} × ${b} + ${c}`;ans=a*b+c}else{a=13+r(40);b=12+r(20);c=100+r(400);q=`${a} × ${b} − ${c}`;ans=a*b-c}return {q,ans}};
+    let left=3,cur=mk();const draw=()=>{o.innerHTML=head+`<div class="smq num">${cur.q} =</div><input class="smin num" id="smA" inputmode="none" readonly autocomplete="off"><div class="dim">${left} to go</div><div class="smkp">${[1,2,3,4,5,6,7,8,9,'−',0,'⌫'].map(k=>`<button type="button" data-k="${k}">${k}</button>`).join('')}</div><button class="btn p" type="button" id="smOk">submit</button>${snz}`;bind()};
+    const bind=()=>{o.onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=$('smA');if(b.dataset.k!=null){const k=b.dataset.k;i.value=k==='⌫'?i.value.slice(0,-1):k==='−'?(i.value.startsWith('-')?i.value.slice(1):'-'+i.value):i.value+k;return}
+      if(b.id==='smOk'){if(+i.value===cur.ans&&i.value!==''){left--;if(!left)return done();cur=mk();draw()}else{i.value='';i.classList.add('bad');setTimeout(()=>i.classList.remove('bad'),400)}}if(b.id==='smSnz')sSnooze()}};draw()}
+  else if(S.miss==='shake'){sShake.on=true;sShake.n=0;const need=S.shakes;o.innerHTML=head+`<div class="smq">shake it</div><div class="smshake num" id="smN">0 / ${need}</div><div class="smbar"><i id="smBar"></i></div>${snz}<div class="dim" style="font-size:11px">no motion sensor? <button class="iconbtn" type="button" id="smAlt">switch to maths</button></div>`;
+    sShake.cb=()=>{$('smN').textContent=sShake.n+' / '+need;$('smBar').style.width=Math.min(100,sShake.n/need*100)+'%';if(sShake.n>=need){sShake.cb=null;done()}};
+    o.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.id==='smSnz')sSnooze();if(b.id==='smAlt'){sShake.on=false;const m=S.miss;S.miss='math';sMission(test);S.miss=m}}}
+  else if(S.miss==='type'){const ph=SPHRASE[Math.floor(Math.random()*SPHRASE.length)];o.innerHTML=head+`<div class="smq" style="font-size:20px">type exactly:</div><div class="smph">${esc(ph)}</div><input class="smin" id="smT" autocomplete="off" autocapitalize="off" spellcheck="false">${snz}`;
+    $('smT').oninput=e=>{if(e.target.value.trim().toLowerCase()===ph.toLowerCase())done()};o.onclick=e=>{if(e.target.id==='smSnz')sSnooze()}}
+  else{if(!S.code){const m=S.miss;S.miss='math';sMission(test);S.miss=m;return}
+    o.innerHTML=head+`<div class="smq" style="font-size:20px">scan your barcode</div><div class="fscan"><video id="smV" playsinline muted></video><i class="fsline"></i></div><div class="dim" id="smMsg">find it and point the camera at it</div>${snz}`;
+    sScanner($('smV'),code=>{if(code===S.code){sScanStop();done();return true}$('smMsg').textContent='wrong barcode — that\'s not the one';return false});o.onclick=e=>{if(e.target.id==='smSnz'){sScanStop();sSnooze()}}}}
+function sSnooze(){sAlarmStop();sShake.on=false;SN.snoozes++;SN.ringing=null;SN.alarm=new Date(Date.now()+5*60e3).toISOString();SN.win=0;LS.set('sleepNight',SN);sNightDraw()}
+let SSC=null;
+async function sScanner(v,cb){sScanStop();try{
+  if('BarcodeDetector' in window){const st=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});SSC={st};v.srcObject=st;await v.play();const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e','code_128']});
+    const loop=async()=>{if(!SSC||!v.isConnected)return sScanStop();try{const r=await det.detect(v);if(r[0]&&cb(r[0].rawValue))return}catch(e){}setTimeout(loop,250)};loop()}
+  else{if(!window.ZXing)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/zxing.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+    const zx=new ZXing.BrowserMultiFormatReader();SSC={zx};zx.decodeFromConstraints({video:{facingMode:'environment'}},v,res=>{if(res&&SSC&&cb(res.getText()))sScanStop()})}}catch(e){}}
+function sScanStop(){if(!SSC)return;try{SSC.zx&&SSC.zx.reset()}catch(e){}if(SSC.st)SSC.st.getTracks().forEach(t=>t.stop());SSC=null}
+function sRegister(){openSheet('register barcode',`<div class="dim" style="margin-bottom:8px">Scan something that lives in another room — toothpaste, shower gel, a cereal box.</div><div class="fscan"><video id="srV" playsinline muted></video><i class="fsline"></i></div><div class="row" style="gap:6px;margin-top:8px"><input class="inp num" id="srC" placeholder="or type the number" style="flex:1"><button class="btn p" type="button" id="srOk">save</button></div>`);
+  const saveC=c=>{SSET.code=c;saveSS();sScanStop();closeSheet();sTonight()};sScanner($('srV'),c=>{saveC(c);return true});$('srOk').onclick=()=>{const c=$('srC').value.replace(/\s/g,'');if(c)saveC(c)};$('sheetX')&&$('sheetX').addEventListener('click',sScanStop,{once:true})}
+
+/* morning: summary + how you feel + tags, then a wake-up check */
+function sFinish(fromAlarm){if(!SN)return;sAlarmStop();clearInterval(STK);removeEventListener('devicemotion',sMotion);document.removeEventListener('visibilitychange',sVis);
+  try{SMIC&&SMIC.getTracks().forEach(t=>t.stop())}catch(e){}SMIC=null;SAN=null;try{SWL&&SWL.release()}catch(e){}SWL=null;
+  SN.end=new Date().toISOString();const r=sAnalyse(SN);const key=ymd(new Date(SN.end));const doc={start:SN.start,end:SN.end,alarm:SN.alarm,woke:SN.woke||null,snoozes:SN.snoozes,mic:SN.mic,s:SN.s,ev:SN.ev.slice(0,80),...r,mood:null,tags:[]};
+  SNIGHTS[key]=doc;save('sleep/n-'+key,doc,true);LS.set('sleepNight',null);const keep=SN;SN=null;
+  if(!fromAlarm){$('sleepNight').hidden=true;document.body.classList.remove('sleeping');SV='history';renderSleep();sDetail(key);return}
+  return {key,doc,keep}}
+function sAnalyse(n){const s=n.s,inBed=(new Date(n.end||Date.now())-new Date(n.start))/6e4;if(!s.length)return {inBed,asleep:0,q:0,onset:0,awake:0,deep:0,snore:0};
+  const base=n.base||Math.min(...s.map(x=>x[1]));const act=s.map(x=>Math.min(1,(x[3]/25)+(x[4]/12)+Math.max(0,x[1]-base)/25));
+  const sm=act.map((v,i)=>{const w=act.slice(Math.max(0,i-2),i+3);return w.reduce((a,b)=>a+b,0)/w.length});
+  let onsetI=sm.findIndex((v,i)=>sm.slice(i,i+20).every(x=>x<.25));if(onsetI<0)onsetI=Math.min(sm.length-1,20);
+  const awakeB=sm.slice(onsetI).filter(v=>v>.55).length,deepB=sm.slice(onsetI).filter(v=>v<.08).length;
+  const asleep=Math.max(0,(s.length-onsetI-awakeB)*0.5);const goal=(SSET&&SSET.goal||8)*60;
+  const q=Math.round(Math.min(100,Math.max(0,55*Math.min(1,asleep/goal)+25*(1-awakeB/Math.max(1,s.length-onsetI))+20*Math.min(1,deepB/Math.max(1,(s.length-onsetI)*.25)))));
+  return {inBed:Math.round(inBed),asleep:Math.round(asleep),onset:Math.round(onsetI*0.5),awake:Math.round(awakeB*0.5),deep:Math.round(deepB*0.5),q,snore:n.ev.filter(e=>e.k==='snore/talk').length}}
+function sMorning(){const r=sFinish(true);if(!r)return;const {key,doc}=r;const o=$('sleepNight');
+  o.innerHTML=`<div class="smhead"><span class="tag pink">good morning</span><b class="num">${pad(new Date().getHours())}:${pad(new Date().getMinutes())}</b></div>
+    <div class="smsum num"><div><b>${fmtHM(doc.asleep)}</b><span>asleep</span></div><div><b>${doc.q}%</b><span>quality</span></div><div><b>${fmtHM(doc.inBed)}</b><span>in bed</span></div></div>
+    ${sGraph(doc)}<div class="dim" style="margin:12px 0 6px">how do you feel?</div><div class="smmood">${['😫','😕','😐','🙂','😁'].map((m,i)=>`<button type="button" data-mood="${i+1}">${m}</button>`).join('')}</div>
+    <div class="dim" style="margin:12px 0 6px">sleep notes</div><div class="chips">${STAGS.map(t=>`<button type="button" class="chip" data-tag="${esc(t)}">${t}</button>`).join('')}</div>
+    <button class="btn p" type="button" id="smDone" style="margin-top:16px;width:100%">done</button>`;
+  o.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.mood){doc.mood=+b.dataset.mood;o.querySelectorAll('[data-mood]').forEach(x=>x.classList.toggle('on',x===b))}
+    if(b.dataset.tag){const t=b.dataset.tag;doc.tags=doc.tags.includes(t)?doc.tags.filter(x=>x!==t):doc.tags.concat(t);b.classList.toggle('on')}
+    save('sleep/n-'+key,doc,true);if(b.id==='smDone'){o.hidden=true;document.body.classList.remove('sleeping');SV='history';renderSleep();sCheck()}}}
+function sCheck(){setTimeout(()=>{const o=$('sleepNight');o.hidden=false;document.body.classList.add('sleeping');let left=90;
+  o.innerHTML=`<div class="smq">still awake?</div><div class="smshake num" id="scT">${left}</div><button class="btn p slgo" type="button" id="scOk">yes, I'm up</button>`;
+  const t=setInterval(()=>{left--;if($('scT'))$('scT').textContent=left;if(left<=0){clearInterval(t);SN={check:true,start:new Date().toISOString(),alarm:new Date().toISOString(),win:0,s:[],ev:[],snoozes:99,acc:{n:0,sum:0,pk:0,mv:0,loud:0}};sAlarmSound(false);sMission(false)}},1000);
+  $('scOk').onclick=()=>{clearInterval(t);o.hidden=true;document.body.classList.remove('sleeping')}},3*60e3)}
+
+/* ---------- history + stats ---------- */
+function sGraph(n){const s=n.s||[];if(!s.length)return '<div class="dim">no samples</div>';const base=n.base||Math.min(...s.map(x=>x[1]));const W=600,H=120;
+  const act=s.map(x=>Math.min(1,(x[3]/25)+(x[4]/12)+Math.max(0,x[1]-base)/25));const sm=act.map((v,i)=>{const w=act.slice(Math.max(0,i-3),i+4);return w.reduce((a,b)=>a+b,0)/w.length});
+  const pts=sm.map((v,i)=>`${(i/(sm.length-1||1)*W).toFixed(1)},${(8+(1-v)*(H-16)).toFixed(1)}`).join(' ');
+  const t0=new Date(n.start),t1=new Date(n.end||Date.now());
+  return `<svg class="slgraph" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none"><defs><linearGradient id="slg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#05d9e8" stop-opacity=".1"/><stop offset="1" stop-color="#9b5cff" stop-opacity=".55"/></linearGradient></defs><polygon points="0,${H} ${pts} ${W},${H}" fill="url(#slg)"/><polyline points="${pts}" fill="none" stroke="#05d9e8" stroke-width="1.5"/></svg>
+    <div class="slaxis dim num"><span>awake ↑</span><span>${pad(t0.getHours())}:${pad(t0.getMinutes())} → ${pad(t1.getHours())}:${pad(t1.getMinutes())}</span><span>deep ↓</span></div>`}
+function sHistory(){const el=$('sleepBody');const ks=Object.keys(SNIGHTS).sort().reverse();
+  el.innerHTML=ks.length?ks.map(k=>{const n=SNIGHTS[k];return `<button type="button" class="panel slcard" data-sn="${k}"><div class="row" style="justify-content:space-between"><b>${esc(nice(k).toLowerCase())}</b><span class="num">${['','😫','😕','😐','🙂','😁'][n.mood||0]||''} <b class="${n.q>=75?'ok':n.q<50?'bad':''}">${n.q||0}%</b></span></div><div class="dim num" style="font-size:12px">${fmtHM(n.asleep)} asleep · ${fmtHM(n.inBed)} in bed${n.snoozes?` · ${n.snoozes} snooze`:''}${(n.tags||[]).length?' · '+n.tags.join(', '):''}</div>${sGraph(n)}</button>`}).join(''):'<div class="panel"><div class="pb dim">No nights yet. Start sleep from the tonight tab before bed.</div></div>';
+  el.onclick=e=>{const b=e.target.closest('[data-sn]');if(b)sDetail(b.dataset.sn)}}
+function sDetail(k){const n=SNIGHTS[k];if(!n)return;
+  openSheet(nice(k).toLowerCase(),`<div class="smsum num"><div><b>${fmtHM(n.asleep)}</b><span>asleep</span></div><div><b>${n.q}%</b><span>quality</span></div><div><b>${fmtHM(n.inBed)}</b><span>in bed</span></div></div>${sGraph(n)}
+  <div class="slkv num"><div><span>fell asleep in</span><b>${n.onset} min</b></div><div><span>restless</span><b>${n.awake} min</b></div><div><span>deep / still</span><b>${n.deep} min</b></div><div><span>noise events</span><b>${(n.ev||[]).length}</b></div><div><span>snore / talk</span><b>${n.snore||0}</b></div><div><span>woke</span><b>${n.woke?new Date(n.woke).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):'—'}</b></div></div>
+  ${(n.tags||[]).length?`<div class="chips" style="margin-top:10px">${n.tags.map(t=>`<span class="chip">${esc(t)}</span>`).join('')}</div>`:''}
+  <div class="bigbtns" style="margin-top:14px"><button class="btn d" type="button" id="snDel">delete night</button><span style="flex:1"></span><button class="btn p" type="button" id="snOk">close</button></div>`);
+  $('snOk').onclick=closeSheet;$('snDel').onclick=function(){if(!this.dataset.arm){this.dataset.arm=1;this.textContent='tap again';return}delete SNIGHTS[k];removeDoc('sleep/n-'+k);closeSheet();renderSleep()}}
+function sStats(){const el=$('sleepBody');const ks=Object.keys(SNIGHTS).sort().slice(-30);const N=ks.map(k=>({k,...SNIGHTS[k]}));
+  if(!N.length){el.innerHTML='<div class="panel"><div class="pb dim">Stats appear after your first tracked night.</div></div>';return}
+  const avg=f=>N.reduce((a,n)=>a+(+n[f]||0),0)/N.length;const bt=N.map(n=>{const d=new Date(n.start);let m=d.getHours()*60+d.getMinutes();if(m<720)m+=1440;return m});const wk=N.map(n=>{const d=new Date(n.woke||n.end);return d.getHours()*60+d.getMinutes()});
+  const sd=a=>{const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)};const hm=m=>{m=Math.round(m)%1440;return pad(Math.floor(m/60))+':'+pad(m%60)};
+  const last14=N.slice(-14);const mx=Math.max(...last14.map(n=>n.asleep||0),(SSET.goal||8)*60);
+  const tagI=STAGS.map(t=>{const w=N.filter(n=>(n.tags||[]).includes(t)),wo=N.filter(n=>!(n.tags||[]).includes(t));if(w.length<2||wo.length<2)return null;const d=w.reduce((a,n)=>a+n.q,0)/w.length-wo.reduce((a,n)=>a+n.q,0)/wo.length;return [t,Math.round(d),w.length]}).filter(Boolean).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  el.innerHTML=`<div class="statcards"><div class="panel"><div class="pb"><span class="dim">avg asleep</span><b class="num">${fmtHM(avg('asleep'))}</b></div></div><div class="panel"><div class="pb"><span class="dim">avg quality</span><b class="num pink">${Math.round(avg('q'))}%</b></div></div><div class="panel"><div class="pb"><span class="dim">avg bedtime</span><b class="num">${hm(bt.reduce((a,b)=>a+b,0)/bt.length)}</b></div></div><div class="panel"><div class="pb"><span class="dim">avg wake</span><b class="num">${hm(wk.reduce((a,b)=>a+b,0)/wk.length)}</b></div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">time asleep · last ${last14.length} nights</span><span class="dim">goal ${SSET.goal} h</span></div><div class="pb"><div class="fbars" style="grid-template-columns:repeat(${last14.length},1fr)">${last14.map(n=>`<div><span class="b ${(n.asleep||0)<(SSET.goal||8)*54?'over':''}" style="height:${(n.asleep||0)/mx*100}%;background:${(n.asleep||0)>=(SSET.goal||8)*54?'#9b5cff':''}"></span><i style="bottom:${(SSET.goal||8)*60/mx*100}%"></i><span class="l">${new Date(n.k+'T12:00').toLocaleDateString('en-GB',{weekday:'narrow'})}</span></div>`).join('')}</div></div></div>
+  <div class="grid2"><div class="panel"><div class="ph"><span class="tag">consistency</span></div><div class="pb fins"><div>▸ bedtime varies by <b>±${Math.round(sd(bt))} min</b></div><div>▸ wake time varies by <b>±${Math.round(sd(wk))} min</b></div><div>▸ ${N.filter(n=>n.snoozes).length} of ${N.length} mornings needed a snooze</div><div>▸ fell asleep in <b>${Math.round(avg('onset'))} min</b> on average</div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">what affects your sleep</span></div><div class="pb fins">${tagI.length?tagI.map(([t,d,c])=>`<div>▸ <b>${esc(t)}</b>: quality ${d>=0?'+':''}${d}% <span class="dim">(${c} nights)</span></div>`).join(''):'<div class="dim">Tag a few mornings with sleep notes (gym, caffeine…) to see what helps or hurts.</div>'}</div></div></div>`}
+
+/* resume a night if the app reloaded mid-sleep */
+(function(){const n=LS.get('sleepNight');if(n&&!n.end&&Date.now()-new Date(n.start)<16*36e5){SN=n;setTimeout(()=>{if(!sleepLoaded)loadSleep().then?.(()=>{});document.body.classList.add('sleeping');$('sleepNight').hidden=false;sNightDraw();STK=setInterval(sTick,1000);addEventListener('devicemotion',sMotion);sWake();document.addEventListener('visibilitychange',sVis)},3000)}})();
 
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
 const CACHE='system-__V__';

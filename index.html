@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794618321">
+<link rel="stylesheet" href="app.css?v=1794619256">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -182,9 +182,12 @@
   /* hold anywhere to skip: a ring fills under your thumb, then it jumps straight to the TV-off (with its sound) */
   var hold=null;
   function holdStart(x,y){if(closing||hold)return;var r=document.createElement('div');r.className='bfx-hold';r.style.left=x+'px';r.style.top=y+'px';
-    r.innerHTML='<svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="hb"/><circle cx="50" cy="50" r="44" class="hf"/></svg><span>skip</span>';el.appendChild(r);
+    var ticks='';for(var i=0;i<48;i++){var a=i/48*Math.PI*2,r1=i%4?58:54,r2=62;ticks+='<line x1="'+(80+Math.cos(a)*r1).toFixed(1)+'" y1="'+(80+Math.sin(a)*r1).toFixed(1)+'" x2="'+(80+Math.cos(a)*r2).toFixed(1)+'" y2="'+(80+Math.sin(a)*r2).toFixed(1)+'"/>'}
+    r.innerHTML='<i class="bhx bhxa"></i><i class="bhx bhxb"></i><svg viewBox="0 0 160 160"><g class="htk">'+ticks+'</g><circle cx="80" cy="80" r="72" class="hseg"/><circle cx="80" cy="80" r="46" class="hb"/><circle cx="80" cy="80" r="46" class="hf"/><circle cx="80" cy="80" r="34" class="hin"/><path class="hbr" d="M14 30V14H30M130 14H146V30M146 130V146H130M30 146H14V130"/></svg><b class="hpct">00</b><span class="hlab">OVERRIDE</span><em class="hsc"></em>';
+    el.appendChild(r);var t0=performance.now(),pc=r.querySelector('.hpct'),lab=r.querySelector('.hlab'),words=['OVERRIDE','BYPASS//','SKIP_SEQ','EXEC 0x7F'];
+    (function upd(){if(!r.isConnected||r.classList.contains('cancel'))return;var p=Math.min(1,(performance.now()-t0)/700);pc.textContent=(p>=1?'OK':('0'+Math.floor(p*99)).slice(-2));lab.textContent=words[Math.min(3,Math.floor(p*4))];if(p<1)requestAnimationFrame(upd)})();
     requestAnimationFrame(function(){requestAnimationFrame(function(){r.classList.add('on')})});
-    hold={r:r,t:setTimeout(function(){r.classList.add('fire');setTimeout(function(){r.remove()},400);hold=null;skipToEnd()},700)}}
+    hold={r:r,t:setTimeout(function(){r.classList.add('fire');setTimeout(function(){r.remove()},600);hold=null;skipToEnd()},700)}}
   function holdEnd(){if(!hold)return;clearTimeout(hold.t);var r=hold.r;r.classList.remove('on');r.classList.add('cancel');setTimeout(function(){r.remove()},250);hold=null}
   function skipToEnd(){try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}if(VID){var d=V.duration||13.6;try{unmute();V.currentTime=Math.max(0,d-1.3);if(V.paused)V.play()}catch(e){tvOff()}}else close(true)}
   el.addEventListener('touchstart',function(e){var t=e.touches[0];if(e.touches.length===1)holdStart(t.clientX,t.clientY);else holdEnd()},{passive:true,capture:true});
@@ -325,6 +328,11 @@
     <div class="seg" id="foodSeg" style="margin:0 0 12px"><button type="button" data-fv="log">log</button><button type="button" data-fv="progress">progress</button><button type="button" data-fv="fast">fasting</button><button type="button" data-fv="goals">goals</button></div>
     <div id="foodBody"></div>
   </section>
+  <section class="view" id="v-sleep" aria-label="Sleep">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/sleep"><span class="slash">/</span>sleep</h2><span class="sub" id="sleepSub"></span></div></div>
+    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="tonight" style="flex:1">tonight</button><button type="button" data-sv="history" style="flex:1">history</button><button type="button" data-sv="stats" style="flex:1">stats</button></div>
+    <div id="sleepBody"></div>
+  </section>
   <section class="view" id="v-media" aria-label="Media">
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/media"><span class="slash">/</span>media</h2><span class="sub">anime · movies · manga · books</span></div></div>
     <div class="toolcards four" id="mediaCards">
@@ -399,6 +407,7 @@
 
 
 <nav class="bnav" id="bnav" aria-label="Sections"></nav>
+<div class="sleepnight" id="sleepNight" hidden></div>
 <div class="restdock" id="restDock" aria-live="polite"><span class="tag">rest</span><b class="num" id="restT">2:00</b><div class="meter"><span id="restBar"></span></div><button class="iconbtn" type="button" data-rd="-15">−15</button><button class="iconbtn" type="button" data-rd="15">+15</button><button class="iconbtn" type="button" data-rd="skip">skip</button></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sheetTitle"><div class="sgrab"></div><div class="sh"><span class="tag" id="sheetTitle"></span><button class="iconbtn" type="button" id="sheetX">close</button></div><div class="sbody" id="sheetBody"></div></div>
 <div class="login" id="login" hidden><div class="loginbg"></div><form class="loginbox" id="loginForm"><div id="loginBox"><div class="tag pink">dylan@stack:~$ login</div><h1 class="glitch" data-text="SYSTEM">SYSTEM</h1>
@@ -421,9 +430,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794618321"</script>
-<script src="config.js?v=1794618321"></script>
+<script>window.APP_V="1794619256"</script>
+<script src="config.js?v=1794619256"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794618321"></script>
+<script src="app.js?v=1794619256"></script>
 </body>
 </html>
