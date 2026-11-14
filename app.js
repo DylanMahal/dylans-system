@@ -462,7 +462,7 @@ function tickNow(force){if(!M||!M.plans||!M.plans[planKind]||!M.plans[planKind].
 setInterval(()=>tickNow(false),1000);
 async function loadDay(){
   const p='days/d-'+DAYK;const d=await load(p);DAY={ticks:{},water:0,msg:{},dw:0,...(d||{})};
-  renderToday();renderTools();watch(p,dd=>{if(p!=='days/d-'+DAYK)return;DAY={ticks:{},water:0,msg:{},dw:0,...dd};applyTicks();renderTools()});
+  renderToday();renderTools();watch(p,dd=>{if(p!=='days/d-'+DAYK)return;DAY={ticks:{},water:0,msg:{},dw:0,...dd};applyTicks();renderTools();if(cur==='streaks'&&typeof renderHabits==='function'&&!hHold)renderHabits()});
 }
 
 
@@ -2106,6 +2106,7 @@ function fLog(){const el=$('foodBody');FD=FD||DAYK;const x=fDay(FD),B=fBudget(),
   <div class="fhero panel"><div class="fring"><svg viewBox="0 0 140 140"><circle cx="70" cy="70" r="${R}" class="rb"/><circle cx="70" cy="70" r="${R}" class="rf${over?' over':''}" style="stroke-dasharray:${C};stroke-dashoffset:${C*(1-pct)}"/></svg><div><b class="num${over?' bad':''}">${Math.abs(left)}</b><span class="dim">${over?'over':'left'}</span></div></div>
     <div class="feq num"><div><b>${B}</b><span>budget</span></div><i>−</i><div><b>${Math.round(S.kcal)}</b><span>food</span></div><i>+</i><div><b>${EX}</b><span>exercise</span></div><i>=</i><div><b class="${over?'bad':'ok'}">${left}</b><span>${over?'over':'remaining'}</span></div></div>
     <div class="fmacs">${mbar('protein',S.p,T.p,'var(--pink)')}${mbar('carbs',S.c,T.c,'var(--cyan)')}${mbar('fat',S.f,T.f,'#ffb000')}</div>
+    <div class="fquick"><button type="button" class="btn p" data-fadd="${fAutoMeal()}">🔍 log food</button><button type="button" class="btn" id="fScanTop">▥ scan barcode</button></div>
     <div class="fnut dim num">fibre ${r1(S.fi)}/${(FPROF&&FPROF.fib)||30} g · sugar ${r1(S.su)} g · sodium ${Math.round(S.na)}/${(FPROF&&FPROF.na)||2300} mg</div></div>
   ${FMEALS.map(([m,lab])=>{const L=x.m[m]||[],s=fSum(L);return `<div class="panel fmeal"><div class="ph"><span class="tag">${lab}</span><span class="row" style="gap:6px"><span class="num">${Math.round(s.kcal)} kcal</span><button class="iconbtn" type="button" data-fmenu="${m}">⋯</button></span></div><div class="pb">
     ${L.map((e,i)=>`<button type="button" class="frow" data-fe="${m}:${i}"><span><b>${esc(e.n)}</b><span class="dim">${esc(fAmt(e))}${e.b?' · '+esc(e.b):''}</span></span><span class="num">${Math.round(fNum(e,'k'))}</span></button>`).join('')}
@@ -2114,6 +2115,7 @@ function fLog(){const el=$('foodBody');FD=FD||DAYK;const x=fDay(FD),B=fBudget(),
   <div class="panel"><div class="ph"><span class="tag">water</span><span class="num">${x.w||0} / ${(FPROF&&FPROF.water)||2500} ml</span></div><div class="pb"><div class="fwater">${[...Array(Math.ceil(((FPROF&&FPROF.water)||2500)/250))].map((_,i)=>`<button type="button" class="${(x.w||0)>=(i+1)*250?'on':''}" data-fw="${(i+1)*250}" aria-label="${(i+1)*250} ml"></button>`).join('')}</div></div></div>
   <div class="panel"><div class="ph"><span class="tag">notes</span></div><div class="pb"><textarea class="inp" id="fNote" rows="2" placeholder="how did today go?">${esc(x.note||'')}</textarea></div></div>`;
   el.onclick=fLogClick;el.oninput=e=>{if(e.target.id==='fNote'){x.note=e.target.value;clearTimeout(fLog.t);fLog.t=setTimeout(()=>saveDay(FD),600)}}}
+function fAutoMeal(){const h=new Date().getHours();return h>=5&&h<11?'b':h<15?'l':h>=17&&h<22?'d':'s'}
 function fAmt(e){if(e.quick)return 'quick add';const q=+e.q||1;return e.u&&e.u!=='g'?`${r1(q)} × ${e.u}`:`${Math.round(e.g)} g`}
 function fLogClick(e){const b=e.target.closest('button');if(!b)return;const x=fDay(FD);
   if(b.dataset.fd){const d=new Date(FD+'T12:00');d.setDate(d.getDate()+(+b.dataset.fd));const k=ymd(d);if(k>DAYK)return;FD=k;renderFood();return}
@@ -2122,6 +2124,7 @@ function fLogClick(e){const b=e.target.closest('button');if(!b)return;const x=fD
   if(b.dataset.fmenu)return fMealMenu(b.dataset.fmenu);
   if(b.dataset.fw){const v=+b.dataset.fw;x.w=(x.w||0)>=v?v-250:v;saveDay(FD);fLog();return}
   if(b.id==='fAddEx')return fExercise();
+  if(b.id==='fScanTop')return fScan(fAutoMeal());
   if(b.dataset.fx){const i=+b.dataset.fx;openSheet('exercise',`<p>${esc(x.ex[i].n)} · ${x.ex[i].k} kcal</p><div class="bigbtns"><button class="btn d" type="button" id="fxDel">remove</button><button class="btn p" type="button" id="fxOk">done</button></div>`);$('fxOk').onclick=closeSheet;$('fxDel').onclick=()=>{x.ex.splice(i,1);saveDay(FD);closeSheet();fLog()}}}
 function fMealMenu(m){const lab=FMEALS.find(z=>z[0]===m)[1];const x=fDay(FD);const y=new Date(FD+'T12:00');y.setDate(y.getDate()-1);const yk=ymd(y);const yl=(fDay(yk).m[m]||[]);
   openSheet(lab,`<div class="bigbtns col"><button class="btn" type="button" id="fmCopy" ${yl.length?'':'disabled'}>copy yesterday's ${lab} (${yl.length} item${yl.length===1?'':'s'})</button><button class="btn" type="button" id="fmSave" ${(x.m[m]||[]).length?'':'disabled'}>save this ${lab} as a meal</button><button class="btn d" type="button" id="fmClear" ${(x.m[m]||[]).length?'':'disabled'}>clear ${lab}</button></div>`);
@@ -2530,14 +2533,25 @@ async function setItemNotify(key,lead){if(lead==null)delete NITEMS.m[key];else N
 const HCOLS=['#ff2a6d','#05d9e8','#9b5cff','#57f5a8','#ffb000','#ff6b3d','#4da3ff','#e6e6e6'];
 const HICONS='💪 🏋️ 🏃 🚶 🧘 💧 🥗 🍎 💊 🧴 🦷 🛏️ 📖 ✍️ 💻 🧠 🎯 🧹 🐈 ☀️ 🌙 🚿 🧊 📵 🚭 🍺 🍬 ☕ 🎧 🙏 💸 📞 🪥 ✂️ 👔 🔥 ⭐ ✅'.split(' ');
 let HAB={list:[]},HLOG={d:{}},habLoaded=false,HSEL=null;
-async function loadHabits(){if(habLoaded){renderHabits();return}const [l,g]=await Promise.all([load('habits/list'),load('habits/log')]);HAB={list:[],...(l||{})};HLOG={d:{},...(g||{})};habLoaded=true;renderHabits()}
+async function loadHabits(){if(habLoaded){renderHabits();return}const [l,g,dd]=await Promise.all([load('habits/list'),load('habits/log'),listDocs('days/d-')]);(dd||[]).forEach(r=>{if(r.data&&r.data.names)DNAMES[r.path.slice(7)]=r.data.names});HAB={list:[],...(l||{})};HLOG={d:{},...(g||{})};habLoaded=true;renderHabits()}
 watch('habits/list',d=>{if(d){HAB={list:[],...d};if(cur==='streaks')renderHabits()}});
 watch('habits/log',d=>{if(d){HLOG={d:{},...d};if(cur==='streaks'&&!hHold)renderHabits()}});
 const hSave=()=>save('habits/list',HAB),hSaveLog=()=>{save('habits/log',HLOG);hWidget()};
-const hCnt=(h,d)=>((HLOG.d[d]||{})[h.id])||0;
-const hTarget=h=>Math.max(1,+h.q||1);
-const hDone=(h,d)=>h.type==='neg'?hCnt(h,d)===0:hCnt(h,d)>=hTarget(h);
-const hDue=(h,d)=>{const dow=new Date(d+'T12:00').getDay();return h.type==='days'?(h.days||[]).includes(dow):true};
+/* habits linked to Today: every plan item except tasks/work/sleep/meals etc. Ticks live in the Today day docs (days/d-*), so ticking here or in Today is the same tick */
+const HL_SKIP=new Set(['Task','Work','Sleep','Meal','Break','Leisure','Social','Research','Plan','Study']);
+const HL_META={Habit:['✅','#57f5a8','habits'],Training:['🏋️','#ff2a6d','training'],Mindset:['🎯','#ffb000','mindset'],Circadian:['☀️','#ffb000','circadian'],LM:['🪞','#9b5cff','looksmaxxing'],Supplement:['💊','#05d9e8','supplements'],Peptide:['💉','#4da3ff','peptides'],Ancillary:['💊','#ff6b3d','ancillaries'],Cognition:['🧠','#9b5cff','cognition'],Anabolic:['💪','#ff2a6d','anabolics']};
+let DNAMES={},dnLoaded=false;
+const hlKind=d=>{const w=new Date(d+'T12:00').getDay();return w===0||w===6?'weekend':'weekday'};
+const hlItems=(d,name)=>{if(!M.plans)return [];const dow=DOW[new Date(d+'T12:00').getDay()];return (M.plans[hlKind(d)]||[]).flatMap(b=>b.items).filter(i=>i.item.trim()===name&&(!i.days||i.days.has(dow)))};
+function hLinked(){if(!M.plans)return [];const hide=new Set(HAB.hide||[]);const map=new Map();
+  for(const kind of ['weekday','weekend'])(M.plans[kind]||[]).forEach(b=>b.items.forEach(i=>{if(HL_SKIP.has(i.type)||!i.item)return;const n=i.item.trim();const id='tl:'+n.toLowerCase();if(map.has(id)||hide.has(id))return;const m=HL_META[i.type]||['⭐','#e6e6e6',(i.type||'other').toLowerCase()];
+    map.set(id,{id,n,ic:m[0],col:m[1],grp:m[2],type:'daily',link:n,created:hFirstDay()})}));return [...map.values()]}
+function hFirstDay(){const k=Object.keys(DNAMES).sort()[0];return k||DAYK}
+function hTodayTicked(name){return visibleItems().filter(i=>i.item.trim()===name&&DAY.ticks[i.tk])}
+const hCnt=(h,d)=>{if(h.link){if(d===DAYK&&M.plans)return hTodayTicked(h.link).length;return (DNAMES[d]||[]).filter(x=>String(x).trim()===h.link).length}return ((HLOG.d[d]||{})[h.id])||0};
+const hTarget=(h,d)=>h.link?Math.max(1,hlItems(d||DAYK,h.link).length):Math.max(1,+h.q||1);
+const hDone=(h,d)=>h.type==='neg'?hCnt(h,d)===0:hCnt(h,d)>=hTarget(h,d);
+const hDue=(h,d)=>{if(h.link)return hlItems(d,h.link).length>0;const dow=new Date(d+'T12:00').getDay();return h.type==='days'?(h.days||[]).includes(dow):true};
 const hAdd=(d,n)=>{const x=new Date(d+'T12:00');x.setDate(x.getDate()+n);return ymd(x)};
 const hWeekStart=d=>{const x=new Date(d+'T12:00');const k=(x.getDay()+6)%7;x.setDate(x.getDate()-k);return ymd(x)};
 function hWeekCount(h,d){const s=hWeekStart(d);let n=0;for(let i=0;i<7;i++){const k=hAdd(s,i);if(k>DAYK)break;if(hCnt(h,k)>=hTarget(h))n++}return n}
@@ -2548,11 +2562,17 @@ function hStreak(h){const start=h.created||'2000-01-01';
   for(let i=0;i<2000&&d>=start;i++){if(!hDue(h,d)){d=hAdd(d,-1);continue}if(hDone(h,d)){n++;d=hAdd(d,-1)}else break}return {n,unit:'day'}}
 function hBest(h){const start=h.created||DAYK;let best=0,cur=0;for(let d=start;d<=DAYK;d=hAdd(d,1)){if(!hDue(h,d))continue;if(hDone(h,d)){cur++;best=Math.max(best,cur)}else if(d!==DAYK)cur=0}return Math.max(best,hStreak(h).n)}
 function hRate(h,days=30){let due=0,ok=0;for(let i=0;i<days;i++){const d=hAdd(DAYK,-i);if(d<(h.created||'0'))break;if(!hDue(h,d))continue;if(i===0&&!hDone(h,d))continue;due++;if(hDone(h,d))ok++}return due?Math.round(ok/due*100):0}
-function renderHabits(){if(!habLoaded){loadHabits();return}const el=$('habBody');const L=HAB.list.filter(h=>!h.arch);
-  const today=L.filter(h=>hDue(h,DAYK));const done=today.filter(h=>hDone(h,DAYK)).length;
-  $('habSub').textContent=L.length?`${done}/${today.length} today · ${Math.max(0,...L.map(h=>hStreak(h).n))} best current streak`:'build streaks that stick';
+const hAll=()=>HAB.list.filter(h=>!h.arch).concat(hLinked());
+const hGet=id=>HAB.list.find(z=>z.id===id)||hLinked().find(z=>z.id===id);
+function renderHabits(){if(!habLoaded){loadHabits();return}const el=$('habBody');const L=HAB.list.filter(h=>!h.arch);const LK=hLinked();const ALL=L.concat(LK);
+  const today=ALL.filter(h=>hDue(h,DAYK));const done=today.filter(h=>hDone(h,DAYK)).length;
+  $('habSub').textContent=ALL.length?`${done}/${today.length} today · ${Math.max(0,...ALL.map(h=>hStreak(h).n))} best current streak`:'build streaks that stick';
+  const grps=[];LK.forEach(h=>{let g=grps.find(x=>x.n===h.grp);if(!g)grps.push(g={n:h.grp,col:h.col,L:[]});g.L.push(h)});
+  const gh=grps.map(g=>{const due=g.L.filter(h=>hDue(h,DAYK));const ok=due.filter(h=>hDone(h,DAYK)).length;const open=(HAB.open||[]).includes(g.n);
+    return `<div class="panel hgrp${open?' open':''}"><button type="button" class="ph hgh" data-hg="${esc(g.n)}"><span class="tag" style="color:${g.col}">${esc(g.n)}</span><span class="num dim">${ok}/${due.length} today${due.length&&ok===due.length?' ✓':''} <span class="hchev">${open?'▾':'▸'}</span></span></button>${open?`<div class="pb"><div class="hgrid sm">${g.L.sort((a,b)=>hDue(b,DAYK)-hDue(a,DAYK)).map(hTile).join('')}</div></div>`:''}</div>`}).join('');
   el.innerHTML=`<div class="hgrid">${L.map(hTile).join('')}<button type="button" class="htile hnew" id="hNew"><span class="hring"><b>＋</b></span><span class="hn">new habit</span></button></div>
-    ${L.length?`<div class="dim" style="font-size:11px;text-align:center;margin-top:10px">hold a habit to complete it · tap for stats</div>`:''}
+    ${gh?`<div class="flab" style="margin:16px 0 6px">from today · ticks sync both ways</div>${gh}`:''}
+    ${ALL.length?`<div class="dim" style="font-size:11px;text-align:center;margin-top:10px">hold a habit to complete it · tap for stats</div>`:''}
     ${L.length?`<div class="panel" style="margin-top:14px"><div class="ph"><span class="tag">last 12 weeks</span><span class="dim">${Math.round(L.reduce((a,h)=>a+hRate(h,30),0)/Math.max(1,L.length))}% in the last 30 days</span></div><div class="pb">${hHeat(null)}</div></div>`:''}`;
   hBind()}
 function hTile(h){const c=hCnt(h,DAYK),t=hTarget(h),due=hDue(h,DAYK),ok=hDone(h,DAYK);const st=hStreak(h);const p=h.type==='neg'?(ok?1:0):Math.min(1,c/t);const R=42,C=2*Math.PI*R;
@@ -2560,14 +2580,17 @@ function hTile(h){const c=hCnt(h,DAYK),t=hTarget(h),due=hDue(h,DAYK),ok=hDone(h,
     <span class="hn">${esc(h.n)}</span><span class="hs num">${st.n?`🔥 ${st.n} ${st.unit}${st.n>1?'s':''}`:h.type==='week'?`${hWeekCount(h,DAYK)}/${h.per||3} this week`:due?'start today':'rest day'}</span></button>`}
 let hHold=null,hFired=0;
 function hBind(){const el=$('habBody');
-  el.onclick=e=>{if(e.target.closest('#hNew'))return hEdit(null);const t=e.target.closest('[data-h]');if(!t)return;if(Date.now()-hFired<700)return;hDetail(t.dataset.h)};
-  const start=(t,x)=>{if(hHold)return;const h=HAB.list.find(z=>z.id===t.dataset.h);if(!h)return;const ring=t.querySelector('.hh');const C=2*Math.PI*42;
+  el.onclick=e=>{if(e.target.closest('#hNew'))return hEdit(null);const g=e.target.closest('[data-hg]');if(g){const n=g.dataset.hg;const o=new Set(HAB.open||[]);o.has(n)?o.delete(n):o.add(n);HAB.open=[...o];hSave();renderHabits();return}const t=e.target.closest('[data-h]');if(!t)return;if(Date.now()-hFired<700)return;hDetail(t.dataset.h)};
+  const start=(t,x)=>{if(hHold)return;const h=hGet(t.dataset.h);if(!h)return;const ring=t.querySelector('.hh');const C=2*Math.PI*42;
     ring.style.transition='none';ring.style.strokeDashoffset=C;void ring.offsetWidth;ring.style.transition='stroke-dashoffset .6s linear';ring.style.strokeDashoffset=0;t.classList.add('holding');
     hHold={t,x:x&&x.clientX,y:x&&x.clientY,timer:setTimeout(()=>{hFired=Date.now();hHold=null;t.classList.remove('holding');hTick(h,t)},600),ring,C}};
   const stop=()=>{if(!hHold)return;clearTimeout(hHold.timer);hHold.ring.style.transition='stroke-dashoffset .2s';hHold.ring.style.strokeDashoffset=hHold.C;hHold.t.classList.remove('holding');hHold=null};
   el.onpointerdown=e=>{const t=e.target.closest('[data-h]');if(t)start(t,e)};el.onpointerup=el.onpointercancel=stop;el.onpointermove=e=>{if(hHold&&hHold.x!=null&&Math.hypot(e.clientX-hHold.x,e.clientY-hHold.y)>12)stop()};
   el.oncontextmenu=e=>{if(e.target.closest('[data-h]'))e.preventDefault()}}
-function hTick(h,tile){const d=HLOG.d[DAYK]=HLOG.d[DAYK]||{};const t=hTarget(h);
+function hTick(h,tile){if(h.link){const its=visibleItems().filter(i=>i.item.trim()===h.link);if(!its.length)return;const nx=its.find(i=>!DAY.ticks[i.tk]);
+    if(nx)setTick(nx.tk,true);else its.forEach(i=>{delete DAY.ticks[i.tk]});if(!nx){persistDay();applyTicks()}
+    try{navigator.vibrate&&navigator.vibrate(hDone(h,DAYK)?[20,40,20]:10)}catch(e){}if(hDone(h,DAYK)){const r=tile.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,40,true)}renderHabits();hWidget();return}
+  const d=HLOG.d[DAYK]=HLOG.d[DAYK]||{};const t=hTarget(h);
   if(h.type==='neg'){d[h.id]=(d[h.id]||0)?0:1}else{const c=d[h.id]||0;d[h.id]=c>=t?0:c+1}
   if(!d[h.id])delete d[h.id];hSaveLog();try{navigator.vibrate&&navigator.vibrate(hDone(h,DAYK)?[20,40,20]:10)}catch(e){}
   if(hDone(h,DAYK)&&h.type!=='neg'){const r=tile.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,40,true)}
@@ -2577,14 +2600,14 @@ function hHeat(h){const weeks=12;const s=hAdd(hWeekStart(DAYK),-7*(weeks-1));con
     const due=L.filter(x=>hDue(x,d)&&d>=(x.created||'0'));const ok=due.filter(x=>hDone(x,d)).length;const v=due.length?ok/due.length:0;
     cells+=`<i title="${d} · ${ok}/${due.length}" style="${v?`background:${h?h.col:'var(--pink)'};opacity:${.2+.8*v}`:''}" class="${d===DAYK?'td':''}"></i>`}cells+='</div>'}
   return `<div class="hheat">${cells}</div>`}
-function hDetail(id){const h=HAB.list.find(z=>z.id===id);if(!h)return;const st=hStreak(h);
+function hDetail(id){const h=hGet(id);if(!h)return;const st=hStreak(h);
   const hist=[...Array(14)].map((_,i)=>{const d=hAdd(DAYK,-13+i);return `<button type="button" class="hday${hDone(h,d)?' ok':''}${hDue(h,d)?'':' off'}" data-hd="${d}" style="--hc:${h.col}"><span>${new Date(d+'T12:00').toLocaleDateString('en-GB',{weekday:'narrow'})}</span><b>${new Date(d+'T12:00').getDate()}</b></button>`}).join('');
-  openSheet(`${h.ic||''} ${h.n}`,`<div class="hstats num"><div><b style="color:${h.col}">${st.n}</b><span>current ${st.unit}s</span></div><div><b>${hBest(h)}</b><span>best</span></div><div><b>${hRate(h,30)}%</b><span>last 30 days</span></div><div><b>${Object.values(HLOG.d).filter(x=>x[h.id]).length}</b><span>${h.type==='neg'?'slips':'total'}</span></div></div>
-    ${hHeat(h)}<div class="dim" style="font-size:11px;margin:12px 0 6px">last 14 days — tap a day to fix it</div><div class="hdays">${hist}</div>
+  openSheet(`${h.ic||''} ${h.n}`,`<div class="hstats num"><div><b style="color:${h.col}">${st.n}</b><span>current ${st.unit}s</span></div><div><b>${hBest(h)}</b><span>best</span></div><div><b>${hRate(h,30)}%</b><span>last 30 days</span></div><div><b>${h.link?Object.keys(DNAMES).filter(d=>hDone(h,d)).length:Object.values(HLOG.d).filter(x=>x[h.id]).length}</b><span>${h.type==='neg'?'slips':'total'}</span></div></div>
+    ${hHeat(h)}<div class="dim" style="font-size:11px;margin:12px 0 6px">last 14 days — ${h.link?'linked to Today — fix past days there':'tap a day to fix it'}</div><div class="hdays">${hist}</div>
     <div class="dim" style="font-size:11px;margin-top:10px">${h.type==='neg'?'avoid it — hold the tile if you slipped':h.type==='week'?`${h.per||3}× a week`:h.type==='days'?'on '+(h.days||[]).map(i=>DOW[i]).join(' '):'every day'}${hTarget(h)>1?` · ${hTarget(h)} ${esc(h.unit||'times')} a day`:''}${h.remind?` · reminder ${h.remind}`:''}</div>
-    <div class="bigbtns" style="margin-top:14px"><button class="btn" type="button" id="hEd">edit</button><span style="flex:1"></span><button class="btn p" type="button" id="hOk">done</button></div>`);
-  $('hOk').onclick=closeSheet;$('hEd').onclick=()=>hEdit(h);
-  $('sheetBody').onclick=e=>{const b=e.target.closest('[data-hd]');if(!b)return;const d=b.dataset.hd;const o=HLOG.d[d]=HLOG.d[d]||{};if(h.type==='neg')o[h.id]=o[h.id]?0:1;else o[h.id]=hDone(h,d)?0:hTarget(h);if(!o[h.id])delete o[h.id];hSaveLog();hDetail(id);renderHabits()}}
+    <div class="bigbtns" style="margin-top:14px">${h.link?'<button class="btn" type="button" id="hHide">hide from streaks</button>':'<button class="btn" type="button" id="hEd">edit</button>'}<span style="flex:1"></span><button class="btn p" type="button" id="hOk">done</button></div>`);
+  $('hOk').onclick=closeSheet;if($('hEd'))$('hEd').onclick=()=>hEdit(h);if($('hHide'))$('hHide').onclick=()=>{HAB.hide=(HAB.hide||[]).concat(h.id);hSave();closeSheet();renderHabits()};
+  $('sheetBody').onclick=e=>{const b=e.target.closest('[data-hd]');if(!b||h.link)return;const d=b.dataset.hd;const o=HLOG.d[d]=HLOG.d[d]||{};if(h.type==='neg')o[h.id]=o[h.id]?0:1;else o[h.id]=hDone(h,d)?0:hTarget(h);if(!o[h.id])delete o[h.id];hSaveLog();hDetail(id);renderHabits()}}
 function hEdit(h){const isNew=!h;h=h?clone(h):{id:rid(),n:'',ic:'💪',col:HCOLS[HAB.list.length%HCOLS.length],type:'daily',per:3,days:[1,2,3,4,5],q:1,unit:'',remind:'',created:DAYK};
   const draw=()=>{$('sheetBody').innerHTML=`<label class="fl">habit<input class="inp" id="heN" value="${esc(h.n)}" placeholder="e.g. gym, skincare, no sugar"></label>
     <div class="dim" style="font-size:11px;margin:4px 0">icon</div><div class="hicons">${HICONS.map(i=>`<button type="button" data-hi="${i}" class="${h.ic===i?'on':''}">${i}</button>`).join('')}</div>
@@ -2602,7 +2625,7 @@ function hEdit(h){const isNew=!h;h=h?clone(h):{id:rid(),n:'',ic:'💪',col:HCOLS
     if(b.id==='heDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}HAB.list=HAB.list.filter(x=>x.id!==h.id);hSave();closeSheet();renderHabits();return}
     if(b.id==='heOk'){read();if(!h.n){$('heN').focus();return}const i=HAB.list.findIndex(x=>x.id===h.id);if(i>=0)HAB.list[i]=h;else HAB.list.push(h);hSave();hWidget();closeSheet();renderHabits();if(typeof pushSync==='function')pushSync()}}}
 /* widget feed: a small summary doc any future widget can read */
-function hWidget(){const L=HAB.list.filter(h=>!h.arch);save('widget/streaks',{at:new Date().toISOString(),day:DAYK,items:L.map(h=>({n:h.n,ic:h.ic,col:h.col,streak:hStreak(h).n,unit:hStreak(h).unit,done:hDone(h,DAYK),due:hDue(h,DAYK),c:hCnt(h,DAYK),t:hTarget(h)}))})}
+function hWidget(){const L=hAll();save('widget/streaks',{at:new Date().toISOString(),day:DAYK,items:L.map(h=>({n:h.n,ic:h.ic,col:h.col,streak:hStreak(h).n,unit:hStreak(h).unit,done:hDone(h,DAYK),due:hDue(h,DAYK),c:hCnt(h,DAYK),t:hTarget(h)}))})}
 
 /* ================= JOURNAL tabs: journal · notes (Apple Notes) · tasks (Todoist) =================
    notes: notes/n-<id> {id,html,folder,pin,created,upd} · notes/folders {list:[name]}
