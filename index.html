@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="app.css?v=1794619256">
+<link rel="stylesheet" href="app.css?v=1794620141">
 </head>
 <body class="fx">
 <div id="bootfx" aria-hidden="true">
@@ -46,7 +46,7 @@
 (function(){
   var el=document.getElementById('bootfx');if(!el)return;
   var fxOff=false;try{fxOff=localStorage.getItem('ds3:fx')==='false'}catch(e){}
-  var quick=false;try{quick=sessionStorage.getItem('ds-quickboot')==='1';sessionStorage.removeItem('ds-quickboot')}catch(e){}
+  var quick=location.hash.indexOf('#wake')===0;try{if(!quick)quick=sessionStorage.getItem('ds-quickboot')==='1';sessionStorage.removeItem('ds-quickboot')}catch(e){}
   if(quick)el.style.display='none';
   var lite=quick||fxOff||matchMedia('(prefers-reduced-motion: reduce)').matches;if(lite)el.classList.add('lite');
   var $=function(i){return document.getElementById(i)};
@@ -212,7 +212,7 @@
   <div class="meta">
     <button class="pendbtn" id="pendBtn" type="button" hidden></button>
     <span class="sync" id="sync" title="Where your data is saved"><i></i><span id="syncTxt">local</span></span>
-    <button class="iconbtn" id="fxBtn" type="button" aria-pressed="true" title="Effects on or off (f)">FX</button>
+    <button class="iconbtn" id="notifyBtn" type="button" title="Notifications" aria-label="Notifications">🔔</button><button class="iconbtn" id="fxBtn" type="button" aria-pressed="true" title="Effects on or off (f)">FX</button>
   </div>
 </header>
 
@@ -330,7 +330,7 @@
   </section>
   <section class="view" id="v-sleep" aria-label="Sleep">
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/sleep"><span class="slash">/</span>sleep</h2><span class="sub" id="sleepSub"></span></div></div>
-    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="tonight" style="flex:1">tonight</button><button type="button" data-sv="history" style="flex:1">history</button><button type="button" data-sv="stats" style="flex:1">stats</button></div>
+    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="last" style="flex:1">last night</button><button type="button" data-sv="history" style="flex:1">history</button><button type="button" data-sv="stats" style="flex:1">stats</button><button type="button" data-sv="setup" style="flex:1">setup</button></div>
     <div id="sleepBody"></div>
   </section>
   <section class="view" id="v-media" aria-label="Media">
@@ -430,9 +430,9 @@
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794619256"</script>
-<script src="config.js?v=1794619256"></script>
+<script>window.APP_V="1794620141"</script>
+<script src="config.js?v=1794620141"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794619256"></script>
+<script src="app.js?v=1794620141"></script>
 </body>
 </html>
