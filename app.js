@@ -464,7 +464,7 @@ async function loadDay(){
 
 
 /* bottom ticker: quotes */
-const QUOTES=[["Everyone has a plan until they get punched in the mouth.", "Mike Tyson"], ["Discipline is doing what you hate to do, but doing it like you love it.", "Mike Tyson"], ["Fear is the greatest obstacle to learning. But fear is your best friend.", "Mike Tyson"], ["The biggest challenge is learning how to psych yourself up into believing in yourself as you walk into the Octagon.", "Jon Jones"], ["Being remembered for standing for something is a lot more important than just for a cool move that you did.", "Jon Jones"], ["To stimulate optimal size and strength increases, it's imperative that you regularly attempt the momentarily impossible.", "Mike Mentzer"], ["It is the body itself that produces growth; but it does so only during a sufficient rest period.", "Mike Mentzer"], ["Man's proper stature is not one of mediocrity, failure, frustration, or defeat, but one of achievement, strength, and nobility.", "Mike Mentzer"], ["Success doesn't know these things about cold or early or tired. It just knows if you showed up or not.", "Greg Plitt"], ["It's early in the morning and your competition is still sleeping.", "Greg Plitt"], ["We all fall in life. The question is: who gets back up?", "Greg Plitt"], ["We don't live forever. Our legacy does.", "Greg Plitt"], ["The obstacle is the way.", "Marcus Aurelius"], ["You have power over your mind, not outside events. Realise this, and you will find strength.", "Marcus Aurelius"], ["We suffer more often in imagination than in reality.", "Seneca"], ["Luck is what happens when preparation meets opportunity.", "Seneca"], ["Talk is cheap. Show me the code.", "Linus Torvalds"], ["First, solve the problem. Then, write the code.", "John Johnson"], ["Make it work, make it right, make it fast.", "Kent Beck"], ["Simplicity is prerequisite for reliability.", "Edsger Dijkstra"], ["Programs must be written for people to read, and only incidentally for machines to execute.", "Harold Abelson"], ["The best way to predict the future is to invent it.", "Alan Kay"], ["Stay hungry, stay foolish.", "Steve Jobs"], ["Strength does not come from winning. Your struggles develop your strengths.", "Arnold Schwarzenegger"], ["The last three or four reps is what makes the muscle grow.", "Arnold Schwarzenegger"], ["Everybody wants to be a bodybuilder, but nobody wants to lift no heavy-ass weights.", "Ronnie Coleman"], ["Hard work beats talent when talent doesn't work hard.", "Tim Notke"], ["The pain you feel today will be the strength you feel tomorrow.", "Arnold Schwarzenegger"], ["You are in danger of living a life so comfortable and soft that you will die without ever realising your true potential.", "David Goggins"], ["Don't stop when you're tired. Stop when you're done.", "David Goggins"], ["Discipline equals freedom.", "Jocko Willink"], ["Rest at the end, not in the middle.", "Kobe Bryant"], ["Great things come from hard work and perseverance. No excuses.", "Kobe Bryant"], ["Be water, my friend.", "Bruce Lee"], ["Absorb what is useful, discard what is useless, add what is specifically your own.", "Bruce Lee"], ["Today is victory over yourself of yesterday.", "Miyamoto Musashi"], ["There is nothing outside of yourself that can ever enable you to get better, stronger, richer, quicker, or smarter.", "Miyamoto Musashi"], ["Play long-term games with long-term people.", "Naval Ravikant"], ["Learn to sell. Learn to build. If you can do both, you will be unstoppable.", "Naval Ravikant"], ["Do the work that compounds.", "Naval Ravikant"], ["The amount of time it takes to get good is the amount of time it takes.", "Alex Hormozi"], ["Volume negates luck.", "Alex Hormozi"], ["Focus is a matter of deciding what things you're not going to do.", "John Carmack"], ["Done is better than perfect.", "Sheryl Sandberg"], ["You don't have to be great to start, but you have to start to be great.", "Zig Ziglar"]];
+const QUOTES=[["Everyone has a plan until they get punched in the mouth.", "Mike Tyson"], ["Discipline is doing what you hate to do, but doing it like you love it.", "Mike Tyson"], ["Fear is the greatest obstacle to learning. But fear is your best friend.", "Mike Tyson"], ["The biggest challenge is learning how to psych yourself up into believing in yourself as you walk into the Octagon.", "Jon Jones"], ["Being remembered for standing for something is a lot more important than just for a cool move that you did.", "Jon Jones"], ["To stimulate optimal size and strength increases, it's imperative that you regularly attempt the momentarily impossible.", "Mike Mentzer"], ["It is the body itself that produces growth; but it does so only during a sufficient rest period.", "Mike Mentzer"], ["Man's proper stature is not one of mediocrity, failure, frustration, or defeat, but one of achievement, strength, and nobility.", "Mike Mentzer"], ["Success doesn't know these things about cold or early or tired. It just knows if you showed up or not.", "Greg Plitt"], ["It's early in the morning and your competition is still sleeping.", "Greg Plitt"], ["We all fall in life. The question is: who gets back up?", "Greg Plitt"], ["Stay hungry, stay foolish.", "Steve Jobs"], ["Strength does not come from winning. Your struggles develop your strengths.", "Arnold Schwarzenegger"], ["The last three or four reps is what makes the muscle grow.", "Arnold Schwarzenegger"], ["Everybody wants to be a bodybuilder, but nobody wants to lift no heavy-ass weights.", "Ronnie Coleman"], ["The pain you feel today will be the strength you feel tomorrow.", "Arnold Schwarzenegger"], ["You are in danger of living a life so comfortable and soft that you will die without ever realising your true potential.", "David Goggins"], ["Don't stop when you're tired. Stop when you're done.", "David Goggins"], ["Rest at the end, not in the middle.", "Kobe Bryant"], ["Great things come from hard work and perseverance. No excuses.", "Kobe Bryant"], ["Be water, my friend.", "Bruce Lee"], ["Absorb what is useful, discard what is useless, add what is specifically your own.", "Bruce Lee"], ["I like criticism. It makes you strong.", "LeBron James"], ["You have to be able to accept failure to get better.", "LeBron James"], ["Everything negative – pressure, challenges – is all an opportunity for me to rise.", "Kobe Bryant"], ["I can't relate to lazy people. We don't speak the same language.", "Kobe Bryant"], ["Talent without working hard is nothing.", "Cristiano Ronaldo"], ["Your love makes me strong. Your hate makes me unstoppable.", "Cristiano Ronaldo"], ["Dreams are not what you see in your sleep, dreams are things which do not let you sleep.", "Cristiano Ronaldo"], ["I'm living a dream I never want to wake up from.", "Cristiano Ronaldo"], ["It took me 17 years and 114 days to become an overnight success.", "Lionel Messi"], ["You have to fight to reach your dream. You have to sacrifice and work hard for it.", "Lionel Messi"], ["I've failed over and over and over again in my life. And that is why I succeed.", "Michael Jordan"], ["Some people want it to happen, some wish it would happen, others make it happen.", "Michael Jordan"], ["Never say never, because limits, like fears, are often just an illusion.", "Michael Jordan"], ["I hated every minute of training, but I said: don't quit. Suffer now and live the rest of your life as a champion.", "Muhammad Ali"], ["Don't count the days. Make the days count.", "Muhammad Ali"], ["Impossible is nothing.", "Muhammad Ali"], ["There's no talent here, this is hard work. This is an obsession.", "Conor McGregor"], ["Doubt is only removed by action.", "Conor McGregor"], ["I don't think limits.", "Usain Bolt"], ["Champions aren't made in gyms. Champions are made from something they have deep inside them.", "Muhammad Ali"], ["A champion is defined not by their wins but by how they can recover when they fall.", "Serena Williams"]];
 function renderQuotes(){const tk=$('tick');if(!tk||tk.dataset.q)return;const q=[...QUOTES];for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]]}
   for(let i=1;i<q.length;i++)if(q[i][1]===q[i-1][1]){const j=q.findIndex((x,k)=>k>i&&x[1]!==q[i][1]&&(!q[k+1]||q[k+1][1]!==q[i][1])&&x[1]!==q[i-1][1]);if(j>0)[q[i],q[j]]=[q[j],q[i]]}
   const html=q.map(([t,a])=>`<span>“${esc(t)}” <b>— ${esc(a)}</b></span>`).join('');tk.dataset.q='1';tk.innerHTML=html+html;tk.style.animationDuration=Math.max(60,tk.scrollWidth/2/40)+'s'}
@@ -558,8 +558,7 @@ function renderWorkout(){
   el.innerHTML=`<div class="wbar"><input class="wname" id="wName" value="${esc(ACTIVE.name)}" aria-label="Workout name"><div class="wstats"><div><span class="dim">${ed?'date':'duration'}</span><b class="num" id="wDur">${ed?esc(nice(ACTIVE.date).toLowerCase()):fmtDur(Date.now()-new Date(ACTIVE.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(st.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${st.n}</b></div></div><div class="row"><button class="btn" type="button" data-act="discard">${ed?'cancel':'discard'}</button><button class="btn p" type="button" data-act="finish">${ed?'save':'finish'}</button></div></div>
   <textarea class="wnote" id="wNote" rows="1" placeholder="workout notes">${esc(ACTIVE.note||'')}</textarea>
   <div class="exlist">${ACTIVE.ex.map((x,xi)=>exCard(x,xi)).join('')}</div>
-  <button class="addex" type="button" data-act="addex">+ add exercises</button>
-  ${ed?'':`<button class="lsabtn${LS.get('lsaOn')?' on':''}" type="button" data-act="lsa">🔒 lock screen: ${LS.get('lsaOn')?'on':'off'}<small>${LS.get('lsaOn')?'current exercise, set + rest timer show on your lock screen':'show current exercise + rest timer on your lock screen (pauses Spotify/other music)'}</small></button>`}`;
+  <button class="addex" type="button" data-act="addex">+ add exercises</button>`;
 }
 function exCard(x,xi){
   const e=exOf(x);const T=XTYPES[e.ty]||XTYPES.wr;const prev=prevSets(x);const b=bests(e.id,ACTIVE.id);const col=ssColor(x.ss);
@@ -590,7 +589,7 @@ function exEntry(e,opt={}){const x={id:e.id,n:e.n,rest:opt.rest??(e.ty==='dur'||
 function startWorkout(r){
   ACTIVE={id:new Date().toISOString().replace(/[:.]/g,'-'),name:r?r.name:(gymTypeFor()==='lower'?'Lower':'Upper'),routineId:r?r.id:null,startedAt:new Date().toISOString(),note:'',
     ex:r?r.ex.map(x=>exEntry(exOf(x),x)):[]};
-  saveActive();GYMV='workout';renderGym();flash('workout_started');staggerIn($('g-workout'));lsaStart();
+  saveActive();GYMV='workout';renderGym();flash('workout_started');staggerIn($('g-workout'));
 }
 function editWorkout(w){if(ACTIVE&&!ACTIVE.editing){flash('finish_current_first');return}ACTIVE={...clone(w),editing:true};ACTIVE.ex.forEach(x=>x.sets.forEach(s=>s.done=true));GYMV='workout';closeSheet();renderGym()}
 function mut(fn){fn();saveActive();renderWorkout()}
@@ -603,10 +602,8 @@ $('g-workout').addEventListener('click',e=>{
   if(d.act==='newroutine'){GYMV='routines';renderGym();return editRoutine(null)}
   if(d.act==='explore'){GYMV='exercises';return renderGym()}
   if(d.act==='addex')return pickExercises(list=>mut(()=>list.forEach(ex=>ACTIVE.ex.push(exEntry(ex)))));
-  if(d.act==='discard'){if(ACTIVE.editing){ACTIVE=null;saveActive();renderGym();return}if(t.dataset.arm){ACTIVE=null;saveActive();lsaStop();renderGym();glitchAll()}else{t.dataset.arm=1;t.textContent='tap again';setTimeout(()=>{if(t.isConnected){delete t.dataset.arm;t.textContent='discard'}},2500)}return}
+  if(d.act==='discard'){if(ACTIVE.editing){ACTIVE=null;saveActive();renderGym();return}if(t.dataset.arm){ACTIVE=null;saveActive();renderGym();glitchAll()}else{t.dataset.arm=1;t.textContent='tap again';setTimeout(()=>{if(t.isConnected){delete t.dataset.arm;t.textContent='discard'}},2500)}return}
   if(d.act==='finish')return finishWorkout();
-  if(d.act==='lsa'){const on=!LS.get('lsaOn');LS.set('lsaOn',on);if(on)lsaStart();else lsaStop();renderGym();return}
-  if(ACTIVE&&!ACTIVE.editing&&LS.get('lsaOn')&&(!LSA||LSA.paused))lsaStart();
   if(d.exinfo)return openExercise(exOf(ACTIVE.ex[+d.exinfo]).id);
   if(d.exmenu)return exMenu(+d.exmenu);
   if(d.restpick)return restPicker(+d.restpick);
@@ -684,7 +681,7 @@ function finishWorkout(){
     if(!w.ex.length){ACTIVE=null;saveActive();renderGym();return}
     saveScreen(w,()=>commit(w));};
   const commit=w=>{
-    lsaStop();save('gym/w-'+w.id,w,true);WORKOUTS.unshift(w);recountUsed();ACTIVE=null;saveActive();restEnd=null;LS.set('restEnd',null);
+    save('gym/w-'+w.id,w,true);WORKOUTS.unshift(w);recountUsed();ACTIVE=null;saveActive();restEnd=null;LS.set('restEnd',null);
     autoTick(/^Gym\b/);flash(w.prs.length?'new_pr':'workout_done');shake();burst(innerWidth/2,innerHeight/2,160,true);renderGym();showSummary(w);
   };
   if(undone){openSheet('finish workout?',`<p class="dim" style="margin:0 0 14px">${undone} set${undone>1?'s':''} not ticked.</p><div class="bigbtns"><button class="btn p" type="button" id="fDrop">discard unticked + finish</button><button class="btn" type="button" id="fKeep">keep sets with values</button><button class="btn" type="button" id="fBack">back</button></div>`);
@@ -895,29 +892,6 @@ function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').
 function closeSheet(){$('sheet').classList.remove('on');$('sheet').setAttribute('aria-hidden','true');if(!$('drawer').classList.contains('on'))$('scrim').classList.remove('on');sheetStack=0}
 $('sheetX').onclick=closeSheet;
 
-/* ---------- lock screen / Control Centre: show the live workout as "now playing" (what a web app can do instead of a Live Activity) ---------- */
-let LSA=null,lsaT=null;
-function lsaArt(){return [{src:new URL('icon-512.png?v=2',location.href).href,sizes:'512x512',type:'image/png'}]}
-function lsaSilence(){/* 2 s of near-silent noise as a WAV, so iOS treats the workout as playing media */
-  const sr=8000,n=sr*2,b=new ArrayBuffer(44+n*2),v=new DataView(b);const W=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
-  W(0,'RIFF');v.setUint32(4,36+n*2,true);W(8,'WAVE');W(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,sr,true);v.setUint32(28,sr*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);W(36,'data');v.setUint32(40,n*2,true);
-  for(let i=0;i<n;i++)v.setInt16(44+i*2,(Math.random()*2-1)*3,true);return URL.createObjectURL(new Blob([b],{type:'audio/wav'}))}
-function lsaStart(){if(!('mediaSession' in navigator)||!ACTIVE||ACTIVE.editing||!LS.get('lsaOn'))return;
-  if(!LSA){LSA=new Audio(lsaSilence());LSA.loop=true;LSA.setAttribute('playsinline','')}
-  LSA.play().catch(()=>{});
-  try{navigator.mediaSession.setActionHandler('play',()=>{LSA.play().catch(()=>{})});navigator.mediaSession.setActionHandler('pause',()=>{});
-    navigator.mediaSession.setActionHandler('nexttrack',()=>{restEnd=null;LS.set('restEnd',null);renderRest&&renderRest();lsaTick()});}catch(e){}
-  clearInterval(lsaT);lsaT=setInterval(lsaTick,1000);lsaTick()}
-function lsaStop(){clearInterval(lsaT);lsaT=null;if(LSA){LSA.pause()}try{navigator.mediaSession.metadata=null;navigator.mediaSession.playbackState='none'}catch(e){}}
-let lsaLast='';
-function lsaTick(){if(!ACTIVE||ACTIVE.editing){lsaStop();return}
-  const el=Date.now()-new Date(ACTIVE.startedAt);let cx=null,si=0,tot=0;
-  for(const x of ACTIVE.ex){const i=x.sets.findIndex(s=>!s.done);if(i>=0){cx=x;si=i;tot=x.sets.length;break}}
-  const rest=restEnd&&restEnd>Date.now()?Math.ceil((restEnd-Date.now())/1000):0;const st=stats(ACTIVE);
-  const title=rest?`rest ${mmss(rest)}`+(cx?` → ${exOf(cx).n}`:''):cx?`${exOf(cx).n} · set ${si+1}/${tot}`:'all sets done — finish workout';
-  const artist=`${ACTIVE.name} · ${fmtDur(el)} · ${st.n} sets · ${fmtVol(st.vol)} kg`;
-  const key=title+'|'+artist;if(key===lsaLast)return;lsaLast=key;
-  try{navigator.mediaSession.metadata=new MediaMetadata({title,artist,album:'dylan@system · gym',artwork:lsaArt()});navigator.mediaSession.playbackState='playing'}catch(e){}}
 
 /* ================= BODY ================= */
 let BP={r:[]},WT={r:[]};
@@ -1763,7 +1737,7 @@ async function startAgentLink(){
 }
 
 /* ================= ROUTER ================= */
-const VIEWS=[['today','today','◉'],['week','week','▦'],['gym','gym','▲'],['journal','journal','✎'],['tools','tools','⧗'],['media','media','◐'],['stack','stack','◈'],['money','money','£']];
+const VIEWS=[['today','today','◉'],['week','week','▦'],['gym','gym','▲'],['food','food','◍'],['journal','journal','✎'],['tools','tools','⧗'],['media','media','◐'],['stack','stack','◈'],['money','money','£']];
 $('tabs').innerHTML=VIEWS.map(([v,l],i)=>`<button type="button" data-v="${v}"><span class="k">${i+1}</span>${l}</button>`).join('');
 $('bnav').innerHTML=VIEWS.map(([v,l,ic])=>`<button type="button" data-v="${v}"><i>${ic}</i><span>${l}</span></button>`).join('')+'<span class="bnind" id="bnind"></span>';
 let cur=null;
@@ -1778,7 +1752,7 @@ function go(v,fromHash,dirHint){
   if(FX&&m.animate){m.animate([{transform:`translateX(${dir*48}px)`,opacity:.1,filter:'hue-rotate(80deg) contrast(1.6)'},{transform:`translateX(${-dir*6}px)`,opacity:1,filter:'none',offset:.7},{transform:'none',opacity:1}],{duration:380,easing:'cubic-bezier(.2,.9,.1,1)'});m.classList.remove('switching');void m.offsetWidth;m.classList.add('switching')}
   const h=$('v-'+v).querySelector('.banner h2.glitch');if(h&&FX){const node=h.lastChild;scramble({set textContent(t){node.textContent=t}},h.dataset.text.slice(1),500)}
   artMount(v);
-  if(v==='week')renderWeek();if(v==='gym')loadGym();if(v==='tools')renderTools();if(v==='media')renderMedia();if(v==='journal'){if(jLoaded)renderJEditor();else loadJournal()}
+  if(v==='week')renderWeek();if(v==='gym')loadGym();if(v==='tools')renderTools();if(v==='media')renderMedia();if(v==='food')loadFood();if(v==='journal'){if(jLoaded)renderJEditor();else loadJournal()}
   if(v==='money'||v==='stack')document.querySelectorAll(`#v-${v} [data-scr]`).forEach(el=>scramble(el,el.dataset.scr,700));
   window.scrollTo(0,0);setTimeout(()=>staggerIn($('v-'+v)),20);
 }
@@ -2076,6 +2050,245 @@ function mStats(k){const all=mItems(k);const done=all.filter(x=>x.st==='done');c
   <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">top genres</span></div><div class="pb"><div class="mbars">${gl.map(([g,v])=>`<div><span>${esc(g)}</span><i style="--w:${v/gmx*100}%"></i><b class="num">${v}</b></div>`).join('')||'<span class="dim">Add a few titles to see your taste.</span>'}</div></div></div>`;
   $('mBody').onclick=e=>{const b=e.target.closest('[data-mkey]');if(b)mEntry(k,b.dataset.mkey)}}
 initMediaNav();
+
+/* ================= FOOD (calories + macros, Lose It style) =================
+   docs: food/profile · food/lib {custom,meals,recent,fav} · food/d-YYYY-MM-DD {m:{b,l,d,s},ex,w,note} · food/fast {cur,log}
+   an entry stores per-100g values + grams eaten, so it can be re-portioned later */
+const FMEALS=[['b','breakfast'],['l','lunch'],['d','dinner'],['s','snacks']];
+const FACT=[[1.2,'sedentary (desk, little exercise)'],[1.375,'lightly active (1–3 workouts/wk)'],[1.55,'active (3–5 workouts/wk)'],[1.725,'very active (6–7 hard days)']];
+const FRATE=[[-1,'lose 1 kg / week'],[-0.75,'lose 0.75 kg / week'],[-0.5,'lose 0.5 kg / week'],[-0.25,'lose 0.25 kg / week'],[0,'maintain'],[0.25,'gain 0.25 kg / week'],[0.5,'gain 0.5 kg / week']];
+const FEX=[['weights / gym',5],['walking',3.5],['incline treadmill walk',6],['running',9.8],['cycling',7.5],['HIIT',8],['swimming',7],['football',7],['boxing / bag work',7.8],['stretching / yoga',2.5]];
+let FPROF=null,FLIB={custom:[],meals:[],recent:[],fav:{}},FDAYS={},FFAST={cur:null,log:[]},FGEN=null,FV=LS.get('foodv')||'log',FD=null,foodLoaded=false;
+const fK=d=>'food/d-'+d;
+const fDay=d=>FDAYS[d]||(FDAYS[d]={m:{b:[],l:[],d:[],s:[]},ex:[],w:0,note:''});
+const r1=x=>Math.round((+x||0)*10)/10;
+function fNum(e,k){if(e.quick)return +e['q'+k]||0;return (+e[k]||0)*(+e.g||0)/100}
+function fSum(list){const t={kcal:0,p:0,c:0,f:0,fi:0,su:0,na:0};list.forEach(e=>{t.kcal+=fNum(e,'k');t.p+=fNum(e,'p');t.c+=fNum(e,'c');t.f+=fNum(e,'f');t.fi+=fNum(e,'fi');t.su+=fNum(e,'su');t.na+=fNum(e,'na')});return t}
+function dayItems(d){const x=fDay(d);return FMEALS.flatMap(([m])=>x.m[m]||[])}
+function curKg(){const r=(typeof WT!=='undefined'&&WT.r)||[];return r.length?+r[r.length-1].kg:(FPROF&&+FPROF.kg)||80}
+function fBudget(){const P=FPROF||{};if(P.override)return +P.override;const kg=curKg(),h=+P.hcm||178,a=+P.age||22;
+  const bmr=10*kg+6.25*h-5*a+(P.sex==='f'?-161:5);const tdee=bmr*(+P.act||1.375);const b=tdee+(+P.rate||0)*7700/7;return Math.round(Math.max(P.sex==='f'?1200:1500,b)/10)*10}
+function fTargets(){const P=FPROF||{},B=fBudget();if(P.mmode==='g')return {p:+P.gp||150,c:+P.gc||200,f:+P.gf||70};
+  const pp=+P.mp||35,pc=+P.mc||35,pf=+P.mf||30;return {p:Math.round(B*pp/100/4),c:Math.round(B*pc/100/4),f:Math.round(B*pf/100/9)}}
+function exKcal(d){return (fDay(d).ex||[]).reduce((a,e)=>a+(+e.k||0),0)}
+async function loadFood(){
+  if(foodLoaded){renderFood();return}
+  const [p,l,f,rows,gen]=await Promise.all([load('food/profile'),load('food/lib'),load('food/fast'),listDocs('food/d-'),FGEN?FGEN:fetch('foods.json').then(r=>r.json()).catch(()=>[])]);
+  FPROF=p||null;FLIB={custom:[],meals:[],recent:[],fav:{},...(l||{})};FFAST={cur:null,log:[],...(f||{})};
+  rows.forEach(r=>{if(r.data)FDAYS[r.path.slice(7)]={m:{b:[],l:[],d:[],s:[]},ex:[],w:0,note:'',...r.data}});
+  FGEN=gen.map((g,i)=>({id:'g'+i,n:g[0],k:g[1],p:g[2],c:g[3],f:g[4],fi:g[5],sv:g[6],src:'gen'}));
+  foodLoaded=true;FD=FD||DAYK;renderFood()}
+watchPrefix('food/d-',(evt,path,data)=>{const d=path.slice(7);if(evt==='DELETE')delete FDAYS[d];else if(data)FDAYS[d]={m:{b:[],l:[],d:[],s:[]},ex:[],w:0,note:'',...data};if(cur==='food'&&!$('sheet').classList.contains('on'))renderFood()});
+watch('food/lib',d=>{if(d)FLIB={custom:[],meals:[],recent:[],fav:{},...d}});
+watch('food/profile',d=>{if(d){FPROF=d;if(cur==='food')renderFood()}});
+watch('food/fast',d=>{if(d){FFAST={cur:null,log:[],...d};if(cur==='food'&&FV==='fast')renderFood()}});
+const saveDay=d=>save(fK(d),fDay(d));
+const saveLib=()=>save('food/lib',FLIB);
+
+/* ---------- shell ---------- */
+function renderFood(){if(!foodLoaded){loadFood();return}
+  document.querySelectorAll('#foodSeg [data-fv]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.fv===FV));
+  $('foodSub').textContent=FPROF?`${fBudget()} kcal budget · ${(FRATE.find(r=>r[0]===+FPROF.rate)||[0,'maintain'])[1]}`:'set up your goal';
+  if(!FPROF&&FV!=='goals'){FV='goals'}
+  ({log:fLog,progress:fProgress,fast:fFast,goals:fGoals}[FV]||fLog)()}
+document.addEventListener('click',e=>{const b=e.target.closest('#foodSeg [data-fv]');if(!b)return;FV=b.dataset.fv;LS.set('foodv',FV);renderFood()});
+
+/* ---------- log (the main daily screen) ---------- */
+function fLog(){const el=$('foodBody');FD=FD||DAYK;const x=fDay(FD),B=fBudget(),T=fTargets(),items=dayItems(FD),S=fSum(items),EX=FPROF&&FPROF.noEx?0:exKcal(FD);
+  const left=Math.round(B+EX-S.kcal),pct=Math.min(1,S.kcal/Math.max(1,B+EX)),over=left<0;
+  const R=58,C=2*Math.PI*R;const isToday=FD===DAYK;
+  const mbar=(lab,v,t,col)=>`<div class="fmac"><div class="row" style="justify-content:space-between"><span>${lab}</span><span class="num"><b>${Math.round(v)}</b><span class="dim"> / ${t} g</span></span></div><div class="fmbar"><i style="width:${Math.min(100,v/Math.max(1,t)*100)}%;background:${col}"></i></div></div>`;
+  el.innerHTML=`<div class="fdate"><button class="iconbtn" type="button" data-fd="-1">‹</button><b>${isToday?'today':esc(nice(FD).toLowerCase())}</b><button class="iconbtn" type="button" data-fd="1" ${isToday?'disabled':''}>›</button></div>
+  <div class="fhero panel"><div class="fring"><svg viewBox="0 0 140 140"><circle cx="70" cy="70" r="${R}" class="rb"/><circle cx="70" cy="70" r="${R}" class="rf${over?' over':''}" style="stroke-dasharray:${C};stroke-dashoffset:${C*(1-pct)}"/></svg><div><b class="num${over?' bad':''}">${Math.abs(left)}</b><span class="dim">${over?'over':'left'}</span></div></div>
+    <div class="feq num"><div><b>${B}</b><span>budget</span></div><i>−</i><div><b>${Math.round(S.kcal)}</b><span>food</span></div><i>+</i><div><b>${EX}</b><span>exercise</span></div><i>=</i><div><b class="${over?'bad':'ok'}">${left}</b><span>${over?'over':'remaining'}</span></div></div>
+    <div class="fmacs">${mbar('protein',S.p,T.p,'var(--pink)')}${mbar('carbs',S.c,T.c,'var(--cyan)')}${mbar('fat',S.f,T.f,'#ffb000')}</div>
+    <div class="fnut dim num">fibre ${r1(S.fi)}/${(FPROF&&FPROF.fib)||30} g · sugar ${r1(S.su)} g · sodium ${Math.round(S.na)}/${(FPROF&&FPROF.na)||2300} mg</div></div>
+  ${FMEALS.map(([m,lab])=>{const L=x.m[m]||[],s=fSum(L);return `<div class="panel fmeal"><div class="ph"><span class="tag">${lab}</span><span class="row" style="gap:6px"><span class="num">${Math.round(s.kcal)} kcal</span><button class="iconbtn" type="button" data-fmenu="${m}">⋯</button></span></div><div class="pb">
+    ${L.map((e,i)=>`<button type="button" class="frow" data-fe="${m}:${i}"><span><b>${esc(e.n)}</b><span class="dim">${esc(fAmt(e))}${e.b?' · '+esc(e.b):''}</span></span><span class="num">${Math.round(fNum(e,'k'))}</span></button>`).join('')}
+    <button class="addrow" type="button" data-fadd="${m}">+ add food</button></div></div>`}).join('')}
+  <div class="panel fmeal"><div class="ph"><span class="tag">exercise</span><span class="num">${EX} kcal</span></div><div class="pb">${(x.ex||[]).map((e,i)=>`<button type="button" class="frow" data-fx="${i}"><span><b>${esc(e.n)}</b><span class="dim">${e.min?e.min+' min':''}</span></span><span class="num">${e.k}</span></button>`).join('')}<button class="addrow" type="button" id="fAddEx">+ add exercise</button></div></div>
+  <div class="panel"><div class="ph"><span class="tag">water</span><span class="num">${x.w||0} / ${(FPROF&&FPROF.water)||2500} ml</span></div><div class="pb"><div class="fwater">${[...Array(Math.ceil(((FPROF&&FPROF.water)||2500)/250))].map((_,i)=>`<button type="button" class="${(x.w||0)>=(i+1)*250?'on':''}" data-fw="${(i+1)*250}" aria-label="${(i+1)*250} ml"></button>`).join('')}</div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">notes</span></div><div class="pb"><textarea class="inp" id="fNote" rows="2" placeholder="how did today go?">${esc(x.note||'')}</textarea></div></div>`;
+  el.onclick=fLogClick;el.oninput=e=>{if(e.target.id==='fNote'){x.note=e.target.value;clearTimeout(fLog.t);fLog.t=setTimeout(()=>saveDay(FD),600)}}}
+function fAmt(e){if(e.quick)return 'quick add';const q=+e.q||1;return e.u&&e.u!=='g'?`${r1(q)} × ${e.u}`:`${Math.round(e.g)} g`}
+function fLogClick(e){const b=e.target.closest('button');if(!b)return;const x=fDay(FD);
+  if(b.dataset.fd){const d=new Date(FD+'T12:00');d.setDate(d.getDate()+(+b.dataset.fd));const k=ymd(d);if(k>DAYK)return;FD=k;renderFood();return}
+  if(b.dataset.fadd)return fAdd(b.dataset.fadd);
+  if(b.dataset.fe){const [m,i]=b.dataset.fe.split(':');return fPortion(x.m[m][+i],{meal:m,idx:+i})}
+  if(b.dataset.fmenu)return fMealMenu(b.dataset.fmenu);
+  if(b.dataset.fw){const v=+b.dataset.fw;x.w=(x.w||0)>=v?v-250:v;saveDay(FD);fLog();return}
+  if(b.id==='fAddEx')return fExercise();
+  if(b.dataset.fx){const i=+b.dataset.fx;openSheet('exercise',`<p>${esc(x.ex[i].n)} · ${x.ex[i].k} kcal</p><div class="bigbtns"><button class="btn d" type="button" id="fxDel">remove</button><button class="btn p" type="button" id="fxOk">done</button></div>`);$('fxOk').onclick=closeSheet;$('fxDel').onclick=()=>{x.ex.splice(i,1);saveDay(FD);closeSheet();fLog()}}}
+function fMealMenu(m){const lab=FMEALS.find(z=>z[0]===m)[1];const x=fDay(FD);const y=new Date(FD+'T12:00');y.setDate(y.getDate()-1);const yk=ymd(y);const yl=(fDay(yk).m[m]||[]);
+  openSheet(lab,`<div class="bigbtns col"><button class="btn" type="button" id="fmCopy" ${yl.length?'':'disabled'}>copy yesterday's ${lab} (${yl.length} item${yl.length===1?'':'s'})</button><button class="btn" type="button" id="fmSave" ${(x.m[m]||[]).length?'':'disabled'}>save this ${lab} as a meal</button><button class="btn d" type="button" id="fmClear" ${(x.m[m]||[]).length?'':'disabled'}>clear ${lab}</button></div>`);
+  $('fmCopy').onclick=()=>{x.m[m]=(x.m[m]||[]).concat(clone(yl).map(e=>({...e,id:rid()})));saveDay(FD);closeSheet();fLog()};
+  $('fmSave').onclick=()=>{const n=prompt('name this meal',lab+' '+nice(FD).toLowerCase());if(!n)return;FLIB.meals.unshift({id:rid(),n,items:clone(x.m[m])});saveLib();closeSheet()};
+  $('fmClear').onclick=function(){if(!this.dataset.arm){this.dataset.arm=1;this.textContent='tap again to clear';return}x.m[m]=[];saveDay(FD);closeSheet();fLog()}}
+
+/* ---------- add food: search, recent, frequent, my foods, meals, barcode, quick add ---------- */
+let FTAB='recent',fSeq=0;
+function fAdd(meal){const lab=FMEALS.find(z=>z[0]===meal)[1];
+  openSheet('add to '+lab,`<div class="fsearch"><input class="inp" id="fQ" placeholder="search foods & brands…" autocomplete="off" enterkeyhint="search"><button class="btn" type="button" id="fScan" aria-label="Scan barcode">▥ scan</button></div>
+  <div class="seg mini" id="fTabs" style="margin:8px 0">${[['recent','recent'],['freq','frequent'],['mine','my foods'],['meals','meals']].map(([k,l])=>`<button type="button" data-ft="${k}" aria-pressed="${FTAB===k}">${l}</button>`).join('')}</div>
+  <div class="row" style="gap:6px;margin-bottom:8px"><button class="iconbtn" type="button" id="fQuick">+ quick add</button><button class="iconbtn" type="button" id="fCreate">+ create food</button></div>
+  <div id="fRes" class="fres"></div>`);
+  const sb=$('sheetBody');const list=()=>{const q=$('fQ').value.trim();if(q)return fSearch(q,meal);$('fRes').innerHTML=fTabList(FTAB)};list();
+  sb.oninput=e=>{if(e.target.id==='fQ'){clearTimeout(fAdd.t);fAdd.t=setTimeout(list,250)}};
+  sb.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.ft){FTAB=b.dataset.ft;sb.querySelectorAll('[data-ft]').forEach(z=>z.setAttribute('aria-pressed',z===b));$('fQ').value='';list();return}
+    if(b.id==='fScan')return fScan(meal);if(b.id==='fQuick')return fQuickAdd(meal);if(b.id==='fCreate')return fCreate(meal);
+    if(b.dataset.fmeal){const M=FLIB.meals.find(z=>z.id===b.dataset.fmeal);if(!M)return;const x=fDay(FD);x.m[meal]=(x.m[meal]||[]).concat(clone(M.items).map(e=>({...e,id:rid()})));saveDay(FD);closeSheet();fLog();return}
+    if(b.dataset.fdelmeal){FLIB.meals=FLIB.meals.filter(z=>z.id!==b.dataset.fdelmeal);saveLib();list();return}
+    if(b.dataset.fpick){const f=fFind(b.dataset.fpick);if(f)fPortion(f,{meal,isNew:true});return}}}
+let FCACHE={};
+function fFind(id){return FCACHE[id]||FLIB.custom.find(f=>f.id===id)||FGEN.find(f=>f.id===id)||(FLIB.recent.find(f=>f.id===id))}
+function fRow(f){FCACHE[f.id]=f;const s=(f.sv&&f.sv[0])||['100 g',100];const k=Math.round((+f.k||0)*s[1]/100);
+  return `<button type="button" class="frow" data-fpick="${esc(f.id)}">${f.img?`<img src="${esc(f.img)}" alt="" loading="lazy">`:''}<span><b>${esc(f.n)}${FLIB.fav[f.id]?' ★':''}</b><span class="dim">${esc([f.b,s[0]].filter(Boolean).join(' · '))}</span></span><span class="num">${k}<small> kcal</small></span></button>`}
+function fTabList(t){
+  if(t==='meals')return FLIB.meals.length?FLIB.meals.map(M=>{const s=fSum(M.items);return `<div class="row" style="gap:6px"><button type="button" class="frow" data-fmeal="${esc(M.id)}" style="flex:1"><span><b>${esc(M.n)}</b><span class="dim">${M.items.length} items · P ${Math.round(s.p)} C ${Math.round(s.c)} F ${Math.round(s.f)}</span></span><span class="num">${Math.round(s.kcal)}</span></button><button class="iconbtn" type="button" data-fdelmeal="${esc(M.id)}">✕</button></div>`}).join(''):'<div class="dim fempty">Save a meal from a meal\'s ⋯ menu to add it here in one tap.</div>';
+  if(t==='mine')return FLIB.custom.length?FLIB.custom.map(fRow).join(''):'<div class="dim fempty">Foods you create show here.</div>';
+  const R=[...FLIB.recent];if(t==='freq')R.sort((a,b)=>(b.cnt||0)-(a.cnt||0));else R.sort((a,b)=>(b.last||'')>(a.last||'')?1:-1);
+  const fav=R.filter(f=>FLIB.fav[f.id]);const rest=R.filter(f=>!FLIB.fav[f.id]);
+  return (R.length?(fav.length?'<div class="flab">favourites</div>'+fav.map(fRow).join(''):'')+rest.slice(0,40).map(fRow).join(''):'<div class="dim fempty">Search above, scan a barcode, or pick from common foods:</div>'+FGEN.slice(0,30).map(fRow).join(''))}
+function offToFood(p){const n=p.nutriments||{};let k=n['energy-kcal_100g'];if(k==null&&n['energy_100g']!=null)k=n['energy_100g']/4.184;if(k==null)return null;
+  const sq=+p.serving_quantity||0;const sv=[];if(sq>0)sv.push([p.serving_size||('serving · '+sq+' g'),sq]);if(p.quantity&&/^\s*\d+(\.\d+)?\s*g\s*$/i.test(p.quantity))sv.push(['pack · '+p.quantity.trim(),parseFloat(p.quantity)]);sv.push(['100 g',100]);
+  return {id:'off'+p.code,code:p.code,n:(p.product_name_en||p.product_name||'').trim()||'unnamed product',b:(p.brands||'').split(',')[0].trim(),k:+k,p:+n.proteins_100g||0,c:+n.carbohydrates_100g||0,f:+n.fat_100g||0,fi:+n.fiber_100g||0,su:+n.sugars_100g||0,na:n.sodium_100g!=null?+n.sodium_100g*1000:(n.salt_100g!=null?+n.salt_100g*400:0),sv,img:p.image_small_url||'',src:'off'}}
+async function offCall(body){try{const r=await SB.functions.invoke('food',{body});return (r.data&&r.data.items)||[]}catch(e){return null}}
+async function fSearch(q,meal){const my=++fSeq;const ql=q.toLowerCase(),words=ql.split(/\s+/);const hit=f=>{const s=(f.n+' '+(f.b||'')).toLowerCase();return words.every(w=>s.includes(w))};
+  const seen=new Set();const loc=[...FLIB.custom,...FLIB.recent,...FGEN].filter(f=>{if(seen.has(f.id)||!hit(f))return false;seen.add(f.id);return true}).slice(0,25);
+  $('fRes').innerHTML=(loc.length?loc.map(fRow).join(''):'')+'<div class="flab" id="fOnl">searching online…</div>';
+  const items=await offCall({q});if(my!==fSeq||!$('fRes'))return;
+  const on=(items||[]).map(offToFood).filter(Boolean).filter(f=>!seen.has(f.id));
+  const lab=$('fOnl');if(!lab)return;lab.outerHTML=items===null?'<div class="dim fempty">Online search unavailable right now — use create food or quick add.</div>':on.length?'<div class="flab">from Open Food Facts</div>'+on.map(fRow).join(''):(loc.length?'':'<div class="dim fempty">Nothing found. Try another word, scan the barcode, or create it.</div>')}
+
+/* portion editor (used for new picks and for editing logged entries) */
+function fPortion(f,{meal,idx,isNew}){const ent=!isNew;const sv=(f.sv&&f.sv.length?f.sv:[['100 g',100]]).concat([['g',1]]);
+  let u=ent?(f.u||'g'):sv[0][0],q=ent?(+f.q||(f.u==='g'?f.g:1)):1,m=meal;
+  if(f.quick){return fQuickAdd(meal,idx)}
+  const gr=()=>{const s=sv.find(z=>z[0]===u)||['g',1];return q*s[1]};
+  const draw=()=>{const g=gr(),K=(+f.k||0)*g/100,P=(+f.p||0)*g/100,Cc=(+f.c||0)*g/100,F=(+f.f||0)*g/100,tot=P*4+Cc*4+F*9||1;
+    $('fpOut').innerHTML=`<div class="fpk num"><b>${Math.round(K)}</b><span>kcal</span></div><div class="fpm num"><span><b>${r1(P)}</b> g protein</span><span><b>${r1(Cc)}</b> g carbs</span><span><b>${r1(F)}</b> g fat</span></div><div class="fpbar"><i style="flex:${P*4/tot};background:var(--pink)"></i><i style="flex:${Cc*4/tot};background:var(--cyan)"></i><i style="flex:${F*9/tot};background:#ffb000"></i></div><div class="dim" style="font-size:11px;margin-top:6px">${Math.round(g)} g · fibre ${r1((+f.fi||0)*g/100)} g · sugar ${r1((+f.su||0)*g/100)} g · sodium ${Math.round((+f.na||0)*g/100)} mg</div>`};
+  openSheet(ent?'edit food':'add food',`${f.img?`<img class="fpimg" src="${esc(f.img)}" alt="">`:''}<b style="font-size:17px">${esc(f.n)}</b>${f.b?`<div class="dim">${esc(f.b)}</div>`:''}
+    <div class="row" style="gap:8px;margin:12px 0"><input class="inp num" id="fpQ" value="${r1(q)}" inputmode="decimal" style="width:90px;text-align:center"><select class="inp" id="fpU" style="flex:1">${sv.map(s=>`<option value="${esc(s[0])}" ${s[0]===u?'selected':''}>${esc(s[0]==='g'?'grams':s[0]+(s[1]!==100||s[0]!=='100 g'?` (${r1(s[1])} g)`:''))}</option>`).join('')}</select></div>
+    <div id="fpOut"></div>
+    <div class="seg mini" id="fpMeal" style="margin-top:12px">${FMEALS.map(([k,l])=>`<button type="button" data-fpm="${k}" aria-pressed="${k===m}">${l}</button>`).join('')}</div>
+    <div class="bigbtns" style="margin-top:14px">${ent?'<button class="btn d" type="button" id="fpDel">delete</button>':''}<button class="iconbtn" type="button" id="fpFav">${FLIB.fav[f.fid||f.id]?'★ favourite':'☆ favourite'}</button><span style="flex:1"></span><button class="btn p" type="button" id="fpOk">${ent?'save':'add'}</button></div>`);
+  draw();const sb=$('sheetBody');
+  sb.oninput=e=>{if(e.target.id==='fpQ'){q=parseFloat(e.target.value.replace(',','.'))||0;draw()}};
+  sb.onchange=e=>{if(e.target.id==='fpU'){const old=gr();u=e.target.value;const s=sv.find(z=>z[0]===u);q=u==='g'?Math.round(old):r1(old/s[1])||1;$('fpQ').value=q;draw()}};
+  sb.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.fpm){m=b.dataset.fpm;sb.querySelectorAll('[data-fpm]').forEach(z=>z.setAttribute('aria-pressed',z===b));return}
+    if(b.id==='fpFav'){const id=f.fid||f.id;FLIB.fav[id]=!FLIB.fav[id];if(!FLIB.fav[id])delete FLIB.fav[id];b.textContent=FLIB.fav[id]?'★ favourite':'☆ favourite';fRemember(f);saveLib();return}
+    if(b.id==='fpDel'){const x=fDay(FD);x.m[meal].splice(idx,1);saveDay(FD);closeSheet();fLog();return}
+    if(b.id==='fpOk'){const x=fDay(FD);const e2={id:ent?f.id:rid(),fid:f.fid||f.id,n:f.n,b:f.b||'',k:f.k,p:f.p,c:f.c,f:f.f,fi:f.fi||0,su:f.su||0,na:f.na||0,sv:f.sv,img:f.img||'',code:f.code||'',src:f.src||'',q,u,g:gr(),t:new Date().toISOString()};
+      if(ent){x.m[meal].splice(idx,1)}x.m[m]=(x.m[m]||[]);if(ent&&m===meal)x.m[m].splice(idx,0,e2);else x.m[m].push(e2);
+      fRemember(f);saveLib();saveDay(FD);closeSheet();fLog()}}}
+function fRemember(f){const id=f.fid||f.id;const keep={id,n:f.n,b:f.b||'',k:f.k,p:f.p,c:f.c,f:f.f,fi:f.fi||0,su:f.su||0,na:f.na||0,sv:f.sv,img:f.img||'',code:f.code||'',src:f.src||''};
+  const i=FLIB.recent.findIndex(z=>z.id===id);const cnt=i>=0?(FLIB.recent[i].cnt||0)+1:1;if(i>=0)FLIB.recent.splice(i,1);FLIB.recent.unshift({...keep,cnt,last:new Date().toISOString()});FLIB.recent=FLIB.recent.slice(0,150)}
+function fQuickAdd(meal,idx){const x=fDay(FD);const e=idx!=null?x.m[meal][idx]:{qk:'',qp:'',qc:'',qf:'',n:'quick add'};
+  openSheet('quick add',`<label class="fl">name<input class="inp" id="qaN" value="${esc(e.n||'quick add')}"></label><div class="fgrid4"><label class="fl">kcal<input class="inp num" id="qaK" inputmode="decimal" value="${e.qk||''}"></label><label class="fl">protein g<input class="inp num" id="qaP" inputmode="decimal" value="${e.qp||''}"></label><label class="fl">carbs g<input class="inp num" id="qaC" inputmode="decimal" value="${e.qc||''}"></label><label class="fl">fat g<input class="inp num" id="qaF" inputmode="decimal" value="${e.qf||''}"></label></div>
+  <div class="dim" style="font-size:11px">Leave kcal empty and it's worked out from the macros.</div><div class="bigbtns" style="margin-top:12px">${idx!=null?'<button class="btn d" type="button" id="qaDel">delete</button>':''}<span style="flex:1"></span><button class="btn p" type="button" id="qaOk">${idx!=null?'save':'add'}</button></div>`);
+  $('qaK').focus();
+  if($('qaDel'))$('qaDel').onclick=()=>{x.m[meal].splice(idx,1);saveDay(FD);closeSheet();fLog()};
+  $('qaOk').onclick=()=>{const P=+$('qaP').value||0,C=+$('qaC').value||0,F=+$('qaF').value||0;let K=+$('qaK').value;if(!K)K=Math.round(P*4+C*4+F*9);if(!K)return;
+    const ne={id:e.id||rid(),quick:1,n:$('qaN').value.trim()||'quick add',qk:K,qp:P,qc:C,qf:F,t:new Date().toISOString()};if(idx!=null)x.m[meal][idx]=ne;else(x.m[meal]=x.m[meal]||[]).push(ne);saveDay(FD);closeSheet();fLog()}}
+function fCreate(meal,pre={}){openSheet('create food',`<label class="fl">name<input class="inp" id="cfN" value="${esc(pre.n||'')}"></label><label class="fl">brand (optional)<input class="inp" id="cfB" value="${esc(pre.b||'')}"></label>
+  <div class="fgrid4"><label class="fl">serving name<input class="inp" id="cfS" value="${esc(pre.sn||'serving')}"></label><label class="fl">serving size g<input class="inp num" id="cfG" inputmode="decimal" value="${pre.sg||100}"></label></div>
+  <div class="dim" style="font-size:11px;margin:4px 0 6px">nutrition per serving — copy it straight off the label</div>
+  <div class="fgrid4">${[['K','kcal'],['P','protein g'],['C','carbs g'],['F','fat g'],['Fi','fibre g'],['Su','sugar g'],['Na','sodium mg']].map(([k,l])=>`<label class="fl">${l}<input class="inp num" id="cf${k}" inputmode="decimal"></label>`).join('')}</div>
+  <div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="cfOk">save + add</button></div>`);
+  $('cfOk').onclick=()=>{const n=$('cfN').value.trim();const g=+$('cfG').value||100;const v=k=>(+$('cf'+k).value||0)*100/g;if(!n||!$('cfK').value){$('cfN').focus();return}
+    const f={id:'c-'+rid(),n,b:$('cfB').value.trim(),k:v('K'),p:v('P'),c:v('C'),f:v('F'),fi:v('Fi'),su:v('Su'),na:v('Na'),sv:[[$('cfS').value.trim()||'serving',g],['100 g',100]],code:pre.code||'',src:'mine'};
+    FLIB.custom.unshift(f);saveLib();fPortion(f,{meal,isNew:true})}}
+
+/* barcode: native BarcodeDetector where available, otherwise ZXing (loaded only when you scan) */
+let fStream=null,fZX=null;
+function fScanStop(){try{fZX&&fZX.reset()}catch(e){}fZX=null;if(fStream){fStream.getTracks().forEach(t=>t.stop());fStream=null}}
+async function fScan(meal){openSheet('scan barcode',`<div class="fscan"><video id="fsV" playsinline muted></video><i class="fsline"></i></div><div class="dim" id="fsMsg" style="margin-top:8px">point the camera at the barcode…</div><div class="row" style="gap:8px;margin-top:8px"><input class="inp num" id="fsCode" placeholder="or type the barcode number" inputmode="numeric" style="flex:1"><button class="btn" type="button" id="fsGo">look up</button></div>`);
+  const done=async code=>{fScanStop();$('fsMsg').textContent='looking up '+code+'…';const items=await offCall({code});const f=items&&items[0]?offToFood(items[0]):null;
+    if(f){FCACHE[f.id]=f;fPortion(f,{meal,isNew:true})}else{$('fsMsg').innerHTML='Not in the database yet — <button class="iconbtn" type="button" id="fsNew">create it</button>';$('fsNew').onclick=()=>fCreate(meal,{code})}};
+  $('fsGo').onclick=()=>{const c=$('fsCode').value.replace(/\D/g,'');if(c)done(c)};
+  const obs=new MutationObserver(()=>{if(!$('fsV')){fScanStop();obs.disconnect()}});obs.observe($('sheetBody'),{childList:true});
+  $('sheetX')&&$('sheetX').addEventListener('click',fScanStop,{once:true});
+  try{const v=$('fsV');
+    if('BarcodeDetector' in window){fStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});v.srcObject=fStream;await v.play();const det=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+      const loop=async()=>{if(!fStream||!$('fsV'))return;try{const r=await det.detect(v);if(r[0]){done(r[0].rawValue);return}}catch(e){}requestAnimationFrame(loop)};loop()}
+    else{if(!window.ZXing)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/zxing.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
+      const hints=new Map();hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E]);
+      fZX=new ZXing.BrowserMultiFormatReader(hints);fZX.decodeFromConstraints({video:{facingMode:'environment'}},'fsV',(res)=>{if(res&&fZX){const c=res.getText();done(c)}})}}
+  catch(e){$('fsMsg').textContent='Camera unavailable — type the barcode number instead.'}}
+
+function fExercise(){const kg=curKg();openSheet('add exercise',`<div class="fexl">${FEX.map(([n,met],i)=>`<button type="button" class="chip" data-fxp="${i}">${n}</button>`).join('')}</div>
+  <div class="fgrid4" style="margin-top:10px"><label class="fl">activity<input class="inp" id="exN" value="weights / gym"></label><label class="fl">minutes<input class="inp num" id="exM" inputmode="numeric" value="60"></label><label class="fl">kcal burned<input class="inp num" id="exK" inputmode="numeric"></label></div>
+  <div class="dim" style="font-size:11px">kcal is estimated from the activity, time and your weight (${r1(kg)} kg) — overwrite it if your watch says different.</div>
+  <div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="exOk">add</button></div>`);
+  let met=5;const est=()=>{$('exK').value=Math.round(met*kg*(+$('exM').value||0)/60)};est();
+  $('sheetBody').onclick=e=>{const b=e.target.closest('[data-fxp]');if(!b)return;const p=FEX[+b.dataset.fxp];met=p[1];$('exN').value=p[0];est()};
+  $('exM').oninput=est;
+  $('exOk').onclick=()=>{const x=fDay(FD);(x.ex=x.ex||[]).push({id:rid(),n:$('exN').value.trim()||'exercise',min:+$('exM').value||0,k:Math.round(+$('exK').value||0)});saveDay(FD);closeSheet();fLog()}}
+
+/* ---------- progress: weight, calories, macros, streak, insights ---------- */
+function fProgress(){const el=$('foodBody');const P=FPROF||{},B=fBudget(),T=fTargets();
+  const ws=((typeof WT!=='undefined'&&WT.r)||[]).slice(-60);const startKg=+P.startKg||(ws[0]&&+ws[0].kg)||curKg(),goal=+P.goalKg||0,now=curKg();
+  const days=[...Array(14)].map((_,i)=>{const d=new Date(DAYK+'T12:00');d.setDate(d.getDate()-13+i);const k=ymd(d);const it=FDAYS[k]?dayItems(k):[];const s=fSum(it);const ex=FDAYS[k]&&!(P.noEx)?exKcal(k):0;return {k,kcal:s.kcal,p:s.p,c:s.c,f:s.f,b:B+ex,has:it.length>0}});
+  const wk=days.slice(-7),logged=wk.filter(d=>d.has);const wkEat=logged.reduce((a,d)=>a+d.kcal,0),wkBud=logged.reduce((a,d)=>a+d.b,0);
+  let streak=0;for(let i=0;i<400;i++){const d=new Date(DAYK+'T12:00');d.setDate(d.getDate()-i);const k=ymd(d);if(FDAYS[k]&&dayItems(k).length)streak++;else if(i>0)break}
+  const avg=k=>logged.length?logged.reduce((a,d)=>a+d[k],0)/logged.length:0;const ap=avg('p'),ac=avg('c'),af=avg('f'),tot=ap*4+ac*4+af*9||1;
+  const mx=Math.max(...days.map(d=>Math.max(d.kcal,d.b)),1);
+  const need=goal?now-goal:0,rate=Math.abs(+P.rate||0);const eta=goal&&rate&&Math.sign(need)===Math.sign(-(+P.rate))?new Date(Date.now()+Math.abs(need)/rate*7*864e5):null;
+  const top={};Object.keys(FDAYS).filter(k=>k>ymd(new Date(Date.now()-30*864e5))).forEach(k=>dayItems(k).forEach(e=>{const n=e.n;top[n]=(top[n]||0)+fNum(e,'k')}));const tops=Object.entries(top).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  el.innerHTML=`<div class="statcards"><div class="panel"><div class="pb"><span class="dim">current</span><b class="num">${r1(now)} kg</b></div></div><div class="panel"><div class="pb"><span class="dim">${now<=startKg?'lost':'gained'}</span><b class="num ${now<=startKg?'ok':''}">${r1(Math.abs(startKg-now))} kg</b></div></div><div class="panel"><div class="pb"><span class="dim">goal</span><b class="num">${goal?r1(goal)+' kg':'—'}</b></div></div><div class="panel"><div class="pb"><span class="dim">logging streak</span><b class="num pink">${streak} 🔥</b></div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">weight</span><span class="dim">${eta?'on pace for goal ~'+eta.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}).toLowerCase():'log weight on today ↓'}</span></div><div class="pb">${typeof spark==='function'?spark(ws.map(x=>+x.kg),{refs:goal?[{v:goal,l:'goal'}]:[]}):''}
+    <form class="row" id="fWt" style="gap:6px;margin-top:8px"><input class="inp num" id="fWtIn" inputmode="decimal" placeholder="weigh in (kg)" style="flex:1"><button class="btn p" type="submit">log</button></form></div></div>
+  <div class="panel"><div class="ph"><span class="tag">calories · last 14 days</span><span class="dim num">this week ${logged.length?(wkEat<=wkBud?gbp0(wkBud-wkEat)+' under':gbp0(wkEat-wkBud)+' over'):'—'}</span></div><div class="pb"><div class="fbars">${days.map(d=>`<div class="${d.k===DAYK?'on':''}"><span class="b ${d.kcal>d.b?'over':''}" style="height:${d.kcal/mx*100}%"></span><i style="bottom:${d.b/mx*100}%"></i><span class="l">${new Date(d.k+'T12:00').toLocaleDateString('en-GB',{weekday:'narrow'})}</span></div>`).join('')}</div>
+    <div class="dim" style="font-size:11px;margin-top:6px">dashed line = your budget that day (incl. exercise) · ${logged.length} of 7 days logged this week · ${Math.round(wkEat)} eaten of ${Math.round(wkBud)} budgeted</div></div></div>
+  <div class="grid2"><div class="panel"><div class="ph"><span class="tag">macros · 7-day average</span></div><div class="pb fdonut"><svg viewBox="0 0 42 42">${(()=>{let o=25;return [[ap*4,'var(--pink)'],[ac*4,'var(--cyan)'],[af*9,'#ffb000']].map(([v,c])=>{const p=v/tot*100;const s=`<circle cx="21" cy="21" r="15.9" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${o}"/>`;o-=p;return s}).join('')})()}</svg>
+    <div class="num"><div><b style="color:var(--pink)">${Math.round(ap)} g</b> protein <span class="dim">/ ${T.p} · ${Math.round(ap*4/tot*100)}%</span></div><div><b style="color:var(--cyan)">${Math.round(ac)} g</b> carbs <span class="dim">/ ${T.c} · ${Math.round(ac*4/tot*100)}%</span></div><div><b style="color:#ffb000">${Math.round(af)} g</b> fat <span class="dim">/ ${T.f} · ${Math.round(af*9/tot*100)}%</span></div></div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">insights</span></div><div class="pb fins">${logged.length?[ap<T.p*0.9?`protein is averaging <b>${Math.round(ap)} g</b> — ${Math.round(T.p-ap)} g a day under your target`:`protein on target — averaging <b>${Math.round(ap)} g</b>`,`average day: <b>${Math.round(wkEat/Math.max(1,logged.length))} kcal</b> vs a <b>${B}</b> budget`,tops.length?`biggest calorie sources this month: ${tops.map(([n,k])=>`<b>${esc(n)}</b> (${Math.round(k)})`).join(', ')}`:''].filter(Boolean).map(t=>`<div>▸ ${t}</div>`).join(''):'<div class="dim">Log a few days and patterns show up here.</div>'}</div></div></div>`;
+  $('fWt').onsubmit=e=>{e.preventDefault();const kg=parseFloat($('fWtIn').value.replace(',','.'));if(!kg)return;WT.r.push({t:new Date().toISOString(),kg});save('body/wt',WT);if(typeof renderBody==='function')renderBody();fProgress()}}
+const gbp0=n=>Math.round(n)+' kcal';
+
+/* ---------- fasting ---------- */
+function fFast(){const el=$('foodBody');const P=FPROF||{};const H=+P.fastH||16;const c=FFAST.cur;const now=Date.now();
+  const el_=c?(now-new Date(c.s))/36e5:0;const pct=Math.min(1,el_/(c?c.h:H));const R=86,C=2*Math.PI*R;
+  const zone=h=>h<4?'fed — digesting':h<12?'early fast':h<16?'fat-burning window':h<24?'deep fast':'extended fast';
+  el.innerHTML=`<div class="panel ffast"><div class="pb"><div class="fring big"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="${R}" class="rb"/><circle cx="100" cy="100" r="${R}" class="rf" style="stroke-dasharray:${C};stroke-dashoffset:${C*(1-pct)}"/></svg><div><span class="dim">${c?'fasting':'not fasting'}</span><b class="num" id="ffT">${c?fmtH(el_):H+':00'}</b><span class="dim" id="ffZ">${c?zone(el_):'target'}</span></div></div>
+    ${c?`<div class="dim num" style="text-align:center">started ${new Date(c.s).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})} · goal ${c.h} h · ends ${new Date(new Date(c.s).getTime()+c.h*36e5).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>`:''}
+    <div class="seg mini" id="ffH" style="justify-content:center;margin:12px 0">${[12,14,16,18,20,24].map(h=>`<button type="button" data-ffh="${h}" aria-pressed="${(c?c.h:H)===h}">${h===24?'OMAD':h+':'+(24-h)}</button>`).join('')}</div>
+    <div class="bigbtns" style="justify-content:center"><button class="btn p" type="button" id="ffGo">${c?'end fast':'start fast'}</button>${c?'':'<button class="btn" type="button" id="ffBack">started earlier…</button>'}</div></div></div>
+  <div class="panel"><div class="ph"><span class="tag">recent fasts</span><span class="dim">${FFAST.log.length} logged</span></div><div class="pb">${FFAST.log.slice(-10).reverse().map(f=>{const h=(new Date(f.e)-new Date(f.s))/36e5;return `<div class="frow" style="cursor:default"><span><b>${new Date(f.s).toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'}).toLowerCase()}</b><span class="dim">goal ${f.h} h</span></span><span class="num ${h>=f.h?'ok':''}">${fmtH(h)} ${h>=f.h?'✓':''}</span></div>`}).join('')||'<div class="dim">No fasts yet.</div>'}</div></div>`;
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.ffh){const h=+b.dataset.ffh;if(FFAST.cur){FFAST.cur.h=h;save('food/fast',FFAST)}else{FPROF={...(FPROF||{}),fastH:h};save('food/profile',FPROF)}fFast();return}
+    if(b.id==='ffGo'){if(FFAST.cur){FFAST.log.push({...FFAST.cur,e:new Date().toISOString()});FFAST.log=FFAST.log.slice(-200);FFAST.cur=null}else FFAST.cur={s:new Date().toISOString(),h:H};save('food/fast',FFAST);fFast();return}
+    if(b.id==='ffBack'){const t=prompt('when did you start? (HH:MM)','20:00');if(!t||!/^\d{1,2}:\d{2}$/.test(t))return;const [hh,mm]=t.split(':').map(Number);const d=new Date();d.setHours(hh,mm,0,0);if(d>new Date())d.setDate(d.getDate()-1);FFAST.cur={s:d.toISOString(),h:H};save('food/fast',FFAST);fFast()}};
+  clearInterval(fFast.t);if(c)fFast.t=setInterval(()=>{if(!$('ffT')||FV!=='fast'||!FFAST.cur){clearInterval(fFast.t);return}const h=(Date.now()-new Date(FFAST.cur.s))/36e5;$('ffT').textContent=fmtH(h);$('ffZ').textContent=zone(h)},1000)}
+const fmtH=h=>{const s=Math.max(0,Math.floor(h*3600));return Math.floor(s/3600)+':'+pad(Math.floor(s%3600/60))+':'+pad(s%60)};
+
+/* ---------- goals ---------- */
+function fGoals(){const el=$('foodBody');const P={sex:'m',age:'',hcm:'',kg:curKg(),goalKg:'',rate:-0.5,act:1.375,mmode:'pct',mp:35,mc:35,mf:30,gp:'',gc:'',gf:'',water:2500,fib:30,na:2300,fastH:16,...(FPROF||{})};
+  const sel=(id,opts,v)=>`<select class="inp" id="${id}">${opts.map(([k,l])=>`<option value="${k}" ${String(k)===String(v)?'selected':''}>${l}</option>`).join('')}</select>`;
+  el.innerHTML=`${FPROF?'':'<div class="panel"><div class="pb"><b>set up your calorie budget</b><div class="dim">A few details and the app works out your daily budget and macros, the same way Lose It does.</div></div></div>'}
+  <div class="grid2"><div class="panel"><div class="ph"><span class="tag">you</span></div><div class="pb fform">
+    <label class="fl">sex${sel('gSex',[['m','male'],['f','female']],P.sex)}</label><label class="fl">age<input class="inp num" id="gAge" inputmode="numeric" value="${P.age}"></label>
+    <label class="fl">height (cm)<input class="inp num" id="gH" inputmode="decimal" value="${P.hcm}"></label><label class="fl">current weight (kg)<input class="inp num" id="gKg" inputmode="decimal" value="${r1(P.kg)}"></label>
+    <label class="fl">goal weight (kg)<input class="inp num" id="gGoal" inputmode="decimal" value="${P.goalKg}"></label><label class="fl">plan${sel('gRate',FRATE,P.rate)}</label>
+    <label class="fl" style="grid-column:1/-1">activity (outside logged exercise)${sel('gAct',FACT,P.act)}</label>
+    <label class="fl" style="grid-column:1/-1"><span><input type="checkbox" id="gNoEx" ${P.noEx?'':'checked'}> add logged exercise calories back to my budget</span></label></div></div>
+  <div class="panel"><div class="ph"><span class="tag">daily budget</span></div><div class="pb"><div class="fbig num" id="gOut"></div>
+    <label class="fl">override budget (optional)<input class="inp num" id="gOv" inputmode="numeric" value="${P.override||''}" placeholder="auto"></label>
+    <div class="seg mini" id="gMode" style="margin:10px 0">${[['pct','macro %'],['g','macro grams']].map(([k,l])=>`<button type="button" data-gm="${k}" aria-pressed="${P.mmode===k}">${l}</button>`).join('')}</div>
+    <div class="fgrid4" id="gMac"></div>
+    <div class="fgrid4" style="margin-top:6px"><label class="fl">water ml<input class="inp num" id="gW" value="${P.water}"></label><label class="fl">fibre g<input class="inp num" id="gFi" value="${P.fib}"></label><label class="fl">sodium mg<input class="inp num" id="gNa" value="${P.na}"></label></div>
+    <div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="gSave">save goals</button></div></div></div></div>`;
+  let mode=P.mmode;const macHtml=()=>{$('gMac').innerHTML=mode==='pct'?`<label class="fl">protein %<input class="inp num" id="gMp" value="${P.mp}"></label><label class="fl">carbs %<input class="inp num" id="gMc" value="${P.mc}"></label><label class="fl">fat %<input class="inp num" id="gMf" value="${P.mf}"></label>`:`<label class="fl">protein g<input class="inp num" id="gGp" value="${P.gp||fTargets().p}"></label><label class="fl">carbs g<input class="inp num" id="gGc" value="${P.gc||fTargets().c}"></label><label class="fl">fat g<input class="inp num" id="gGf" value="${P.gf||fTargets().f}"></label>`};macHtml();
+  const read=()=>{const v=id=>$(id)?$(id).value:'';const n={...P,sex:v('gSex'),age:+v('gAge')||'',hcm:+v('gH')||'',kg:+v('gKg')||P.kg,goalKg:+v('gGoal')||'',rate:+v('gRate'),act:+v('gAct'),noEx:!$('gNoEx').checked,override:+v('gOv')||null,mmode:mode,water:+v('gW')||2500,fib:+v('gFi')||30,na:+v('gNa')||2300};
+    if(mode==='pct'){n.mp=+v('gMp')||35;n.mc=+v('gMc')||35;n.mf=+v('gMf')||30}else{n.gp=+v('gGp')||0;n.gc=+v('gGc')||0;n.gf=+v('gGf')||0}if(!n.startKg)n.startKg=n.kg;return n};
+  const show=()=>{const keep=FPROF;FPROF=read();const b=fBudget(),t=fTargets();FPROF=keep;const sum=mode==='pct'?(+$('gMp').value||0)+(+$('gMc').value||0)+(+$('gMf').value||0):100;
+    $('gOut').innerHTML=`<b>${b}</b><span> kcal / day</span><div class="dim" style="font-size:12px">protein ${t.p} g · carbs ${t.c} g · fat ${t.f} g${sum!==100?` · <span class="bad">macros add to ${sum}%</span>`:''}</div>`};show();
+  el.oninput=show;el.onchange=show;
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.gm){mode=b.dataset.gm;el.querySelectorAll('[data-gm]').forEach(z=>z.setAttribute('aria-pressed',z===b));macHtml();show();return}
+    if(b.id==='gSave'){const n=read();if(!n.age||!n.hcm){(!n.age?$('gAge'):$('gH')).focus();return}const kgChanged=Math.abs(n.kg-curKg())>0.05;FPROF=n;save('food/profile',FPROF);
+      if(kgChanged&&typeof WT!=='undefined'){WT.r.push({t:new Date().toISOString(),kg:n.kg});save('body/wt',WT)}FV='log';LS.set('foodv',FV);renderFood()}}}
 
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
 const CACHE='system-__V__';
