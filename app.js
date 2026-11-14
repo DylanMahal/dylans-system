@@ -299,7 +299,7 @@ function openEditor(cfg){
     else if(f.type==='area')inp=`<textarea id="${id}">${esc(v??'')}</textarea>`;
     else inp=`<input id="${id}" type="${f.type==='num'?'text':'text'}" ${f.type==='num'?'inputmode="decimal"':''} value="${esc(v??'')}" ${f.ph?`placeholder="${esc(f.ph)}"`:''}>`;
     return `<label for="${id}">${esc(f.label||f.k)}</label>${inp}`}).join('')+
-    (cfg.hint?`<div class="hint2">${esc(cfg.hint)}</div>`:'')+
+    (cfg.extra||'')+(cfg.hint?`<div class="hint2">${esc(cfg.hint)}</div>`:'')+
     `<div class="mf">${cfg.onDelete?'<button class="btn d" type="button" id="mDel">delete</button>':''}${cfg.onRevert?'<button class="btn" type="button" id="mRev">undo my edits</button>':''}<span class="sp"></span><button class="btn" type="button" id="mCan">cancel</button><button class="btn p" type="submit">save</button></div>`;
   $('modal').classList.add('on');
   const first=$('mForm').querySelector('input,select,textarea');first&&first.focus();
@@ -312,7 +312,7 @@ $('mX').onclick=closeModal;$('modal').onclick=e=>{if(e.target===$('modal'))close
 $('mForm').onsubmit=e=>{e.preventDefault();if(!mCfg)return;const vals={};
   for(const f of mCfg.fields){const el=$('f_'+f.k);let v=el.value;if(f.type==='bool')v=v==='1';else if(f.type==='num'){v=v.trim();v=v===''?null:(isFinite(+v)?+v:v)}else{v=v.trim()===''?null:v}vals[f.k]=v}
   const changed={};for(const f of mCfg.fields){if(JSON.stringify(vals[f.k]??null)!==JSON.stringify(mCfg.values[f.k]??null))changed[f.k]=vals[f.k]}
-  const cfg=mCfg;closeModal();if(Object.keys(changed).length||cfg.isNew)cfg.onSave(vals,changed);
+  const cfg=mCfg;const ex=cfg.onExtra?cfg.readExtra():null;closeModal();if(Object.keys(changed).length||cfg.isNew)cfg.onSave(vals,changed);if(cfg.onExtra)cfg.onExtra(ex);
   const sub=$('main');burst(innerWidth/2,innerHeight/3,30);glitchAll()};
 
 const F_PLAN=[{k:'time',label:'time',ph:'HH:MM'},{k:'item',label:'item'},{k:'type',type:'select',options:TYPES},{k:'dose'},{k:'route'},{k:'sched',label:'schedule / days',ph:'Daily · Mon–Fri · Tue, Thu · EOD'},{k:'notes',type:'area'},{k:'caution',label:'cautions',type:'area'}];
@@ -322,7 +322,10 @@ const F_EXP=[{k:'name'},{k:'cat',label:'category',type:'select',options:EXP_CATS
 const F_TGT=[{k:'item',label:'target'},{k:'notes',label:'detail',type:'area'}];
 function pick(o,fields){const r={};fields.forEach(f=>r[f.k]=o[f.k]??null);return r}
 function editPlanItem(kind,it){const pre=kind==='weekday'?'wd':'we';
+  const lead=(typeof NITEMS!=='undefined'&&NITEMS.m[it.key]!=null)?NITEMS.m[it.key]:'';
   openEditor({title:`edit · ${kind==='weekday'?'weekday plan':'weekend plan'}${it.row?' · row '+it.row:''}`,fields:F_PLAN,values:pick(it,F_PLAN),
+    extra:`<label for="f_notify">🔔 notification</label><select id="f_notify"><option value="" ${lead===''?'selected':''}>off</option>${[0,5,10,15,30,60].map(m=>`<option value="${m}" ${lead===m?'selected':''}>${m?m+' min before':'at the time'}</option>`).join('')}</select>${it.t==null?'<div class="hint2">this item has no time yet — add one above for the notification to fire</div>':''}`,
+    readExtra:()=>$('f_notify').value,onExtra:v=>{if(typeof setItemNotify==='function')setItemNotify(it.key,v===''?null:+v)},
     onSave:(v,ch)=>patch(it.key,it.isNew?v:ch),onDelete:()=>{if(it.isNew)dropPatch(it.key);else patch(it.key,{_del:true})},onRevert:it.edited&&!it.isNew?()=>dropPatch(it.key):null})}
 function addPlanItem(kind,block){const pre=kind==='weekday'?'wd':'we';const b=M.plans[kind].find(x=>x.row===block);
   openEditor({title:`add to ${b?b.short.toLowerCase():'block'}`,fields:F_PLAN,values:{time:b?fmtM(b.s):'',type:'Task',sched:'Daily'},isNew:true,
@@ -2455,11 +2458,13 @@ async function nQueue(){if(NQ)return NQ;NQ=(await load('push/q'))||{items:[]};re
 async function pushOne(tag,at,title,body,url){if(!NSET.on)return;const q=await nQueue();q.items=q.items.filter(i=>i.tag!==tag);if(at&&at>Date.now()+3000)q.items.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body,url:url||'./'});save('push/q',q,true)}
 async function pushCancel(tag){if(!NSET.on)return;const q=await nQueue();const n=q.items.length;q.items=q.items.filter(i=>i.tag!==tag);if(q.items.length!==n)save('push/q',q,true)}
 const atMin=(dayKey,mins)=>{const d=new Date(dayKey+'T00:00');return d.getTime()+mins*60e3+5*3600e3*0};
-async function pushSync(){if(!NSET.on)return;const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|dose|bed|leet|water):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
+async function pushSync(){if(!NSET.on)return;const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|item|dose|bed|leet|water):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
   const push=(tag,at,title,body,url)=>{if(at>now+5000&&at<H)add.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body,url:url||'./'})};
   const days=[DAYK,ymd(new Date(new Date(DAYK+'T12:00').getTime()+864e5))];
   days.forEach((dk,di)=>{const base=new Date(dk+'T00:00').getTime();const dow=new Date(dk+'T12:00').getDay();const kind=(dow===0||dow===6)?'weekend':'weekday';
     if(nOn('plan')&&typeof M!=='undefined'&&M.plans&&M.plans[kind])M.plans[kind].forEach(b=>{const n=b.items.length;push('plan:'+dk+':'+b.bi,base+b.s*60e3,b.short||b.title,`${pad(Math.floor(b.s/60)%24)}:${pad(b.s%60)}–${pad(Math.floor(b.e/60)%24)}:${pad(b.e%60)} · ${n} item${n===1?'':'s'}`,'./#today')});
+    if(typeof M!=='undefined'&&M.plans&&M.plans[kind])M.plans[kind].forEach(b=>b.items.forEach(it=>{const lead=NITEMS.m[it.key];if(lead==null||it.t==null)return;if(it.days&&!it.days.has(DOW[dow]))return;if(di===0&&typeof DAY!=='undefined'&&DAY.ticks&&DAY.ticks[it.tk])return;
+      push('item:'+dk+':'+it.key,base+(it.t-lead)*60e3,(lead?`in ${lead} min · `:'')+it.item,[it.time,it.dose,it.notes&&it.notes.slice(0,80)].filter(Boolean).join(' · '),'./#today')}));
     if(nOn('dose')&&typeof PROTO!=='undefined'&&typeof scheduledOn==='function')PROTO.list.forEach(c=>{if(!scheduledOn(c,dk))return;(c.times||[]).forEach((t,i)=>{const m=/^(\d{1,2}):(\d{2})$/.exec(t);if(!m)return;if(di===0&&typeof logsFor==='function'&&logsFor(c.id,dk)[i])return;push('dose:'+dk+':'+c.id+':'+i,base+(+m[1]*60+ +m[2])*60e3,c.name+' due',[c.dose,c.unit].filter(Boolean).join(' ')||'log your dose','./#tools')})});
     if(nOn('leet')){const n=leetDue();if(n&&di===0)push('leet:'+dk,base+9*36e5,`${n} LeetCode review${n>1?'s':''} due`,'spaced repetition — keep the streak','./#tools')}
     if(nOn('water'))[13,17].forEach(h=>push('water:'+dk+':'+h,base+h*36e5,'drink some water','check your water for today','./#food'));
@@ -2478,6 +2483,13 @@ function openNotify(){const sup=('serviceWorker' in navigator)&&('PushManager' i
 document.addEventListener('click',e=>{if(e.target.closest('#notifyBtn'))openNotify()});
 
 function leetDue(){return typeof LEET!=='undefined'&&LEET&&LEET.items?Object.values(LEET.items).filter(it=>it.review&&it.review<=DAYK).length:0}
+
+/* per-item reminders set from a Today item's edit sheet: doc push/items {m:{itemKey:minutesBefore}} */
+let NITEMS={m:{}};
+load('push/items').then(d=>{if(d)NITEMS={m:{},...d}}).catch(()=>{});
+watch('push/items',d=>{if(d)NITEMS={m:{},...d}});
+async function setItemNotify(key,lead){if(lead==null)delete NITEMS.m[key];else NITEMS.m[key]=lead;save('push/items',NITEMS,true);
+  if(lead!=null&&!NSET.on){openNotify();return}pushSync()}
 
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
 const CACHE='system-__V__';
