@@ -2160,7 +2160,13 @@ function fTabList(t){
 function offToFood(p){const n=p.nutriments||{};let k=n['energy-kcal_100g'];if(k==null&&n['energy_100g']!=null)k=n['energy_100g']/4.184;if(k==null)return null;
   const sq=+p.serving_quantity||0;const sv=[];if(sq>0)sv.push([p.serving_size||('serving · '+sq+' g'),sq]);if(p.quantity&&/^\s*\d+(\.\d+)?\s*g\s*$/i.test(p.quantity))sv.push(['pack · '+p.quantity.trim(),parseFloat(p.quantity)]);sv.push(['100 g',100]);
   return {id:'off'+p.code,code:p.code,n:(p.product_name_en||p.product_name||'').trim()||'unnamed product',b:(p.brands||'').split(',')[0].trim(),k:+k,p:+n.proteins_100g||0,c:+n.carbohydrates_100g||0,f:+n.fat_100g||0,fi:+n.fiber_100g||0,su:+n.sugars_100g||0,na:n.sodium_100g!=null?+n.sodium_100g*1000:(n.salt_100g!=null?+n.salt_100g*400:0),sv,img:p.image_small_url||'',src:'off'}}
-async function offCall(body){try{const r=await SB.functions.invoke('food',{body});return (r.data&&r.data.items)||[]}catch(e){return null}}
+async function offCall(body){const C=window.APP_CONFIG||{};let tok='';try{tok=JSON.parse(localStorage.getItem('ds-auth')||'{}').access_token||''}catch(e){}
+  const url=(C.supabaseUrl||'').replace(/\/$/,'')+'/functions/v1/food';
+  for(let a=0;a<2;a++){const ac=new AbortController();const to=setTimeout(()=>ac.abort(),a?20000:12000);
+    try{const r=await fetch(url,{method:'POST',signal:ac.signal,headers:{'content-type':'application/json',apikey:C.supabaseKey,authorization:'Bearer '+(tok||C.supabaseKey)},body:JSON.stringify(body)});clearTimeout(to);
+      if(r.status===401&&!a){try{const s=await Promise.race([SB.auth.refreshSession(),new Promise(z=>setTimeout(z,4000))]);tok=(s&&s.data&&s.data.session&&s.data.session.access_token)||tok}catch(e){}continue}
+      if(!r.ok)continue;const j=await r.json();return j.items||[]}catch(e){clearTimeout(to)}}
+  return null}
 async function fSearch(q,meal){const my=++fSeq;const ql=q.toLowerCase(),words=ql.split(/\s+/);const hit=f=>{const s=(f.n+' '+(f.b||'')).toLowerCase();return words.every(w=>s.includes(w))};
   const seen=new Set();const loc=[...FLIB.custom,...FLIB.recent,...FGEN].filter(f=>{if(seen.has(f.id)||!hit(f))return false;seen.add(f.id);return true}).slice(0,25);
   $('fRes').innerHTML=(loc.length?loc.map(fRow).join(''):'')+'<div class="flab" id="fOnl">searching online…</div>';

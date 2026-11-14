@@ -1069,7 +1069,7 @@ body.sleeping{overflow:hidden}body.sleeping .bnav,body.sleeping .ticker,body.sle
 @media (max-width:700px){.wrec .pb{grid-template-columns:1fr;justify-items:center}.wring{width:170px;height:170px}.wkv{width:100%}}
 /* food: add buttons always visible (the Today edit-mode rule hid them) */
 .fmeal .addrow{display:block;border-style:solid;border-color:var(--line2);color:var(--pink);font-weight:600;margin-top:6px}
-.fquick{display:flex;gap:8px;margin-top:12px}.fquick .btn{flex:1;padding:12px;font-size:14px}
+.fquick{display:flex;gap:8px;margin-top:12px;grid-column:1/-1;width:100%}.fquick .btn{flex:1;padding:12px;font-size:14px}
 /* streaks: today-linked groups */
 .hgrp{margin-top:8px}.hgrp .hgh{all:unset;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;width:100%;cursor:pointer;padding:10px 12px}
 .hgrp .hgh:hover .tag{filter:brightness(1.3)}.hchev{margin-left:6px}
