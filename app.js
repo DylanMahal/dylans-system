@@ -2157,7 +2157,9 @@ function fTabList(t){
   const R=[...FLIB.recent];if(t==='freq')R.sort((a,b)=>(b.cnt||0)-(a.cnt||0));else R.sort((a,b)=>(b.last||'')>(a.last||'')?1:-1);
   const fav=R.filter(f=>FLIB.fav[f.id]);const rest=R.filter(f=>!FLIB.fav[f.id]);
   return (R.length?(fav.length?'<div class="flab">favourites</div>'+fav.map(fRow).join(''):'')+rest.slice(0,40).map(fRow).join(''):'<div class="dim fempty">Search above, scan a barcode, or pick from common foods:</div>'+FGEN.slice(0,30).map(fRow).join(''))}
-function offToFood(p){const n=p.nutriments||{};let k=n['energy-kcal_100g'];if(k==null&&n['energy_100g']!=null)k=n['energy_100g']/4.184;if(k==null)return null;
+const offStr=v=>Array.isArray(v)?v.join(', '):v==null?'':String(v);
+function offToFood(p){try{return offToFood0(p)}catch(e){return null}}
+function offToFood0(p){p={...p,brands:offStr(p.brands),product_name:offStr(p.product_name),product_name_en:offStr(p.product_name_en),quantity:offStr(p.quantity),serving_size:offStr(p.serving_size)};const n=p.nutriments||{};let k=n['energy-kcal_100g'];if(k==null&&n['energy_100g']!=null)k=n['energy_100g']/4.184;if(k==null)return null;
   const sq=+p.serving_quantity||0;const sv=[];if(sq>0)sv.push([p.serving_size||('serving · '+sq+' g'),sq]);if(p.quantity&&/^\s*\d+(\.\d+)?\s*g\s*$/i.test(p.quantity))sv.push(['pack · '+p.quantity.trim(),parseFloat(p.quantity)]);sv.push(['100 g',100]);
   return {id:'off'+p.code,code:p.code,n:(p.product_name_en||p.product_name||'').trim()||'unnamed product',b:(p.brands||'').split(',')[0].trim(),k:+k,p:+n.proteins_100g||0,c:+n.carbohydrates_100g||0,f:+n.fat_100g||0,fi:+n.fiber_100g||0,su:+n.sugars_100g||0,na:n.sodium_100g!=null?+n.sodium_100g*1000:(n.salt_100g!=null?+n.salt_100g*400:0),sv,img:p.image_small_url||'',src:'off'}}
 async function offCall(body){const C=window.APP_CONFIG||{};let tok='';try{tok=JSON.parse(localStorage.getItem('ds-auth')||'{}').access_token||''}catch(e){}
@@ -2170,9 +2172,9 @@ async function offCall(body){const C=window.APP_CONFIG||{};let tok='';try{tok=JS
 async function fSearch(q,meal){const my=++fSeq;const ql=q.toLowerCase(),words=ql.split(/\s+/);const hit=f=>{const s=(f.n+' '+(f.b||'')).toLowerCase();return words.every(w=>s.includes(w))};
   const seen=new Set();const loc=[...FLIB.custom,...FLIB.recent,...FGEN].filter(f=>{if(seen.has(f.id)||!hit(f))return false;seen.add(f.id);return true}).slice(0,25);
   $('fRes').innerHTML=(loc.length?loc.map(fRow).join(''):'')+'<div class="flab" id="fOnl">searching online…</div>';
-  const items=await offCall({q});if(my!==fSeq||!$('fRes'))return;
+  const items=await offCall({q});if(my!==fSeq||!$('fRes'))return;try{
   const on=(items||[]).map(offToFood).filter(Boolean).filter(f=>!seen.has(f.id));
-  const lab=$('fOnl');if(!lab)return;lab.outerHTML=items===null?'<div class="dim fempty">Online search unavailable right now — use create food or quick add.</div>':on.length?'<div class="flab">from Open Food Facts</div>'+on.map(fRow).join(''):(loc.length?'':'<div class="dim fempty">Nothing found. Try another word, scan the barcode, or create it.</div>')}
+  const lab=$('fOnl');if(!lab)return;lab.outerHTML=items===null?'<div class="dim fempty">Online search unavailable right now — use create food or quick add.</div>':on.length?'<div class="flab">from Open Food Facts</div>'+on.map(fRow).join(''):(loc.length?'':'<div class="dim fempty">Nothing found. Try another word, scan the barcode, or create it.</div>')}catch(e){const l=$('fOnl');if(l)l.outerHTML='<div class="dim fempty">Online search hit an error — try again.</div>'}}
 
 /* portion editor (used for new picks and for editing logged entries) */
 function fPortion(f,{meal,idx,isNew}){const ent=!isNew;const sv=(f.sv&&f.sv.length?f.sv:[['100 g',100]]).concat([['g',1]]);
