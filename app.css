@@ -913,3 +913,14 @@ body.poweron .ticker,body.poweron .bnav,body.poweron .edgefx{animation:fadein .6
   .ticker{zoom:1.1}
   .banner{min-height:150px}
 }
+
+/* gym: save screen + photos */
+.swtitle{font-size:18px!important;font-weight:700}
+.swph{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.swimg{position:relative;aspect-ratio:1;overflow:hidden;border:1px solid var(--line2)}.swimg img{width:100%;height:100%;object-fit:cover;display:block}
+.swimg button{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.7);border:0;color:#fff;width:24px;height:24px;cursor:pointer}
+.swadd{aspect-ratio:1;border:1px dashed var(--line2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--dim);cursor:pointer}.swadd span{font-size:26px;color:var(--pink)}
+.swgal{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;scroll-snap-type:x mandatory}.swgal img{height:220px;max-width:85%;object-fit:cover;scroll-snap-align:start;border:1px solid var(--line2)}
+.wcimg{width:100%;height:140px;object-fit:cover;display:block;margin:-2px 0 8px;border:1px solid var(--line)}
+.lsabtn{appearance:none;width:100%;margin-top:10px;background:var(--bg2);border:1px dashed var(--line2);color:var(--dim);font:12px var(--mono);padding:10px;cursor:pointer;display:flex;flex-direction:column;gap:3px;text-align:left}
+.lsabtn small{font-size:10.5px;opacity:.8}.lsabtn.on{border-style:solid;border-color:var(--pink);color:var(--fg)}
