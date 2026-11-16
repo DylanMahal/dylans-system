@@ -1,0 +1,4 @@
+.secrets
+.vapid.json
+dist/
+node_modules/

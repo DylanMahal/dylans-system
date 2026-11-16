@@ -1,0 +1,108 @@
+/* ================= TODAY ================= */
+let L=logical(),DAYK=ymd(L),DOWN=DOW[L.getDay()];
+let planKind=(DOWN==='Sat'||DOWN==='Sun')?'weekend':'weekday',planForced=false;
+let DAY={ticks:{},water:0,msg:{},dw:0};let filt='all';
+function visibleItems(){return M.plans[planKind].flatMap(b=>b.items.filter(i=>!i.days||i.days.has(DOWN)))}
+function nowM(){let m=mins(new Date());if(m<300)m+=1440;return m}
+function itemRow(i){
+  const ds=[i.dose&&i.dose!=='—'?i.dose:null,i.route&&i.route!=='—'?i.route:null].filter(Boolean).join(' · ');
+  const sch=i.sched&&!/^(Daily|—|None)$/.test(i.sched)?i.sched:'';
+  return `<div class="it" role="checkbox" tabindex="0" aria-checked="false" data-k="${esc(i.tk)}" data-t="${i.t??''}" data-cmp="${i.cmp?1:0}"><span class="box"></span><span class="t num">${esc(i.time||'')}</span><span><span class="nm">${esc(i.item)}</span>${i.edited?'<span class="delta">Δ</span>':''}${ds?`<span class="dd">${esc(ds)}</span>`:''}${sch?`<span class="dd">· ${esc(sch)}</span>`:''}${i.caution?'<span class="warnflag" title="Has a caution">⚠</span>':''}${i.notes?`<span class="nt">${esc(i.notes)}</span>`:''}${i.caution?`<span class="ca">${esc(i.caution)}</span>`:''}</span><span class="row" style="gap:6px;justify-content:flex-end"><button class="ed" type="button" data-edit="${esc(i.key)}">✎</button><span class="ty${i.cmp?' c':''}">${esc(i.type||'')}</span></span></div>`;
+}
+function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks();if(typeof renderTodayCal==='function')renderTodayCal();
+  const blocks=M.plans[planKind];
+  $('planName').textContent=planKind==='weekday'?'weekday plan':'weekend plan';$('todaySub').textContent=planKind==='weekday'?'weekday plan':'weekend plan';
+  $('pWd').setAttribute('aria-pressed',planKind==='weekday');$('pWe').setAttribute('aria-pressed',planKind==='weekend');
+  const gym=(planKind==='weekday'&&(DOWN==='Tue'||DOWN==='Thu'))||(planKind==='weekend');
+  const tdate=L.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase();
+  const late=mins(new Date())<300;
+  $('dateline').innerHTML=`<span class="num">${esc(tdate)}</span><span class="chipy">${planKind}</span>${gym?`<button class="chipy hot" type="button" data-go="gym" style="background:none;cursor:pointer">gym day · ${gymTypeFor()} → log</button>`:''}${planKind==='weekday'&&!gym?'<span class="chipy">non-gym · dinner 19:30</span>':''}${late?'<span class="chipy hot">after midnight · still logging '+esc(DOWN)+'</span>':''}`;
+  $('strip').innerHTML=blocks.map(b=>`<button type="button" data-b="${b.bi}" style="flex:${Math.max(b.e-b.s,20)}"><span class="t num">${fmtM(b.s)}</span><span class="n">${esc(b.short.toLowerCase())}</span><span class="fill"></span></button>`).join('')+`<span class="nowline" id="nowline"></span>`;
+  const open=new Set([...document.querySelectorAll('#blocks .blk.open')].map(e=>e.dataset.b));
+  $('blocks').innerHTML=blocks.map(b=>{const its=b.items.filter(i=>!i.days||i.days.has(DOWN));
+    return `<div class="blk${open.has(String(b.bi))?' open':''}" id="blk-${b.bi}" data-b="${b.bi}"><button class="bh" type="button" aria-expanded="${open.has(String(b.bi))}"><span class="ar">▸</span><span class="tm num">${fmtM(b.s)}–${fmtM(b.e)}</span><span class="ti">${esc(b.title)}</span><span class="ct num"></span><span class="mini"><span></span></span></button><div class="items">${its.map(itemRow).join('')}<button class="addrow" type="button" data-addblock="${b.row}">+ add item to ${esc(b.short.toLowerCase())}</button></div></div>`}).join('');
+  const ex=M.extra[planKind];const showK=Object.keys(ex).filter(k=>/^(AS NEEDED|WEEKLY)/.test(k));
+  $('todayExtra').innerHTML=showK.map(k=>`<div class="blk" data-x="1"><button class="bh" type="button" aria-expanded="false"><span class="ar">▸</span><span class="tm">${/WEEKLY/.test(k)?'weekly':'any time'}</span><span class="ti">${/WEEKLY/.test(k)?'weekly':'as needed'}</span><span class="ct">${ex[k].length} items</span><span></span></button><div class="items">${ex[k].map(r=>`<div class="it" role="checkbox" tabindex="0" aria-checked="false" data-k="${esc(r.tk)}" data-cmp="${CMP.has(r.type)?1:0}"><span class="box"></span><span class="t">${esc(r.day||'—')}</span><span><span class="nm">${esc(r.item)}</span>${r.edited?'<span class="delta">Δ</span>':''}<span class="dd">${esc([r.dose,r.route,r.sched].filter(x=>x&&x!=='—').join(' · '))}</span>${r.caution?'<span class="warnflag">⚠</span>':''}${r.notes?`<span class="nt">${esc(r.notes)}</span>`:''}${r.caution?`<span class="ca">${esc(r.caution)}</span>`:''}</span><span class="row" style="gap:6px;justify-content:flex-end"><button class="ed" type="button" data-editx="${esc(r.key)}" data-sec="${esc(k)}">✎</button><span class="ty c">${esc(r.type||'')}</span></span></div>`).join('')}<button class="addrow" type="button" data-addsec="${esc(k)}">+ add</button></div></div>`).join('');
+  applyTicks();applyFilter();tickNow(true);
+}
+function applyTicks(){document.querySelectorAll('#v-today .it').forEach(el=>el.setAttribute('aria-checked',!!DAY.ticks[el.dataset.k]));updateCounts()}
+function updateCounts(){
+  const vis=visibleItems();const total=vis.length;const done=vis.filter(i=>DAY.ticks[i.tk]).length;const p=total?Math.round(done/total*100):0;
+  $('pct').textContent=p+'%';$('pct').className='pct num '+(p>=80?'ok':'');
+  const W=40,f=Math.round(p/100*W);$('asc').innerHTML=`<span class="f">${'█'.repeat(f)}</span><span class="e">${'░'.repeat(W-f)}</span>`;
+  $('pctTxt').textContent=`${done}/${total} ticked · target 80%`;
+  M.plans[planKind].forEach(b=>{const its=b.items.filter(i=>!i.days||i.days.has(DOWN));const el=$('blk-'+b.bi);if(!el)return;const d=its.filter(i=>DAY.ticks[i.tk]).length;
+    el.querySelector('.ct').textContent=`${d}/${its.length}`;el.querySelector('.mini span').style.width=(its.length?d/its.length*100:0)+'%';el.classList.toggle('done',its.length>0&&d===its.length);
+    const sb=document.querySelector(`#strip button[data-b="${b.bi}"] .fill`);if(sb)sb.style.width=(its.length?d/its.length*100:0)+'%'});
+  return {done,total,p};
+}
+function persistDay(){const {done,total}=updateCounts();const names=visibleItems().filter(i=>DAY.ticks[i.tk]).map(i=>i.item);DAY={...DAY,done,total,names,plan:planKind,dow:DOWN};save('days/d-'+DAYK,DAY);schedWidget()}
+function setTick(k,on){if(on)DAY.ticks[k]=1;else delete DAY.ticks[k];document.querySelectorAll(`#v-today .it[data-k="${CSS.escape(k)}"]`).forEach(el=>el.setAttribute('aria-checked',on));persistDay()}
+function autoTick(re){const it=visibleItems().find(i=>re.test(i.item));if(it&&!DAY.ticks[it.tk])setTick(it.tk,true)}
+function toggle(el){
+  const k=el.dataset.k;const on=!DAY.ticks[k];setTick(k,on);
+  if(on){burstEl(el.querySelector('.box'),34);const nm=el.querySelector('.nm');scramble(nm,nm.textContent,300)}
+  const c=updateCounts();const blk=el.closest('.blk');
+  if(on&&blk&&!blk.dataset.x&&blk.classList.contains('done')){shake();flash('block_cleared');burstEl(blk.querySelector('.bh'),90,true)}
+  if(on&&c.done===c.total&&c.total)setTimeout(()=>{flash('day_complete');shake();burst(innerWidth/2,innerHeight/2,200,true)},350);
+}
+$('v-today').addEventListener('click',e=>{
+  const ed=e.target.closest('[data-edit]');if(ed){e.stopPropagation();const it=M.plans[planKind].flatMap(b=>b.items).find(i=>i.key===ed.dataset.edit);if(it)editPlanItem(planKind,it);return}
+  const edx=e.target.closest('[data-editx]');if(edx){e.stopPropagation();const r=(M.extra[planKind][edx.dataset.sec]||[]).find(x=>x.key===edx.dataset.editx);if(r)editExtra(planKind,r);return}
+  const ab=e.target.closest('[data-addblock]');if(ab){addPlanItem(planKind,+ab.dataset.addblock);return}
+  const as=e.target.closest('[data-addsec]');if(as){addExtra(planKind,as.dataset.addsec);return}
+  const g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
+  const it=e.target.closest('.it');if(it){toggle(it);return}
+  const bh=e.target.closest('.bh');if(bh){const b=bh.parentElement;const o=!b.classList.contains('open');b.classList.toggle('open',o);bh.setAttribute('aria-expanded',o);return}
+  const sb=e.target.closest('#strip button');if(sb)openBlock(+sb.dataset.b,true);
+});
+$('v-today').addEventListener('keydown',e=>{if((e.key===' '||e.key==='Enter')&&e.target.classList.contains('it')){e.preventDefault();toggle(e.target)}});
+function openBlock(bi,scroll){const el=$('blk-'+bi);if(!el)return;el.classList.add('open');el.querySelector('.bh').setAttribute('aria-expanded',true);if(scroll){el.scrollIntoView({behavior:FX?'smooth':'auto',block:'start'});FX&&el.animate([{boxShadow:'0 0 0 2px #ff2a6d'},{boxShadow:'0 0 0 0 transparent'}],{duration:900})}}
+$('filtSeg').onclick=e=>{const b=e.target.closest('button');if(!b)return;filt=b.dataset.f;$('filtSeg').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));applyFilter()};
+function applyFilter(){document.querySelectorAll('#v-today .it').forEach(el=>{const c=el.dataset.cmp==='1';el.classList.toggle('flt',filt==='cmp'&&!c||filt==='rtn'&&c)})}
+function tog(id,cls,key){$(id).onclick=function(){const on=this.getAttribute('aria-pressed')!=='true';this.setAttribute('aria-pressed',on);$('v-today').classList.toggle(cls,on);LS.set(key,on)};if(LS.get(key)){$(id).setAttribute('aria-pressed',true);$('v-today').classList.add(cls)}}
+tog('hideDone','hidedone','hideDone');document.body.classList.add('showinfo');
+$('pWd').onclick=()=>{planKind='weekday';planForced=true;firstNow=true;renderToday();glitchAll()};
+$('pWe').onclick=()=>{planKind='weekend';planForced=true;firstNow=true;renderToday();glitchAll()};
+let resetArm=0;$('resetDay').onclick=function(){if(Date.now()-resetArm<2500){DAY.ticks={};applyTicks();persistDay();this.textContent='reset';glitchAll();resetArm=0}else{resetArm=Date.now();this.textContent='tap again';setTimeout(()=>{this.textContent='reset'},2500)}};
+
+let lastMin=-1,firstNow=true;
+function tickNow(force){if(!M||!M.plans||!M.plans[planKind]||!M.plans[planKind].length)return;
+  if(!booted||!M.plans)return;
+  const n=new Date();const hm=pad(n.getHours())+':'+pad(n.getMinutes());const ce=$('clock');
+  if(ce.textContent!==hm){if(!force&&FX)scramble(ce,hm,420);else ce.textContent=hm;ce.dataset.text=hm}
+  $('secs').textContent=pad(n.getSeconds());
+  const m=nowM();if(m===lastMin&&!force)return;lastMin=m;
+  const nl=logical();if(ymd(nl)!==DAYK){L=nl;DAYK=ymd(L);DOWN=DOW[L.getDay()];if(!planForced)planKind=(DOWN==='Sat'||DOWN==='Sun')?'weekend':'weekday';firstNow=true;loadDay();return}
+  const blocks=M.plans[planKind];const cur=blocks.find(b=>m>=b.s&&m<b.e);
+  const vis=visibleItems().filter(i=>i.t!==null).sort((a,b)=>a.t-b.t);
+  const past=vis.filter(i=>i.t<=m);const nowT=past.length?past[past.length-1].t:null;const nowItems=vis.filter(i=>i.t===nowT);const next=vis.find(i=>i.t>m);
+  const sleeping=m>=1440||m<480;
+  $('nowBlk').textContent=cur?fmtM(cur.s)+'–'+fmtM(cur.e):(sleeping?'00:00–08:00':'');
+  const nowName=sleeping&&m>=1440?'sleep — lights out was 00:00':cur?cur.short.toLowerCase():'free time';
+  if($('nowItem').dataset.v!==nowName){$('nowItem').dataset.v=nowName;scramble($('nowItem'),nowName)}
+  $('nowSub').textContent=nowItems.length&&!sleeping?`${fmtM(nowT)} · ${nowItems.slice(0,3).map(i=>i.item).join(', ')}${nowItems.length>3?' +'+(nowItems.length-3):''}`:(sleeping?'next up is the 08:00 wake':'');
+  if(next){const dt=next.t-m;const prev=nowT??(cur?cur.s:m);const same=vis.filter(i=>i.t===next.t);const nn=same.length>1?`${next.item} +${same.length-1}`:next.item;
+    if($('nextItem').dataset.v!==nn){$('nextItem').dataset.v=nn;scramble($('nextItem'),nn)}
+    $('nextAt').textContent=fmtM(next.t);$('eta').textContent=dt>=60?`${Math.floor(dt/60)}h${pad(dt%60)}`:`${dt}m`;$('etaBar').style.width=Math.min(100,Math.max(2,(m-prev)/Math.max(1,next.t-prev)*100))+'%';
+  }else{$('nextItem').textContent='wake · 08:00';$('nextAt').textContent='08:00';const dt=(1440+480-m)%1440;$('eta').textContent=`${Math.floor(dt/60)}h${pad(dt%60)}`;$('etaBar').style.width='100%'}
+  const btns=[...$('strip').querySelectorAll('button')];btns.forEach(b=>{const bl=blocks[+b.dataset.b];b.classList.toggle('cur',bl===cur);b.classList.toggle('past',m>=bl.e)});
+  const nl2=$('nowline');if(nl2){const tot=btns.reduce((s,b)=>s+parseFloat(b.style.flex),0);let acc=0,pos=null;for(const b of btns){const bl=blocks[+b.dataset.b];const w=parseFloat(b.style.flex);if(m>=bl.s&&m<bl.e){pos=acc+(m-bl.s)/(bl.e-bl.s)*w;break}acc+=w}if(pos===null)pos=m<blocks[0].s?0:tot;nl2.style.left=`calc(${pos/tot*100}% - 1px)`}
+  document.querySelectorAll('#blocks .blk').forEach(el=>{const bl=blocks[+el.dataset.b];const isCur=bl===cur;el.classList.toggle('cur',isCur);if(isCur&&firstNow){el.classList.add('open');el.querySelector('.bh').setAttribute('aria-expanded',true)}});
+  if(firstNow&&!cur){if(sleeping&&m>=1440){const all=document.querySelectorAll('#blocks .blk');all.length&&all[all.length-1].classList.add('open')}else{const f=document.querySelector('#blocks .blk');f&&f.classList.add('open')}}
+  firstNow=false;
+  document.querySelectorAll('#blocks .it').forEach(el=>el.classList.toggle('nowit',el.dataset.t!==''&&+el.dataset.t===nowT&&!sleeping));
+  renderQuotes();
+}
+setInterval(()=>{if(!document.hidden)tickNow(false)},1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)tickNow(false)});
+async function loadDay(){
+  const p='days/d-'+DAYK;const d=await load(p);DAY={ticks:{},water:0,msg:{},dw:0,...(d||{})};
+  renderToday();renderTools();watch(p,dd=>{if(p!=='days/d-'+DAYK)return;DAY={ticks:{},water:0,msg:{},dw:0,...dd};applyTicks();renderTools();if(cur==='streaks'&&typeof renderHabits==='function'&&!hHold)renderHabits()});
+}
+
+
+/* bottom ticker: quotes */
+const QUOTES=[["Everyone has a plan until they get punched in the mouth.", "Mike Tyson"], ["Discipline is doing what you hate to do, but doing it like you love it.", "Mike Tyson"], ["Fear is the greatest obstacle to learning. But fear is your best friend.", "Mike Tyson"], ["The biggest challenge is learning how to psych yourself up into believing in yourself as you walk into the Octagon.", "Jon Jones"], ["Being remembered for standing for something is a lot more important than just for a cool move that you did.", "Jon Jones"], ["To stimulate optimal size and strength increases, it's imperative that you regularly attempt the momentarily impossible.", "Mike Mentzer"], ["It is the body itself that produces growth; but it does so only during a sufficient rest period.", "Mike Mentzer"], ["Man's proper stature is not one of mediocrity, failure, frustration, or defeat, but one of achievement, strength, and nobility.", "Mike Mentzer"], ["Success doesn't know these things about cold or early or tired. It just knows if you showed up or not.", "Greg Plitt"], ["It's early in the morning and your competition is still sleeping.", "Greg Plitt"], ["We all fall in life. The question is: who gets back up?", "Greg Plitt"], ["Stay hungry, stay foolish.", "Steve Jobs"], ["Strength does not come from winning. Your struggles develop your strengths.", "Arnold Schwarzenegger"], ["The last three or four reps is what makes the muscle grow.", "Arnold Schwarzenegger"], ["Everybody wants to be a bodybuilder, but nobody wants to lift no heavy-ass weights.", "Ronnie Coleman"], ["The pain you feel today will be the strength you feel tomorrow.", "Arnold Schwarzenegger"], ["You are in danger of living a life so comfortable and soft that you will die without ever realising your true potential.", "David Goggins"], ["Don't stop when you're tired. Stop when you're done.", "David Goggins"], ["Rest at the end, not in the middle.", "Kobe Bryant"], ["Great things come from hard work and perseverance. No excuses.", "Kobe Bryant"], ["Be water, my friend.", "Bruce Lee"], ["Absorb what is useful, discard what is useless, add what is specifically your own.", "Bruce Lee"], ["I like criticism. It makes you strong.", "LeBron James"], ["You have to be able to accept failure to get better.", "LeBron James"], ["Everything negative – pressure, challenges – is all an opportunity for me to rise.", "Kobe Bryant"], ["I can't relate to lazy people. We don't speak the same language.", "Kobe Bryant"], ["Talent without working hard is nothing.", "Cristiano Ronaldo"], ["Your love makes me strong. Your hate makes me unstoppable.", "Cristiano Ronaldo"], ["Dreams are not what you see in your sleep, dreams are things which do not let you sleep.", "Cristiano Ronaldo"], ["I'm living a dream I never want to wake up from.", "Cristiano Ronaldo"], ["It took me 17 years and 114 days to become an overnight success.", "Lionel Messi"], ["You have to fight to reach your dream. You have to sacrifice and work hard for it.", "Lionel Messi"], ["I've failed over and over and over again in my life. And that is why I succeed.", "Michael Jordan"], ["Some people want it to happen, some wish it would happen, others make it happen.", "Michael Jordan"], ["Never say never, because limits, like fears, are often just an illusion.", "Michael Jordan"], ["I hated every minute of training, but I said: don't quit. Suffer now and live the rest of your life as a champion.", "Muhammad Ali"], ["Don't count the days. Make the days count.", "Muhammad Ali"], ["Impossible is nothing.", "Muhammad Ali"], ["There's no talent here, this is hard work. This is an obsession.", "Conor McGregor"], ["Doubt is only removed by action.", "Conor McGregor"], ["I don't think limits.", "Usain Bolt"], ["Champions aren't made in gyms. Champions are made from something they have deep inside them.", "Muhammad Ali"], ["A champion is defined not by their wins but by how they can recover when they fall.", "Serena Williams"]];
+function renderQuotes(){const tk=$('tick');if(!tk||tk.dataset.q)return;const q=[...QUOTES];for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]]}
+  for(let i=1;i<q.length;i++)if(q[i][1]===q[i-1][1]){const j=q.findIndex((x,k)=>k>i&&x[1]!==q[i][1]&&(!q[k+1]||q[k+1][1]!==q[i][1])&&x[1]!==q[i-1][1]);if(j>0)[q[i],q[j]]=[q[j],q[i]]}
+  const html=q.map(([t,a])=>`<span>“${esc(t)}” <b>— ${esc(a)}</b></span>`).join('');tk.dataset.q='1';tk.innerHTML=html+html;tk.style.animationDuration=Math.max(60,tk.scrollWidth/2/40)+'s'}

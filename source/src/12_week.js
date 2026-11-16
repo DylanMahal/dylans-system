@@ -1,0 +1,39 @@
+/* ================= WEEK ================= */
+let WEEK={};
+async function renderWeek(){
+  calInit();
+  const L0=logical();const ds=[];for(let i=29;i>=0;i--){const d=new Date(L0);d.setDate(d.getDate()-i);ds.push(d)}
+  const docs=await Promise.all(ds.map(d=>ymd(d)===DAYK?Promise.resolve(DAY):load('days/d-'+ymd(d))));
+  const last7=ds.slice(-7),v7=docs.slice(-7);
+  $('days').innerHTML=`<div class="line80" style="bottom:${21+0.8*130}px"></div>`+last7.map((d,i)=>{const v=v7[i];const p=v&&v.total?Math.round(v.done/v.total*100):null;return `<div class="d"><span class="p num ${p!==null&&p>=80?'ok':''}">${p===null?'–':p+'%'}</span>${p===null?'':`<div class="b ${p<80?'low':''}" style="height:${p*1.3}px"></div>`}<span class="l">${DOW[d.getDay()].toLowerCase()}</span></div>`}).join('');
+  if(FX)document.querySelectorAll('#days .b').forEach((b,i)=>b.animate([{transform:'scaleY(0)'},{transform:'scaleY(1)'}],{duration:500,delay:i*60,easing:'cubic-bezier(.2,.9,.1,1)',fill:'backwards'}));
+  const logged=v7.filter(v=>v&&v.total).length;$('daysNote').textContent=logged<2?'Fills in as you tick items on the today view.':`${logged} of 7 days logged · avg ${Math.round(avg(v7.filter(v=>v&&v.total).map(v=>v.done/v.total*100)))}%`;
+  wkStreaks();
+  WEEK=await load('weeks/w-'+WK)||WEEK||{};
+  renderTargets();if(document.activeElement!==$('weekNotes'))$('weekNotes').value=WEEK.notes||'';
+  $('weekSub').textContent=`${WK} · review Sundays 19:00`;
+}
+/* weekly targets: each one carries a slider for how far along it is this week.
+   progress lives in the week's own doc, so a new week starts every bar at zero. */
+function renderTargets(){const tp=(WEEK&&WEEK.tp)||{};
+  $('targets').innerHTML=(M.targets||[]).map(r=>{const v=Math.max(0,Math.min(100,+tp[r.key]||0));
+    return `<div class="tg2 tgw${v>=100?' full':''}"><b>${esc(String(r.item||'').toLowerCase())}${r.edited?'<span class="delta">Δ</span>':''}</b><span>${esc(r.notes||'')}</span><button class="ed" type="button" data-tg="${esc(r.key)}">✎</button>
+      <div class="tgs"><input type="range" min="0" max="100" step="5" value="${v}" data-tgp="${esc(r.key)}" style="--v:${v}%" aria-label="progress this week"><span class="num tgv">${v}%</span></div></div>`}).join('')}
+let tgT=null;
+$('targets').oninput=e=>{const s=e.target.closest('[data-tgp]');if(!s)return;const v=+s.value;
+  s.style.setProperty('--v',v+'%');const row=s.closest('.tg2');row.querySelector('.tgv').textContent=v+'%';row.classList.toggle('full',v>=100);
+  WEEK={...WEEK,tp:{...((WEEK&&WEEK.tp)||{}),[s.dataset.tgp]:v}};
+  clearTimeout(tgT);tgT=setTimeout(()=>save('weeks/w-'+WK,WEEK),500)};
+$('targets').onchange=e=>{const s=e.target.closest('[data-tgp]');if(s&&+s.value>=100&&typeof burstEl==='function')burstEl(s,30,true)};
+$('targets').onclick=e=>{const b=e.target.closest('[data-tg]');if(!b)return;const r=M.targets.find(x=>x.key===b.dataset.tg);editExtra('weekday',r)};
+$('addTarget').onclick=()=>addExtra('weekday','DAILY TARGETS – review Sundays 19:00');
+let notesT;$('weekNotes').oninput=()=>{clearTimeout(notesT);$('notesSaved').textContent='typing…';notesT=setTimeout(()=>{WEEK={...WEEK,notes:$('weekNotes').value,lc};save('weeks/w-'+WK,WEEK);$('notesSaved').textContent='saved'},700)};
+
+
+/* top streaks — same engine as the Streaks section, so the numbers always match */
+function wkStreaks(){const el=$('streaks');if(!el)return;if(!habLoaded){loadHabits().then(()=>{if(cur==='week')wkStreaks()});return}
+  const L=hAll().map(h=>({h,s:hStreak(h).n,r:hRate(h)})).filter(x=>x.s>0||x.r>0).sort((a,b)=>b.s-a.s||((b.r||0)-(a.r||0))).slice(0,8);
+  el.innerHTML=L.length?L.map(({h,s,r})=>{const marks=[];for(let i=13;i>=0;i--){const d=hAdd(DAYK,-i);marks.push(!hDue(h,d)?'s':hDone(h,d)?'y':i===0?'p':'n')}
+    return `<button type="button" class="streak" data-go="streaks"><span class="tag dim">${esc(h.ic||'')} ${esc(h.n)}</span><b class="num ${s>=3?'hot':''}">${s}</b><span class="dim" style="font-size:11px">day streak${r!=null?` · ${Math.round(r)}% last 30d`:''}</span><div class="dots">${marks.map(m=>`<i class="${m}"></i>`).join('')}</div></button>`}).join('')
+    :'<div class="dim">Tick things off in Today or Streaks and your best streaks show up here.</div>';
+  el.onclick=e=>{if(e.target.closest('[data-go]'))go('streaks')}}

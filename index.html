@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Dylan's System</title>
+<meta name="theme-color" content="#050505">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="System">
+<meta name="robots" content="noindex,nofollow">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
+<link rel="icon" type="image/png" href="icons/favicon-32.png?v=2">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
+<script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
+<link rel="stylesheet" href="app.css?v=1794863714">
+</head>
+<body class="fx">
+<style>
+#bfxV::-webkit-media-controls,#bfxV::-webkit-media-controls-panel,#bfxV::-webkit-media-controls-start-playback-button,
+#bfxV::-webkit-media-controls-overlay-play-button,#bfxV::-webkit-media-controls-play-button{display:none!important;-webkit-appearance:none!important;opacity:0!important}
+video::-webkit-media-controls-start-playback-button,video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none!important}
+/* until a frame has actually advanced the video is not on screen at all, so there is nothing
+   for iPadOS to draw a play button on; the still frame underneath carries the boot instead */
+/* the still frame sits ON TOP of the video and only lifts once frames are advancing.
+   whatever iPadOS decides to draw on an unstarted video is painted over, not merely
+   styled away — no stylesheet rule has to win for the play button to be invisible. */
+#bfxPost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:3;background:#000}
+/* the video itself must stay fully visible: WebKit refuses muted autoplay to an element
+   it considers hidden, so opacity:0 here was starting the clip and pausing it at 0. the
+   still frame above it does the covering instead — occlusion by a sibling is not hiding. */
+#bfxV{pointer-events:none;z-index:1;opacity:1}
+#bootfx.vplaying #bfxPost{opacity:0;transition:opacity .22s linear}
+/* while the animation is carrying the boot, leave it up even if the clip limps into life */
+#bootfx.animon.vplaying #bfxPost{opacity:1}
+/* portrait: the clip and the animated frame turn sideways together to fill the screen. this has to live
+   here, after the #bfxPost rule above, or that rule's inset/size win and the frame lands rotated off-centre */
+@media (orientation:portrait){#bootfx #bfxV,#bootfx #bfxPost{inset:auto;left:50%;top:50%;width:100vh;height:100vw;width:100dvh;height:100dvw;transform:translate(-50%,-50%) rotate(90deg)}}
+</style>
+<div id="bootfx" aria-hidden="true">
+  <canvas id="bfxGL"></canvas>
+  <div class="bfx-vig"></div>
+  <div class="bfx-term" id="bfxTerm"><span id="bfxCmd"></span><i class="bfx-caret"></i></div>
+  <div class="bfx-line" id="bfxLine"></div>
+  <div class="bfx-core" id="bfxCore">
+    <svg class="bfx-ring" viewBox="0 0 400 400">
+      <circle class="halo" cx="200" cy="200" r="196"/>
+      <circle class="ring" id="bfxRing" cx="200" cy="200" r="186"/>
+      <circle class="prog" id="bfxProg" cx="200" cy="200" r="196"/>
+      <g id="bfxDotG"><circle class="dot" cx="200" cy="4" r="3.2"/></g>
+    </svg>
+    <div class="bfx-face"><canvas id="bfxFace" width="360" height="360"></canvas></div>
+  </div>
+  <div class="bfx-word" id="bfxWord"></div>
+  <div class="bfx-status"><span id="bfxSub">&nbsp;</span></div>
+  <div class="bfx-meter"><i id="bfxBar"></i><span id="bfxPct">00</span></div>
+  <pre class="bfx-log" id="bfxLog"></pre>
+  <div class="bfx-vid" id="bfxVid"><img id="bfxPost" alt=""><video id="bfxV" playsinline webkit-playsinline preload="auto"></video></div>
+  <div class="tv-line"></div><div class="tv-dot"></div>
+  <div class="bfx-off"></div>
+</div>
+<script>
+(function(){
+  var el=document.getElementById('bootfx');if(!el)return;
+  var fxOff=false;try{fxOff=localStorage.getItem('ds3:fx')==='false'}catch(e){}
+  var quick=location.hash.indexOf('#wake')===0;try{if(!quick)quick=sessionStorage.getItem('ds-quickboot')==='1';sessionStorage.removeItem('ds-quickboot')}catch(e){}
+  if(quick)el.style.display='none';
+  var lite=quick||fxOff||matchMedia('(prefers-reduced-motion: reduce)').matches;if(lite)el.classList.add('lite');
+  var $=function(i){return document.getElementById(i)};
+  /* a saved boot video exists on this device: show its first frame straight away and never start the generated scene */
+  var expectVid=false,poster=null;try{expectVid=!quick&&localStorage.getItem('ds3:bootvid')==='1';poster=localStorage.getItem('ds3:bootposter')}catch(e){}
+  /* the still frame goes on an <img> of its own: a <video> that carries a poster but has no
+     source yet is what iPadOS decorates with its own play button, and no stylesheet can be
+     relied on to hide that. the video itself stays invisible until it is genuinely playing. */
+  if(expectVid){el.classList.add('vidmode');el.classList.remove('lite');try{if(poster)$('bfxPost').src=poster}catch(e){}}
+  /* an animated still: an <img> is not a media element, so no autoplay policy applies to it
+     and it moves on every device whatever the battery or accessibility settings say. the
+     video underneath is only there to carry the sound once the screen is tapped. */
+  if(expectVid&&window.caches)try{caches.open('ds-media').then(function(c){return c.match('bootanim')})
+    .then(function(r){return r?r.blob():null})
+    .then(function(b){if(b&&b.size>1000&&!closing){dg('anim:'+b.size);$('bfxPost').src=URL.createObjectURL(b);el.classList.add('animon')}})
+    .catch(function(){})}catch(e){}
+  var readyRes;var ready=new Promise(function(r){readyRes=r});setTimeout(function(){readyRes()},expectVid?1800:0);
+  var SPD=lite?1:5.4,t0=performance.now(),MIN=lite?400:10200,done=false,closing=false,target=4,shown=0,raf=0;
+  document.body.classList.add('booting');window.__bfxT0=t0;
+
+  /* GPU background: star field, plasma core, lensing, flash, shockwave */
+  var gc=$('bfxGL'),gl=null,U={},DPR=Math.min(devicePixelRatio||1,1),glInit=false;
+  function setupGL(){
+  try{gl=gc.getContext('webgl',{alpha:false,antialias:false,premultipliedAlpha:false})}catch(e){}
+  var FS="precision highp float;uniform vec2 R,P;uniform float T,C,K,F,W,S,B;"+
+  "float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}"+
+  "float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(h(i),h(i+vec2(1,0)),f.x),mix(h(i+vec2(0,1)),h(i+1.),f.x),f.y);}"+
+  "float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<5;i++){v+=a*n(p);p=p*2.03+vec2(1.7,9.2);a*=.5;}return v;}"+
+  "float star(vec2 u,float sc){vec2 g=u*sc,c=floor(g);float s=h(c);vec2 o=vec2(h(c+3.1),h(c+7.7))-.5;float d=length(fract(g)-.5-o*.6);return step(.93,s)*smoothstep(.09,0.,d)*(.55+.45*sin(T*1.7+s*60.));}"+
+  "vec3 scene(vec2 uv){float d=length(uv),a=atan(uv.y,uv.x);"+
+  " float r=mix(.012,.115,C)*(1.-K);"+
+  " float lens=(C*(1.-K)*.035+W*0.)/(d+.03);vec2 su=uv*(1.-lens)+vec2(T*.004,0.);"+
+  " vec3 col=vec3(.62,.72,1.)*(star(su,38.)*.7+star(su+9.,70.)*.45)*B;"+
+  " col+=vec3(.02,.0,.03)*fbm(su*3.+T*.05)*B;"+
+  " vec3 pk=vec3(1.,.17,.52),cy=vec3(0.,.88,1.);"+
+  " float ang=log(d+.004)*2.2-T*(.7+C*2.6);float cs=cos(ang),sn=sin(ang);vec2 q=mat2(cs,-sn,sn,cs)*uv;"+
+  " float fil=fbm(q*vec2(5.,22.)+vec2(0.,T*.3));fil=smoothstep(.42,.86,fil);"+
+  " float env=exp(-max(d-r,0.)*(9.-C*4.))*C*(1.-K);"+
+  " col+=mix(cy,pk,smoothstep(r*.8,r*2.6,d))*fil*env*1.6;"+
+  " col+=pk*exp(-max(d-r,0.)*22.)*C*(1.-K)*1.1;"+
+  " col+=vec3(1.,.93,.97)*smoothstep(r,r*.25,d)*2.5*C*(1.-K);"+
+  " col+=vec3(1.)*exp(-d*900.)*K*3.;"+
+  " return col;}"+
+  "void main(){vec2 uv=(gl_FragCoord.xy-P)/R.y;"+
+  " uv+=S*vec2(sin(T*61.)+sin(T*37.)*.6,cos(T*53.)+sin(T*29.)*.6)*.004;"+
+  " float wr=W*1.7,wd=length(uv);float rf=exp(-pow((wd-wr)*14.,2.))*(1.-W);"+
+  " vec2 dir=uv/(wd+1e-4);vec2 uR=uv-dir*rf*.035,uB=uv+dir*rf*.035;"+
+  " vec3 col=scene(uv);if(rf>.002){col.r=scene(uR).r;col.b=scene(uB).b;}"+
+  " float ring=exp(-pow((wd-wr)*55.,2.))*(1.-W);vec3 rc=mix(vec3(1.,.17,.52),vec3(0.,.88,1.),.5+.5*sin(atan(uv.y,uv.x)*2.+T));"+
+  " col+=rc*ring*1.8+vec3(1.)*exp(-pow((wd-wr*.94)*80.,2.))*(1.-W)*.8;"+
+  " col+=vec3(1.,.97,1.)*F;"+
+  " col*=1.-smoothstep(.55,1.25,length((gl_FragCoord.xy-.5*R)/R.y))*.8;"+
+  " col=1.-exp(-col*1.35);"+
+  " col+=(h(gl_FragCoord.xy+T)-.5)*.035;"+
+  " gl_FragColor=vec4(col,1.);}";
+  if(gl){var mk=function(t,src){var o=gl.createShader(t);gl.shaderSource(o,src);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS)){console.warn(gl.getShaderInfoLog(o));return null}return o};
+    var vs=mk(gl.VERTEX_SHADER,"attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}"),fs=mk(gl.FRAGMENT_SHADER,FS);
+    if(vs&&fs){var pr=gl.createProgram();gl.attachShader(pr,vs);gl.attachShader(pr,fs);gl.linkProgram(pr);gl.useProgram(pr);
+      var bf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,bf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+      var lc=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(lc);gl.vertexAttribPointer(lc,2,gl.FLOAT,false,0,0);
+      'R P T C K F W S B'.split(' ').forEach(function(k){U[k]=gl.getUniformLocation(pr,k)})}else gl=null}
+  function gsize(){gc.width=Math.round(innerWidth*DPR);gc.height=Math.round(innerHeight*DPR);if(gl)gl.viewport(0,0,gc.width,gc.height)}
+  gsize();addEventListener('resize',gsize);}
+  var sm=function(a,b,x){x=Math.max(0,Math.min(1,(x-a)/(b-a)));return x*x*(3-2*x)};
+  var CH0=1500,CH1=4150,IMP=4320;
+  function gpu(e){if(!glInit){glInit=true;setupGL()}if(!gl)return;var r=$('bfxCore').getBoundingClientRect(),px=(r.left+r.width/2)*DPR,py=gc.height-(r.top+r.height/2)*DPR;
+    var C=Math.pow(sm(CH0,CH1,e),1.6),K=sm(CH1,IMP,e),F=e>IMP?Math.exp(-(e-IMP)/140):0,W=e>IMP?1-Math.pow(1-Math.min(1,(e-IMP)/1500),3):0;
+    if(e>IMP+1500)W=1;var S=sm(CH0+1200,CH1,e)*(1-K)*.7+(e>IMP?Math.exp(-(e-IMP)/260)*2.2:0),B=sm(0,1600,e)*(1-.6*sm(IMP,IMP+800,e)*0)+.0;
+    gl.uniform2f(U.R,gc.width,gc.height);gl.uniform2f(U.P,px,py);gl.uniform1f(U.T,e/1000);gl.uniform1f(U.C,C);gl.uniform1f(U.K,K);gl.uniform1f(U.F,F);gl.uniform1f(U.W,W);gl.uniform1f(U.S,lite?0:S);gl.uniform1f(U.B,B);
+    gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+    var sh=lite?0:S*3;el.style.setProperty('--sx',(Math.sin(e*.061)+Math.sin(e*.037)*.6)*sh+'px');el.style.setProperty('--sy',(Math.cos(e*.053)+Math.sin(e*.029)*.6)*sh+'px')}
+
+  /* phase A: typed command */
+  var cmd='dylan@stack:~$ ./boot --system',ci=0;
+  function typeCmd(){var tc=$('bfxCmd');if(!tc)return;if(ci<=cmd.length){tc.innerHTML=cmd.slice(0,ci).replace('dylan@stack','<b>dylan@stack</b>');ci++;setTimeout(typeCmd,lite?0:(ci<15?38:46)/SPD)}}
+  setTimeout(typeCmd,lite?0:250/SPD);
+  setTimeout(function(){el.classList.add('phB')},lite?0:1450/SPD);
+  setTimeout(function(){el.classList.add('phC')},lite?0:4380/SPD);
+
+  /* face decoder */
+  var fc=$('bfxFace'),fx=fc.getContext('2d'),img=new Image(),imgOk=false,off=document.createElement('canvas'),ox=off.getContext('2d');
+  img.onload=function(){imgOk=true};img.src='icons/icon-512.png?v=2';
+  var burst=0;
+  function face(e){if(!imgOk)return;var S=360,k=Math.max(0,Math.min(1,(e-4400)/2600));if(k<=0){fx.clearRect(0,0,S,S);return}
+    var ke=1-Math.pow(1-k,3);fx.clearRect(0,0,S,S);fx.globalAlpha=Math.min(1,k*3);fx.drawImage(img,0,0,S,S);fx.globalAlpha=1;
+    fc.style.filter='blur('+((1-ke)*14).toFixed(2)+'px) brightness('+(1+(1-ke)*1.4).toFixed(2)+') saturate('+(1+ (1-ke)*.6).toFixed(2)+')';
+    var g=burst>0?.9:(k<1?.05:.012);if(Math.random()<g){var m=burst>0?6:2;for(var i=0;i<m;i++){var y=Math.random()*S|0,h=2+Math.random()*(burst>0?30:10)|0,dx=(Math.random()-.5)*(burst>0?90:18);fx.drawImage(fc,0,y,S,h,dx,y,S,h)}}
+    if(burst>0)burst--}
+
+  /* wordmark: letters resolve one by one */
+  var word='SYSTEM',wEl=$('bfxWord'),glyph='#%&*+=<>/\\|01',wT0=5600;
+  for(var i=0;i<word.length;i++){var s=document.createElement('span');s.textContent=' ';wEl.appendChild(s)}
+  function wordTick(e){var sp=wEl.children;for(var i=0;i<sp.length;i++){var st=wT0+i*260,lock=st+520;
+    if(e<st)sp[i].textContent=' ';else if(e<lock){sp[i].textContent=glyph[Math.random()*glyph.length|0];sp[i].className='scr'}else if(sp[i].className!=='ok'){sp[i].textContent=word[i];sp[i].className='ok'}}}
+
+  /* status + log */
+  var subs=[[1700,'charging'],[4300,'release'],[4500,'decoding identity'],[6000,'syncing your stack'],[7300,'restoring today'],[8500,'compiling interface']],curSub='';
+  function setSub(t){if(t===curSub)return;curSub=t;var s=$('bfxSub');s.classList.remove('in');void s.offsetWidth;s.textContent=t;s.classList.add('in')}
+  var log=$('bfxLog'),q=[],qBusy=false,maxL=4;
+  function render(s){var sp=document.createElement('span');sp.innerHTML=s;log.appendChild(sp);while(log.children.length>maxL)log.removeChild(log.firstChild)}
+  function pump(){if(!q.length){qBusy=false;return}qBusy=true;render(q.shift());setTimeout(pump,lite?0:70)}
+  var logOn=false;function addLine(s){q.push(s);if(logOn&&!qBusy)pump()}
+  ['kernel · dylan.sys','crt · 60hz · gamma 2.2','mount /today /gym /journal /stack'].forEach(addLine);
+  setTimeout(function(){logOn=true;if(!qBusy)pump()},lite?0:4800/SPD);
+
+  /* own boot video (kept in this device's private cache, never in the public repo) */
+  var VID=false,vEnded=false,V=$('bfxV'),muted=false;
+  /* a tap starts it if the device refused to autoplay, and brings the sound with it */
+  /* a tap is the one moment iOS lets sound start, so unmute SYNCHRONOUSLY inside it —
+     doing it in a promise callback lands outside the gesture and is ignored. no early
+     return either: every tap re-asserts it, so a refused first tap isn't the last word. */
+  function unmute(){if(!VID)return;
+    V.muted=false;V.volume=1;muted=false;
+    var r=V.play();
+    if(r&&r.catch)r.catch(function(e){dg('tap:'+e.name);muted=true;V.muted=true;V.play().catch(function(){})})}
+  /* NO autoplay attribute on the element. iPadOS puts its own start-playback button on a
+     video that declares autoplay and has not begun playing — which is the whole of the time
+     between the boot painting and the clip arriving from the cache. Muting and calling play()
+     from script autoplays just the same, without asking for that control. */
+  function startVideo(url){dg('startVideo');try{localStorage.setItem('ds3:bootvid','1')}catch(x){}
+    V.addEventListener('playing',function(){el.classList.add('vplaying');setTimeout(function(){readyRes()},250);
+      if(!poster)setTimeout(function(){try{var cv=document.createElement('canvas'),w=480;cv.width=w;cv.height=Math.round(w*(V.videoHeight||16)/(V.videoWidth||9));cv.getContext('2d').drawImage(V,0,0,cv.width,cv.height);localStorage.setItem('ds3:bootposter',cv.toDataURL('image/jpeg',.6))}catch(x){}},60)},{once:true});el.classList.remove('lite');V.addEventListener('playing',function(){dg('playing')});V.addEventListener('error',function(){dg('vERR:'+(V.error&&V.error.code))});VID=true;el.classList.add('vidmode');V.controls=false;V.removeAttribute('controls');V.src=url;SPD=1;t0=performance.now();
+    /* start muted so every device autoplays it; the first tap turns the sound on */
+    muted=true;V.muted=true;
+    /* calling play() the instant src is set can be refused outright while the blob is still
+       being opened; ask again the moment there is data, which is when it actually takes */
+    function kick(tag){if(vStarted||closing||!VID)return;
+      V.muted=true;var r=V.play();
+      if(r&&r.catch)r.catch(function(e){dg(tag+':'+e.name)})}
+    ['loadedmetadata','loadeddata','canplay','canplaythrough'].forEach(function(ev){
+      V.addEventListener(ev,function(){dg(ev);kick(ev)})});
+    var pl=V.play();
+    if(pl&&pl.catch)pl.catch(function(e){dg('play1:'+e.name)});
+    V.addEventListener('pause',function(){dg('paused@'+Math.round(V.currentTime*100)/100)});
+    V.addEventListener('ended',function(){vEnded=true});V.addEventListener('error',function(){vEnded=true});
+    /* iPad with "Never Auto-Play" blocks even a muted start, which used to leave a black screen
+       until the screen was tapped. If no frame has advanced, retry muted, then drop the clip
+       and run the generated scene instead. */
+    var vStarted=false;
+    V.addEventListener('timeupdate',function(){if(V.currentTime>0.04&&!vStarted){vStarted=true;dg('rolling m='+V.muted)}});
+    function bail(){if(vStarted||closing||!VID)return;dg('vidbail');try{V.pause()}catch(x){}
+      VID=false;vEnded=false;el.classList.remove('vidmode');el.classList.remove('vplaying');expectVid=false;
+      try{localStorage.removeItem('ds3:bootvid')}catch(x){}
+      SPD=lite?1:5.4;t0=performance.now();readyRes()}
+    setTimeout(function(){if(vStarted||closing)return;dg('vidstall');
+      muted=true;V.muted=true;V.load();var r2=V.play();if(r2&&r2.catch)r2.catch(function(e){dg('play2:'+e.name)});
+      setTimeout(function(){if(vStarted||closing)return;dg('vidstall2');
+        var r3=V.play();if(r3&&r3.catch)r3.catch(function(){});
+        setTimeout(bail,2200)},1800)},2200);
+    // iPhone/iPad only allow sound after a tap; taps here only turn sound on, they never skip the video
+    ['touchend','click','keydown'].forEach(function(t){el.addEventListener(t,function(ev){ev.stopImmediatePropagation();unmute()},true)})}
+  var vchk=false,DG={t:new Date().toISOString(),ua:navigator.userAgent.slice(0,90),fxOff:fxOff,quick:quick,rm:matchMedia('(prefers-reduced-motion: reduce)').matches,proto:location.protocol,caches:!!window.caches,ev:[]};
+  function dg(x){DG.ev.push(Math.round(performance.now()-t0)+':'+x);try{localStorage.setItem('ds3:bootdiag',JSON.stringify(DG))}catch(e){}}
+  dg('start');
+  if(!quick&&window.caches&&(location.protocol==='https:'||location.hostname==='localhost')){vchk=true;setTimeout(function(){if(vchk&&!VID){vchk=false;noVid()}},4000);
+    try{caches.open('ds-media').then(function(c){return c.match('bootvid')}).then(function(r){dg('match:'+!!r);if(!r){vchk=false;noVid();return null}return r.blob()}).then(function(b){vchk=false;dg('blob:'+(b?b.size:0)+' closing:'+closing);if(b&&b.size>1000&&!closing)startVideo(URL.createObjectURL(b));else if(!b||b.size<=1000)noVid()}).catch(function(e){dg('err:'+e);vchk=false;noVid()})}catch(e){vchk=false;noVid()}}else readyRes();
+  function noVid(){readyRes();if(!expectVid)return;expectVid=false;try{localStorage.removeItem('ds3:bootvid');localStorage.removeItem('ds3:bootposter')}catch(x){}el.classList.remove('vidmode');t0=performance.now()}
+
+  function tick(now){raf=requestAnimationFrame(tick);var e=(now-t0)*SPD;
+    if(VID){var d=V.duration||13.2,ct=V.currentTime||0;if(!closing&&(ct>=d-1.26||vEnded))tvOff();return}
+    if(expectVid&&vchk)return;
+    gpu(e);face(e);wordTick(e);
+    for(var si=subs.length-1;si>=0;si--)if(e>=subs[si][0]){setSub(done&&e>MIN-300?'ready':subs[si][1]);break}
+    var cap=Math.min(target,Math.max(0,(e-4300)/(MIN-4300))*100,done?100:97);shown+=(Math.max(cap,shown)-shown)*.35;if(done&&e>MIN)shown+=(100-shown)*.5;
+    var p=Math.min(100,shown);$('bfxPct').textContent=p>=99.5?'OK':('0'+Math.floor(p)).slice(-2);$('bfxBar').style.transform='scaleX('+(p/100)+')';
+    $('bfxProg').style.strokeDashoffset=1231.5*(1-p/100);$('bfxDotG').setAttribute('transform','rotate('+(p*3.6)+' 200 200)');
+    if(done&&e>MIN&&p>99.4&&!closing&&!vchk)close(); /* wait for the saved edit to load before giving up on it */
+  }
+  raf=requestAnimationFrame(tick);
+
+  // own video: old-TV power-off, synced to the cut (the power-off sound is baked into the clip)
+  function tvOff(){if(closing)return;closing=true;el.classList.add('tvoff');
+    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting');document.body.classList.add('poweron');setTimeout(function(){document.body.classList.remove('poweron')},1100)},1100);
+    setTimeout(function(){cancelAnimationFrame(raf);try{V.pause()}catch(e){}el.remove()},1800)}
+  function close(fast){if(closing)return;try{dg('close fast:'+!!fast)}catch(e){}closing=true;
+    if(fast||lite)el.classList.add('fast');else{burst=5;el.classList.add('flare')}
+    setTimeout(function(){el.classList.add('off')},fast||lite?0:140);
+    setTimeout(function(){el.classList.add('gone');document.body.classList.remove('booting')},fast||lite?200:520);
+    setTimeout(function(){cancelAnimationFrame(raf);el.remove()},fast||lite?600:950)}
+  window.BOOTFX={
+    step:function(msg,pct,ok){if(closing)return;if(pct)target=Math.max(target,pct);if(msg)addLine(msg+(ok===false?' <em class="er">· cached</em>':' <em>· ok</em>'))},
+    done:function(){if(done)return;done=true;target=100},
+    skip:function(){close(true)},
+    ready:ready
+  };
+  setTimeout(function(){el.addEventListener('pointerdown',function(){if(done&&!VID)close(true)})},300);
+  /* hold anywhere to skip: a thin ring fills under your thumb, then it jumps straight to the TV-off (with its sound) */
+  var hold=null;
+  function holdStart(x,y){if(closing||hold)return;var r=document.createElement('div');r.className='bfx-hold';r.style.left=x+'px';r.style.top=y+'px';
+    r.innerHTML='<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" class="hb"/><circle cx="32" cy="32" r="28" class="hf"/></svg><span class="hlab">SKIP</span>';
+    el.appendChild(r);
+    requestAnimationFrame(function(){requestAnimationFrame(function(){r.classList.add('on')})});
+    hold={r:r,t:setTimeout(function(){r.classList.add('fire');setTimeout(function(){r.remove()},400);hold=null;skipToEnd()},700)}}
+  function holdEnd(){if(!hold)return;clearTimeout(hold.t);var r=hold.r;r.classList.remove('on');r.classList.add('cancel');setTimeout(function(){r.remove()},250);hold=null}
+  function skipToEnd(){try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}if(VID){var d=V.duration||13.6;try{unmute();V.currentTime=Math.max(0,d-1.3);if(V.paused)V.play()}catch(e){tvOff()}}else close(true)}
+  el.addEventListener('touchstart',function(e){var t=e.touches[0];if(e.touches.length===1)holdStart(t.clientX,t.clientY);else holdEnd()},{passive:true,capture:true});
+  el.addEventListener('mousedown',function(e){holdStart(e.clientX,e.clientY)},true);
+  ['touchend','touchcancel','mouseup','mouseleave'].forEach(function(t){el.addEventListener(t,holdEnd,true)});
+  el.addEventListener('touchmove',function(e){if(!hold)return;var t=e.touches[0],r=hold.r;if(Math.abs(t.clientX-parseFloat(r.style.left))>30||Math.abs(t.clientY-parseFloat(r.style.top))>30)holdEnd()},{passive:true,capture:true});
+  el.addEventListener('contextmenu',function(e){e.preventDefault()});
+  setTimeout(function(){if(!closing){done=true;target=100}},12000);
+})();
+</script>
+
+<canvas id="noise" width="160" height="90" aria-hidden="true"></canvas>
+<div class="scanfx" aria-hidden="true"></div>
+<div class="vign" aria-hidden="true"></div>
+<canvas id="parts" aria-hidden="true"></canvas>
+<div class="cur-x" id="curx" aria-hidden="true"></div>
+<div class="cur-xy" id="curxy" aria-hidden="true"></div>
+
+<header class="bar">
+  <span class="prompt" id="promptBtn" role="button" tabindex="0" title="search" style="cursor:pointer">dylan@<b>system</b>:~$<span class="caret"></span></span>
+  <nav class="tabs" aria-label="Views" id="tabs"></nav>
+  <div class="meta">
+    <button class="pendbtn" id="pendBtn" type="button" hidden></button>
+    <span class="sync" id="sync" title="Where your data is saved"><i></i><span id="syncTxt">local</span></span>
+    <button class="iconbtn" id="notifyBtn" type="button" title="Notifications" aria-label="Notifications">🔔</button><button class="iconbtn" id="fxBtn" type="button" aria-pressed="true" title="Effects on or off (f)">FX</button>
+  </div>
+</header>
+
+<main id="main">
+  <div class="nodata panel" id="nodata" hidden><div class="pb">No sheet data yet. Once the laptop sync agent runs, your plan, stack and money fill in here automatically.</div></div>
+  <!-- TODAY -->
+  <section class="view" id="v-today" aria-label="Today">
+    <div class="banner slim"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/today"><span class="slash">/</span>today</h2><span class="sub" id="todaySub">weekday plan</span></div></div>
+    <div id="todayTasks"></div>
+    <div class="hud">
+      <div class="panel clockp">
+        <div class="ph"><span class="tag">sys.clock</span><span id="planName"></span></div>
+        <div class="pb">
+          <div class="clock num"><span class="glitch" id="clock" data-text="00:00">00:00</span><span class="sec" id="secs">00</span></div>
+          <div class="dateline" id="dateline"></div>
+        </div>
+      </div>
+      <div class="nn">
+        <div class="panel"><div class="ph"><span class="tag">now</span><span id="nowBlk"></span></div>
+          <div class="pb"><span class="big" id="nowItem"></span><span class="small" id="nowSub"></span></div></div>
+        <div class="panel"><div class="ph"><span class="tag">next</span><span id="nextAt"></span></div>
+          <div class="pb"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end"><span class="big" id="nextItem"></span><span class="eta num" id="eta"></span></div>
+          <div class="meter scan"><span id="etaBar"></span></div></div></div>
+      </div>
+    </div>
+    <div class="panel prog"><div class="pb">
+      <span class="pct num" id="pct">0%</span>
+      <span class="asc num" id="asc"></span>
+      <span class="target-mark num" id="pctTxt"></span>
+    </div></div>
+    <div id="todayCal"></div>
+    <div class="strip" id="strip" role="group" aria-label="Blocks of the day"></div>
+    <div class="tools">
+      <div class="seg" role="group" aria-label="Show" id="filtSeg">
+        <button type="button" data-f="all" aria-pressed="true">all</button>
+        <button type="button" data-f="cmp" aria-pressed="false" data-lx="items">items</button>
+        <button type="button" data-f="rtn" aria-pressed="false">routine</button>
+      </div>
+      <button class="iconbtn" type="button" id="hideDone" aria-pressed="false">hide done</button>
+      
+      <span class="sp"></span>
+      <div class="seg" role="group" aria-label="Plan">
+        <button type="button" id="pWd" aria-pressed="false">weekday</button>
+        <button type="button" id="pWe" aria-pressed="false">weekend</button>
+      </div>
+      <button class="iconbtn" type="button" id="resetDay" title="Untick everything for this day">reset</button>
+    </div>
+    <div id="blocks"></div>
+    <div id="todayExtra"></div>
+    <div class="two" id="bodyCheck" style="margin-top:14px">
+      <div class="panel"><div class="ph"><span class="tag">bp check</span><span>seated · 5 min rest · same arm</span></div><div class="pb">
+        <form class="bpgrid" id="bpForm">
+          <label>sys<input class="inp num" id="bpS" type="number" inputmode="numeric" min="60" max="250" required></label>
+          <label>dia<input class="inp num" id="bpD" type="number" inputmode="numeric" min="30" max="160" required></label>
+          <label>pulse<input class="inp num" id="bpP" type="number" inputmode="numeric" min="30" max="220"></label>
+          <button class="btn p" type="submit" style="height:46px">log</button>
+        </form>
+        <div class="stat" id="bpStat" style="margin-top:14px"></div>
+        <div id="bpChart"></div>
+        <div class="rlist" id="bpList"></div>
+      </div></div>
+      <div class="panel"><div class="ph"><span class="tag">bodyweight</span><span>kg</span></div><div class="pb">
+        <form class="bpgrid" id="wtForm" style="grid-template-columns:1fr auto">
+          <label>kg<input class="inp num" id="wtIn" type="number" inputmode="decimal" step="0.1" min="30" max="250" required></label>
+          <button class="btn p" type="submit" style="height:46px">log</button>
+        </form>
+        <div class="stat" id="wtStat" style="margin-top:14px"></div>
+        <div id="wtChart"></div>
+        <div class="rlist" id="wtList"></div>
+      </div></div>
+    </div>
+  </section>
+
+  <!-- GYM -->
+  <section class="view" id="v-gym" aria-label="Gym">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/gym"><span class="slash">/</span>gym</h2><span class="sub" id="gymSub"></span></div></div>
+    <div class="seg gseg" role="group" aria-label="Gym" id="gymSeg"><button type="button" data-g="workout">workout</button><button type="button" data-g="routines">routines</button><button type="button" data-g="history">history</button><button type="button" data-g="stats">stats</button><button type="button" data-g="exercises">exercises</button><button type="button" data-g="motivation">motivation</button></div>
+    <div id="g-workout"></div><div id="g-routines" hidden></div><div id="g-history" hidden></div><div id="g-stats" hidden></div><div id="g-exercises" hidden></div><div id="g-motivation" hidden></div>
+  </section>
+
+  <!-- JOURNAL -->
+  <section class="view" id="v-journal" aria-label="Journal">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/journal"><span class="slash">/</span>journal</h2><span class="sub" id="jStreak"></span></div></div>
+    <div class="seg" id="jTabs" style="margin:0 0 12px;display:flex"><button type="button" data-jt="journal" style="flex:1">journal</button><button type="button" data-jt="notes" style="flex:1">notes</button><button type="button" data-jt="tasks" style="flex:1">tasks</button></div>
+    <div id="jPaneJ">
+    <div class="jgrid">
+      <div class="jside"><input class="inp" id="jQ" type="search" placeholder="search entries + #tags" autocomplete="off"><div class="jlist" id="jList"></div></div>
+      <div class="jeditor panel" id="jEditor">
+        <div class="ph"><span class="row" style="gap:6px"><button class="iconbtn" type="button" id="jPrev" aria-label="Previous day">‹</button><button class="iconbtn" type="button" id="jToday">today</button><button class="iconbtn" type="button" id="jNext" aria-label="Next day">›</button></span><span id="jSaved" class="dim"></span></div>
+        <div class="pb">
+          <h3 class="jdate" id="jDate"></h3>
+          <div class="jmood" id="jMood" role="group" aria-label="Mood"></div>
+          <div class="jtagrow" id="jTags"></div>
+          <div class="row" style="justify-content:space-between;margin:12px 0 8px"><div class="seg" id="jModeSeg" role="group" aria-label="Mode"><button type="button" data-jm="type">type</button><button type="button" data-jm="ink">write</button></div><div class="chips" id="jPrompts" style="margin:0"></div></div>
+          <div id="jTypePane"><textarea class="jtext" id="jText" placeholder="What happened today? How did it feel?" spellcheck="true"></textarea><div class="dim" style="font-size:11px;text-align:right" id="jWords"></div></div>
+          <div id="jInkPane" hidden>
+            <div class="jtools" id="jTools">
+              <button type="button" data-tool="pen">pen</button><button type="button" data-tool="hl">highlight</button><button type="button" data-tool="eraser">erase</button>
+              <span class="sep"></span>
+              <button type="button" class="col" data-col="#e6e6e6" style="--c:#e6e6e6" aria-label="White"></button><button type="button" class="col" data-col="#ff2a6d" style="--c:#ff2a6d" aria-label="Pink"></button><button type="button" class="col" data-col="#05d9e8" style="--c:#05d9e8" aria-label="Cyan"></button><button type="button" class="col" data-col="#ffb000" style="--c:#ffb000" aria-label="Amber"></button>
+              <input type="range" id="jWidth" min="1" max="12" value="4" aria-label="Pen width">
+              <span class="sep"></span>
+              <button type="button" id="jUndo">undo</button><button type="button" id="jRedo">redo</button><button type="button" id="jPage">+ page</button><button type="button" id="jClear">clear</button>
+              <button type="button" id="jPencil" aria-pressed="false" title="Ignore fingers so your palm can rest on the screen">pencil only</button>
+            </div>
+            <div class="jcanvaswrap" id="jCanvasWrap"><canvas id="jCanvas"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+    <div id="jPaneN" hidden></div>
+    <div id="jPaneT" hidden></div>
+  </section>
+    <section class="view" id="v-alter" aria-label="Alter egos"></section>
+
+
+  <!-- MEDIA -->
+  <section class="view" id="v-food" aria-label="Food">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/food"><span class="slash">/</span>food</h2><span class="sub" id="foodSub"></span></div></div>
+    <div class="seg" id="foodSeg" style="margin:0 0 12px"><button type="button" data-fv="log">log</button><button type="button" data-fv="progress">progress</button><button type="button" data-fv="fast">fasting</button><button type="button" data-fv="goals">goals</button></div>
+    <div id="foodBody"></div>
+  </section>
+  <section class="view" id="v-sleep" aria-label="Sleep">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/sleep"><span class="slash">/</span>sleep</h2><span class="sub" id="sleepSub"></span></div></div>
+    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="recovery" style="flex:1">recovery</button><button type="button" data-sv="last" style="flex:1">last night</button><button type="button" data-sv="history" style="flex:1">history</button><button type="button" data-sv="stats" style="flex:1">stats</button><button type="button" data-sv="setup" style="flex:1">setup</button></div>
+    <div id="sleepBody"></div>
+  </section>
+  <section class="view" id="v-streaks" aria-label="Streaks">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/streaks"><span class="slash">/</span>streaks</h2><span class="sub" id="habSub"></span></div></div>
+    <div id="habBody"></div>
+  </section>
+  <section class="view" id="v-media" aria-label="Media">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/media"><span class="slash">/</span>media</h2><span class="sub">anime · movies · manga · books</span></div></div>
+    <div class="toolcards four" id="mediaCards">
+      <button type="button" data-mk="anime"><i>◐</i><b>anime</b><span></span></button>
+      <button type="button" data-mk="movies"><i>▶</i><b>movies</b><span></span></button>
+      <button type="button" data-mk="manga"><i>❏</i><b>manga</b><span></span></button>
+      <button type="button" data-mk="books"><i>▤</i><b>books</b><span></span></button>
+    </div>
+    <div id="v-media-body"></div>
+  </section>
+
+  <!-- TOOLS -->
+  <section class="view" id="v-tools" aria-label="Tools">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/tools"><span class="slash">/</span>tools</h2><span class="sub" id="toolsSub"></span></div></div>
+    <div class="toolcards" id="toolSeg">
+      <button type="button" data-t="focus"><i>⧗</i><b>focus</b><span id="tcFocus">timer · music · sound</span></button>
+      <button type="button" data-t="protocols"><i>◈</i><b>protocols</b><span id="tcProto">doses · sites · inventory</span></button>
+      <button type="button" data-t="leetcode"><i>λ</i><b>leetcode</b><span id="tcLeet">problems · notes</span></button>
+      <button type="button" data-t="brick"><i>⊘</i><b>brick</b><span id="tcBrick">lock the phone</span></button>
+    </div>
+    <div id="t-focus"></div>
+    <div id="t-protocols" hidden></div>
+    <div id="t-leetcode" hidden></div>
+    <div id="t-brick" hidden></div>
+  </section>
+
+  <!-- WEEK -->
+  <section class="view" id="v-week" aria-label="Week">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/week"><span class="slash">/</span>week</h2><span class="sub" id="weekSub">review Sundays 19:00</span></div></div>
+    <div class="gcal" id="gcal"></div>
+    <div class="two" style="margin-top:12px">
+      <div class="panel"><div class="ph"><span class="tag">adherence · last 7 days</span><span>target 80%</span></div><div class="pb"><div class="days" id="days"></div><div class="dim" id="daysNote" style="font-size:12px;margin-top:10px"></div></div></div>
+      <div class="panel"><div class="ph"><span class="tag">top streaks</span><span>same as /streaks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
+    </div>
+    <div class="two" style="margin-top:12px">
+      <div class="panel"><div class="ph"><span class="tag">weekly targets</span><span>drag to log this week</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ add target</button></div></div>
+      <div class="panel"><div class="ph"><span class="tag">weekly review notes</span><span id="notesSaved" class="dim"></span></div><div class="pb"><textarea class="notes" id="weekNotes" placeholder="What worked, what slipped, what to change next week…"></textarea></div></div>
+    </div>
+  </section>
+
+  <!-- STACK -->
+  <section class="view" id="v-stack" aria-label="Stack">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/stack"><span class="slash">/</span>stack</h2><span class="sub" id="stackSub"></span></div></div>
+    <div class="kv" id="stackKv"></div>
+    <div id="stackWarn"></div>
+    <div class="searchrow">
+      <label class="grep"><span class="pink">grep</span><input id="q" type="search" placeholder="name, dose, source, note…" autocomplete="off"></label>
+      <button class="btn p" type="button" id="addCmp" data-lx="additem">+ item</button>
+    </div>
+    <div class="chips" id="stChips"></div>
+    <div class="chips" id="catChips"></div>
+    <div class="tbl" id="stackTbl"></div>
+  </section>
+
+  <!-- MONEY -->
+  <section class="view" id="v-money" aria-label="Money">
+    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/money"><span class="slash">/</span>money</h2><span class="sub">monthly budget</span></div></div>
+    <div class="kv" id="moneyKv"></div>
+    <div class="money-grid">
+      <div class="grid">
+        <div class="panel"><div class="ph"><span class="tag">outgoings by category</span><span>click to list</span></div><div class="pb" id="cats"></div></div>
+        <div class="panel"><div class="ph"><span class="tag" id="billsTitle">every bill</span><span id="billsTot"></span></div><div class="pb"><div id="bills"></div><button class="addrow" type="button" id="addBill">+ add bill</button></div></div>
+      </div>
+      <div class="grid" style="align-content:start">
+        <div class="panel"><div class="ph"><span class="tag">savings</span><span id="saveTot"></span></div><div class="pb"><div id="saves"></div><button class="addrow" type="button" id="addSave">+ add saving</button></div></div>
+        <div class="panel"><div class="ph"><span class="tag">price → hours of work</span><span id="rateLbl"></span></div><div class="pb">
+          <div class="calc"><span class="dim">£</span><input id="calcIn" type="number" inputmode="decimal" min="0" step="0.01" value="40" aria-label="Price in pounds"><span class="dim">=</span><span class="res num" id="calcOut"></span></div>
+          <p class="dim" style="margin:10px 0 0;font-size:12px" id="calcNote"></p></div></div>
+        <div class="panel"><div class="ph"><span class="tag">actual vs budget</span><span class="row" style="gap:6px"><button class="iconbtn" type="button" id="avPrev">‹</button><b id="avMon" style="min-width:86px;text-align:center"></b><button class="iconbtn" type="button" id="avNext">›</button></span></div><div class="pb" id="avBody"></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+<button class="editpill" id="editPill" type="button" hidden>✎ editing · tap to finish</button>
+
+
+<nav class="bnav" id="bnav" aria-label="Sections"></nav>
+<div class="sleepnight" id="sleepNight" hidden></div>
+<div class="restdock" id="restDock" aria-live="polite"><span class="tag">rest</span><b class="num" id="restT">2:00</b><div class="meter"><span id="restBar"></span></div><button class="iconbtn" type="button" data-rd="-15">−15</button><button class="iconbtn" type="button" data-rd="15">+15</button><button class="iconbtn" type="button" data-rd="skip">skip</button></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sheetTitle"><div class="sgrab"></div><div class="sh"><span class="tag" id="sheetTitle"></span><button class="iconbtn" type="button" id="sheetX">close</button></div><div class="sbody" id="sheetBody"></div></div>
+<div class="login" id="login" hidden><div class="loginbg"></div><form class="loginbox" id="loginForm"><div id="loginBox"><div class="tag pink">dylan@stack:~$ login</div><h1 class="glitch" data-text="SYSTEM">SYSTEM</h1>
+<label>email<input class="inp" id="lEmail" type="email" autocomplete="username" required></label><label>password<input class="inp" id="lPass" type="password" autocomplete="current-password" required></label>
+<button class="btn p" type="submit">sign in</button><p class="dim" id="loginMsg" aria-live="polite"></p></div></form></div>
+<div class="edgefx" aria-hidden="true"><i class="ec tl"></i><i class="ec tr"></i></div>
+<div class="ticker" aria-hidden="true"><div class="run" id="tick"></div></div>
+<div class="flash" id="flash" aria-hidden="true"><span id="flashTxt"></span></div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Details" aria-hidden="true"></aside>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mb"><div class="mh"><span class="tag" id="mTitle">edit</span><button class="iconbtn" type="button" id="mX">esc ✕</button></div><form id="mForm"></form></div></div>
+<div class="pal" id="pal" role="dialog" aria-label="Search">
+  <div class="box2">
+    <div class="in"><span class="pink">&gt;</span><input id="palIn" type="text" placeholder="jump to an item, bill or view…" autocomplete="off" aria-label="Search"></div>
+    <ul id="palList"></ul>
+    <div class="hint"><span class="kbd">↑↓</span> move · <span class="kbd">enter</span> open · <span class="kbd">esc</span> close · keys: <span class="kbd">1–8</span> views <span class="kbd">/</span> search <span class="kbd">e</span> edit mode <span class="kbd">n</span> now <span class="kbd">j k</span> move <span class="kbd">x</span> tick <span class="kbd">f</span> fx</div>
+  </div>
+</div>
+
+<div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
+<script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
+addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
+<script>window.APP_V="1794863714"</script>
+<script src="config.js?v=1794863714"></script>
+<script src="vendor/supabase.js"></script>
+<script src="app.js?v=1794863714"></script>
+</body>
+</html>
