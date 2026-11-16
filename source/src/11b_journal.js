@@ -1,6 +1,6 @@
 /* ================= JOURNAL (typing + Apple Pencil) ================= */
 const PAGE_W=1000,PAGE_H=1400;
-const MOODS=[['1','awful'],['2','low'],['3','okay'],['4','good'],['5','great']];
+const MOODS=[...Array(10)].map((_,i)=>[String(i+1),String(i+1)]);
 const PROMPTS=[['woop','WOOP\nWish: \nOutcome: \nObstacle: \nPlan (if…then…): '],['wins','3 wins today\n1. \n2. \n3. '],['grat','Grateful for\n- '],['tmrw','Tomorrow, the one thing that matters: ']];
 let JDATE=null,JE=null,JLIST=[],jmode=LS.get('jmode')||'type',jtool='pen',jcolor='#e6e6e6',jwidth=4,pencilOnly=LS.get('pencilOnly')||false,jundo=[],jredo=[],jSaveT=null,jLoaded=false;
 const jpath=d=>'journal/e-'+d;

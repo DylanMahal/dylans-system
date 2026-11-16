@@ -140,7 +140,7 @@ button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .jtags{font-size:11px;color:var(--cyan)}
 .jdate{font-size:clamp(22px,3vw,32px);font-weight:800;letter-spacing:-.03em;margin:0 0 12px}
 .mood{display:inline-block;width:10px;height:10px;flex:none}
-.mood.m1{background:#ff3b3b}.mood.m2{background:#ffb000}.mood.m3{background:#7a7a7a}.mood.m4{background:#05d9e8}.mood.m5{background:#57f5a8}
+.mood.m1{background:#ff2a2a}.mood.m2{background:#ff5a1f}.mood.m3{background:#ff8a00}.mood.m4{background:#ffb000}.mood.m5{background:#d9c400}.mood.m6{background:#9fd400}.mood.m7{background:#57e08a}.mood.m8{background:#05d9e8}.mood.m9{background:#3aa8ff}.mood.m10{background:#c77dff}
 .jmood{display:flex;gap:6px;flex-wrap:wrap}
 .jmood button{appearance:none;border:1px solid var(--line2);background:none;display:flex;gap:6px;align-items:center;padding:6px 10px;cursor:pointer;font-size:12px;color:var(--dim)}
 .jmood button[aria-pressed="true"]{border-color:var(--fg);color:var(--fg);background:var(--bg3)}
@@ -1155,3 +1155,9 @@ body.vfullon{overflow:hidden}
 .aadd{all:unset;cursor:pointer;font-size:13px;line-height:1;min-width:14px;text-align:center;padding:5px 9px;opacity:.55;border:1px solid currentColor;border-radius:999px}
 .aadd:hover{opacity:1}
 .aadd:disabled,.aeback:disabled{opacity:.4;cursor:default}
+
+/* clock fills its panel */
+.clockp{display:flex;flex-direction:column;container-type:inline-size}.clockp .pb{flex:1;display:flex;flex-direction:column;justify-content:center;padding:14px 16px}
+.clockp .clock{font-size:clamp(76px,27cqw,260px);line-height:.82;white-space:nowrap}
+.clockp .dateline{margin-top:clamp(12px,3cqw,22px);font-size:clamp(12px,2.2cqw,17px)}
+.jmood button{min-width:38px;justify-content:center}

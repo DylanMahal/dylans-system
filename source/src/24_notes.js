@@ -150,8 +150,8 @@ async function renderTodayTasks(){const el=$('todayTasks');if(!el)return;
       ${td.length?srt(td).map(row).join(''):(ov.length?'':'<div class="dim tempty">nothing due today — add one in the journal</div>')}
       ${doneToday.length?`<div class="tgrp">done</div>${doneToday.map(row).join('')}`:''}</div></div>`;
   el.onclick=e=>{const b=e.target.closest('[data-ttc],[data-tte],#ttGo');if(!b)return;
-    if(b.id==='ttGo'){JTAB='tasks';TV='today';LS.set('tview','today');go('journal');jTab('tasks');return}
+    if(b.id==='ttGo'){JTAB='tasks';TV='today';LS.set('tview','today');go('journal');setJTab('tasks');return}
     if(b.dataset.ttc){if(!tToggle(b.dataset.ttc))return;const r=b.closest('.ttrow');if(r)r.classList.add('pop');
       setTimeout(()=>{tSave();renderTodayTasks();if(cur==='journal'&&JTAB==='tasks')renderTasks()},260);return}
-    if(b.dataset.tte){JTAB='tasks';go('journal');jTab('tasks');setTimeout(()=>tEdit(b.dataset.tte),250)}}}
+    if(b.dataset.tte){JTAB='tasks';go('journal');setJTab('tasks');setTimeout(()=>tEdit(b.dataset.tte),250)}}}
 watch('tasks/all',()=>{if(cur==='today')renderTodayTasks()});
