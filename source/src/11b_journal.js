@@ -101,49 +101,55 @@ addEventListener('resize',()=>{if(cur==='journal'&&jmode==='ink')sizeInk()});
 
 /* ---- day recap: pull what the app already knows about a day ---- */
 async function jRecap(d){
-  const L=[];const R=n=>Math.round(n||0);
+  const L=[],R=n=>Math.round(n||0),K=n=>R(n).toLocaleString('en-GB');
+  const P=(l,v)=>L.push(l.padEnd(8)+v),S=v=>L.push(' '.repeat(8)+v);
+  const cut=(x,n)=>{x=String(x||'').trim();return x.length>n?x.slice(0,n-1)+'…':x};
+  const hm=x=>x?Math.floor(x/60)+'h'+String(x%60).padStart(2,'0'):'';
   try{
     const f=await load('food/d-'+d);
-    if(f&&f.m){const all=['b','l','d','s'].reduce((a,k)=>a.concat(f.m[k]||[]),[]);
+    if(f&&f.m){const ML=[['b','breakfast'],['l','lunch'],['d','dinner'],['s','snacks']];
+      const all=ML.reduce((a,[k])=>a.concat(f.m[k]||[]),[]);
       if(all.length){const t=typeof fSum==='function'?fSum(all):null;
-        L.push('food · '+all.length+' item'+(all.length===1?'':'s')+(t?' · '+R(t.kcal)+' kcal · '+R(t.p)+'p '+R(t.c)+'c '+R(t.f)+'f':''));
-        L.push('  '+all.map(x=>x.n).filter(Boolean).join(', '))}
-      const ex=(f.ex||[]).reduce((n,e)=>n+(+e.k||0),0);if(ex)L.push('exercise burn · '+R(ex)+' kcal');
-      if(f.w)L.push('weight · '+f.w+' kg')}
+        P('food',t?K(t.kcal)+' kcal · P'+R(t.p)+' C'+R(t.c)+' F'+R(t.f):all.length+' items');
+        ML.forEach(([k,lab])=>{const its=(f.m[k]||[]).map(x=>cut(x.n,26)).filter(Boolean);if(!its.length)return;
+          const c={};its.forEach(n=>c[n]=(c[n]||0)+1);
+          S(lab+' · '+Object.entries(c).map(([n,q])=>q>1?n+' ×'+q:n).join(', '))})}
+      const ex=(f.ex||[]).reduce((n,e)=>n+(+e.k||0),0);if(ex)P('burn',K(ex)+' kcal');
+      if(f.w)P('weight',f.w+' kg')}
   }catch(e){}
   try{
     const s2=await load('sleep/w-'+d);
-    if(s2&&(s2.asleep||s2.start)){const h=x=>x?Math.floor(x/60)+'h '+String(x%60).padStart(2,'0')+'m':'';
-      L.push('sleep · '+(h(s2.asleep)||'logged')+(s2.deep?' · deep '+h(s2.deep):'')+(s2.rem?' · rem '+h(s2.rem):'')+(s2.mood?' · felt '+s2.mood+'/5':''))}
+    if(s2&&(s2.asleep||s2.start)){
+      P('sleep',[hm(s2.asleep)||'logged',s2.deep&&'deep '+hm(s2.deep),s2.rem&&'REM '+hm(s2.rem)].filter(Boolean).join(' · '));
+      if(s2.mood)S('felt '+s2.mood+'/5')}
   }catch(e){}
   try{
     let ws=(typeof WORKOUTS!=='undefined'&&WORKOUTS.length)?WORKOUTS:(await listDocs('gym/w-')).map(r=>r.data).filter(Boolean);
     ws.filter(w=>w&&w.date===d).forEach(w=>{
       const st=(w.nsets!=null)?{vol:w.vol,n:w.nsets}:(typeof stats==='function'?stats(w):{vol:0,n:0});
-      L.push('gym · '+(w.name||'session')+' · '+(st.n||0)+' sets'+(st.vol?' · '+R(st.vol)+' kg volume':''));
-      const lines=(w.ex||[]).map(x=>{const ds=(x.sets||[]).filter(s3=>s3.done!==false&&s3.t!=='w');if(!ds.length)return '';
+      P('gym',[w.name||'session',(st.n||0)+' sets',st.vol&&K(st.vol)+' kg vol'].filter(Boolean).join(' · '));
+      (w.ex||[]).forEach(x=>{const ds=(x.sets||[]).filter(s3=>s3.done!==false&&s3.t!=='w');if(!ds.length)return;
         const b=ds.slice().sort((a,c)=>((+c.kg||0)*(+c.r||0))-((+a.kg||0)*(+a.r||0)))[0];
-        return x.n+' '+ds.length+'×'+((+b.kg)?b.kg+'kg':'')+((+b.r)?' × '+b.r:'')}).filter(Boolean);
-      if(lines.length)L.push('  '+lines.join(' · '));
-      if((w.prs||[]).length)L.push('  PRs · '+w.prs.map(x=>typeof x==='string'?x:(x.n||'')+' '+(x.kg||'')+'kg×'+(x.r||'')).join(', '))})
+        S(cut(x.n,24)+' · '+ds.length+'×'+[(+b.kg)&&b.kg+'kg',(+b.r)&&b.r].filter(Boolean).join('×'))});
+      (w.prs||[]).forEach(x=>S('PR '+(typeof x==='string'?x:(x.n||'')+' '+(x.kg||'')+'kg×'+(x.r||''))))})
   }catch(e){}
   try{
     const t=await load('tasks/all');const done=((t&&t.list)||[]).filter(x=>x.done&&String(x.done).slice(0,10)===d);
-    if(done.length)L.push('tasks done · '+done.map(x=>x.t).join(', '))
+    if(done.length){P('tasks',done.length+' done');done.forEach(x=>S('✓ '+cut(x.t,34)))}
   }catch(e){}
   try{
     const hl=await load('habits/log'),hx=await load('habits/list');
     const day=(hl&&hl.d&&hl.d[d])||{};
     const nm={};const HL=(hx&&hx.list)||(Array.isArray(hx)?hx:[]);HL.forEach(h=>{nm[h.id]=h.n||h.name});
     const hit=Object.keys(day).filter(k=>day[k]).map(k=>nm[k]||k);
-    if(hit.length)L.push('habits · '+hit.join(', '))
+    if(hit.length){P('habits',hit.length+' hit');S(hit.join(', '))}
   }catch(e){}
   return L.length?L.join('\n'):'nothing logged in the app for this day yet.'}
 async function jInsertRecap(btn){
   if(btn){btn.disabled=true;btn.textContent='reading…'}
   let txt='';try{txt=await jRecap(JDATE)}catch(e){txt='could not read the day.'}
   if(btn){btn.disabled=false;btn.textContent='day recap'}
-  const head='— '+nice(JDATE).toLowerCase()+' · from the app —\n';
-  JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+head+txt+'\n\n';
+  const head='── recap · '+nice(JDATE).toLowerCase()+' ──\n';
+  JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+head+txt+'\n────\n\n';
   jmode='type';LS.set('jmode',jmode);renderJEditor();
   const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ()}

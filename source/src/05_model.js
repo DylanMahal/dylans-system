@@ -22,9 +22,9 @@ function rebuild(){
       let items=b.items.map(it=>applyP({...it},pre+':'+it.row)).filter(Boolean).concat(newOf(pre+':').filter(n=>n._ctx&&n._ctx.block===b.row));
       items=items.map(it=>{let t=parseT(it.time);if(t!==null&&t<s-60)t+=1440;return {...it,t,days:daysFrom(it.sched)||daysFrom(it.item),cmp:CMP.has(it.type),tk:pre+'|'+(it.time||'')+'|'+it.item}}).sort((a,b)=>(a.t??9999)-(b.t??9999)||(a.row||9e9)-(b.row||9e9));
       return {s,e,title:m[5],short:m[5].replace(/\s*\(.*?\)/g,'').replace(/\s*→.*$/,'').trim(),items,row:b.row,bi}});}
-  /* an item whose time was edited to fall outside its block moves to the block that covers that time */
+  /* an item whose time falls outside its block moves to the block that covers that time */
   for(const kind of ['weekday','weekend']){const B=plans[kind];if(!B||!B.length)continue;let moved=false;
-    B.forEach(b=>{b.items=b.items.filter(it=>{const p=EDITS.p[it.key];if(!p||!('time' in p)||it.t==null||(it.t>=b.s&&it.t<b.e))return true;
+    B.forEach(b=>{b.items=b.items.filter(it=>{if(it.t==null||(it.t>=b.s&&it.t<b.e))return true;
       const m=it.t%1440;const nb=B.find(x=>x!==b&&((m>=x.s&&m<x.e)||(m+1440>=x.s&&m+1440<x.e)));if(!nb)return true;
       nb.items.push({...it,t:(m>=nb.s&&m<nb.e)?m:m+1440});moved=true;return false})});
     if(moved)B.forEach(b=>b.items.sort((a,c)=>(a.t??9999)-(c.t??9999)||(a.row||9e9)-(c.row||9e9)))}
