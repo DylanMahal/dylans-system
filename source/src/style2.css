@@ -1161,3 +1161,12 @@ body.vfullon{overflow:hidden}
 .clockp .clock{font-size:clamp(76px,27cqw,260px);line-height:.82;white-space:nowrap}
 .clockp .dateline{margin-top:clamp(12px,3cqw,22px);font-size:clamp(12px,2.2cqw,17px)}
 .jmood button{min-width:38px;justify-content:center}
+.tgs .tgb{flex:none;width:30px;height:30px;padding:0;border:1px solid var(--line2);background:#0a0a0a;color:var(--pink);font-size:16px;line-height:1;cursor:pointer}
+.tgs .tgb:active{background:var(--pink);color:#050505}
+.tgs .tgv{width:48px}
+.tgs input[type=range]::-webkit-slider-runnable-track{background:linear-gradient(90deg,var(--pink) var(--v,0%),transparent var(--v,0%)),repeating-linear-gradient(90deg,transparent 0 calc(100%/var(--n,7) - 1px),var(--line2) calc(100%/var(--n,7) - 1px) calc(100%/var(--n,7))),#0c0c0c}
+.tgw.full .tgs input[type=range]::-webkit-slider-runnable-track{background:var(--ok,#57f5a8)}
+.curw{display:flex;gap:6px;align-items:stretch}.curw input{flex:1;min-width:0}
+.curb{flex:none;min-width:34px;padding:0 8px;border:1px solid var(--line2);background:#0a0a0a;color:var(--dim);font:inherit;cursor:pointer}
+.curb.usd{color:var(--cyan);border-color:var(--cyan)}
+.curh{font-size:11px;margin:-4px 0 6px;min-height:0}

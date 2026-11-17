@@ -8,6 +8,7 @@ function openEditor(cfg){
     else if(f.type==='bool')inp=`<select id="${id}"><option value="1" ${v?'selected':''}>Yes</option><option value="0" ${!v?'selected':''}>No</option></select>`;
     else if(f.type==='area')inp=`<textarea id="${id}">${esc(v??'')}</textarea>`;
     else inp=`<input id="${id}" type="${f.type==='num'?'text':'text'}" ${f.type==='num'?'inputmode="decimal"':''} value="${esc(v??'')}" ${f.ph?`placeholder="${esc(f.ph)}"`:''}>`;
+    if(f.type==='num'&&/£/.test(f.label||''))inp=`<span class="curw">${inp}<button type="button" class="curb" data-cur="${id}" aria-label="switch £ / $">£</button></span>`;
     return `<label for="${id}">${esc(f.label||f.k)}</label>${inp}`}).join('')+
     (cfg.extra||'')+(cfg.hint?`<div class="hint2">${esc(cfg.hint)}</div>`:'')+
     `<div class="mf">${cfg.onDelete?'<button class="btn d" type="button" id="mDel">delete</button>':''}${cfg.onRevert?'<button class="btn" type="button" id="mRev">undo my edits</button>':''}<span class="sp"></span><button class="btn" type="button" id="mCan">cancel</button><button class="btn p" type="submit">save</button></div>`;
@@ -20,7 +21,7 @@ function openEditor(cfg){
 function closeModal(){$('modal').classList.remove('on');mCfg=null}
 $('mX').onclick=closeModal;$('modal').onclick=e=>{if(e.target===$('modal'))closeModal()};
 $('mForm').onsubmit=e=>{e.preventDefault();if(!mCfg)return;const vals={};
-  for(const f of mCfg.fields){const el=$('f_'+f.k);let v=el.value;if(f.type==='bool')v=v==='1';else if(f.type==='num'){v=v.trim();v=v===''?null:(isFinite(+v)?+v:v)}else{v=v.trim()===''?null:v}vals[f.k]=v}
+  for(const f of mCfg.fields){const el=$('f_'+f.k);let v=el.value;if(f.type==='bool')v=v==='1';else if(f.type==='num'){v=v.trim();const cb=document.querySelector(`[data-cur="f_${f.k}"]`);const u=parseUsd(v);if(u!=null)v=u;else if(cb&&cb.textContent==='$'&&v!==''&&isFinite(+v))v=usd2gbp(+v);else v=v===''?null:(isFinite(+v)?+v:v)}else{v=v.trim()===''?null:v}vals[f.k]=v}
   const changed={};for(const f of mCfg.fields){if(JSON.stringify(vals[f.k]??null)!==JSON.stringify(mCfg.values[f.k]??null))changed[f.k]=vals[f.k]}
   const cfg=mCfg;const ex=cfg.onExtra?cfg.readExtra():null;closeModal();if(Object.keys(changed).length||cfg.isNew)cfg.onSave(vals,changed);if(cfg.onExtra)cfg.onExtra(ex);
   const sub=$('main');burst(innerWidth/2,innerHeight/3,30);glitchAll()};
@@ -29,7 +30,7 @@ const F_PLAN=[{k:'time',label:'time',ph:'HH:MM'},{k:'item',label:'item'},{k:'typ
 const F_EXTRA=[{k:'item'},{k:'type',type:'select',options:[''].concat(TYPES)},{k:'dose'},{k:'route'},{k:'sched',label:'schedule'},{k:'notes',type:'area'},{k:'caution',label:'cautions',type:'area'}];
 const F_STACK=[{k:'name'},{k:'cat',label:'category',type:'select',options:STACK_CATS},{k:'dose'},{k:'route'},{k:'sched',label:'schedule'},{k:'notes',type:'area'},{k:'price',label:'pack price £',type:'num',ph:'or "owned"'},{k:'units',label:'units / pack',type:'num'},{k:'perweek',label:'used / week',type:'num'},{k:'inb',label:'in budget',type:'bool'},{k:'src',label:'source'}];
 const F_EXP=[{k:'name'},{k:'cat',label:'category',type:'select',options:EXP_CATS},{k:'prov',label:'provider'},{k:'freq',label:'frequency',type:'select',options:FREQ_OPTS},{k:'per',label:'cost / payment £',type:'num'},{k:'day',label:'payment day'},{k:'method',label:'method'},{k:'notes'},{k:'inb',label:'in budget',type:'bool'}];
-const F_TGT=[{k:'item',label:'target'},{k:'notes',label:'detail',type:'area'}];
+const F_TGT=[{k:'item',label:'target'},{k:'goal',label:'times per week',type:'num'},{k:'notes',label:'detail',type:'area'}];
 function pick(o,fields){const r={};fields.forEach(f=>r[f.k]=o[f.k]??null);return r}
 function editPlanItem(kind,it){const pre=kind==='weekday'?'wd':'we';
   const lead=(typeof NITEMS!=='undefined'&&NITEMS.m[it.key]!=null)?NITEMS.m[it.key]:'';
@@ -53,3 +54,9 @@ function editExp(e){openEditor({title:`edit · Expenses${e.row?' · row '+e.row:
 function addExp(cat){openEditor({title:'add · '+(cat||'bill').toLowerCase(),fields:F_EXP,values:{cat:cat||'Subscriptions',freq:'Monthly',inb:true},isNew:true,onSave:v=>patch('xp:n:'+rid(),{...v,_new:true},{cat:v.cat})})}
 function editIncome(){openEditor({title:'edit · income (Expenses Summary B15–B16)',fields:[{k:'hours',label:'hours / month',type:'num'},{k:'take',label:'take-home £',type:'num'}],values:{hours:M.inc.hours,take:M.inc.take},onSave:(v)=>patch('inc:',{hours:v.hours,take:v.take})})}
 
+
+/* £ / $ toggle on money fields: in $ mode the field shows a live £ preview and saves as £ */
+$('mForm').addEventListener('click',e=>{const b=e.target.closest('[data-cur]');if(!b)return;e.preventDefault();b.textContent=b.textContent==='£'?'$':'£';b.classList.toggle('usd',b.textContent==='$');FXR.get();curHint(b)});
+$('mForm').addEventListener('input',e=>{const b=e.target.closest('.curw');if(b)curHint(b.querySelector('[data-cur]'))});
+function curHint(b){const w=b.closest('.curw'),i=w.querySelector('input');let h=w.nextElementSibling;if(!h||!h.classList.contains('curh')){h=document.createElement('div');h.className='curh dim';w.after(h)}
+  const v=i.value.trim(),u=parseUsd(v);const g=u!=null?u:(b.textContent==='$'&&v!==''&&isFinite(+v)?usd2gbp(+v):null);h.textContent=g!=null?`= ${gbp(g,2)} (rate ${FXR.r.toFixed(3)})`:''}

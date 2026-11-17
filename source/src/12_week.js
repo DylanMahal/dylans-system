@@ -13,19 +13,23 @@ async function renderWeek(){
   renderTargets();if(document.activeElement!==$('weekNotes'))$('weekNotes').value=WEEK.notes||'';
   $('weekSub').textContent=`${WK} · review Sundays 19:00`;
 }
-/* weekly targets: each one carries a slider for how far along it is this week.
-   progress lives in the week's own doc, so a new week starts every bar at zero. */
-function renderTargets(){const tp=(WEEK&&WEEK.tp)||{};
-  $('targets').innerHTML=(M.targets||[]).map(r=>{const v=Math.max(0,Math.min(100,+tp[r.key]||0));
-    return `<div class="tg2 tgw${v>=100?' full':''}"><b>${esc(String(r.item||'').toLowerCase())}${r.edited?'<span class="delta">Δ</span>':''}</b><span>${esc(r.notes||'')}</span><button class="ed" type="button" data-tg="${esc(r.key)}">✎</button>
-      <div class="tgs"><input type="range" min="0" max="100" step="5" value="${v}" data-tgp="${esc(r.key)}" style="--v:${v}%" aria-label="progress this week"><span class="num tgv">${v}%</span></div></div>`}).join('')}
+/* weekly targets: each one is a count of completions this week (one notch = one done).
+   the goal is the target's "times per week" field, else a number in its text ("4x"), else 7 (daily).
+   counts live in the week's own doc, so a new week starts every bar at zero. */
+function tgGoal(r){const g=+r.goal;if(g>0)return Math.min(50,Math.round(g));const m=/(\d+)\s*(?:x|×|times|\/\s*w)|(?:x|×)\s*(\d+)/i.exec((r.item||'')+' '+(r.notes||''));const n=m?+(m[1]||m[2]):0;return n>0&&n<=50?n:7}
+function tgCount(r,n){const w=WEEK||{};if(w.tc&&w.tc[r.key]!=null)return Math.max(0,Math.min(n,+w.tc[r.key]||0));const p=w.tp&&+w.tp[r.key];return p?Math.round(Math.min(100,p)/100*n):0}
+function renderTargets(){
+  $('targets').innerHTML=(M.targets||[]).map(r=>{const n=tgGoal(r),v=tgCount(r,n),pc=v/n*100;
+    return `<div class="tg2 tgw${v>=n?' full':''}"><b>${esc(String(r.item||'').toLowerCase())}${r.edited?'<span class="delta">Δ</span>':''}</b><span>${esc(r.notes||'')}</span><button class="ed" type="button" data-tg="${esc(r.key)}">✎</button>
+      <div class="tgs"><button class="tgb" type="button" data-tgd="${esc(r.key)}" data-d="-1" aria-label="undo one">−</button><input type="range" min="0" max="${n}" step="1" value="${v}" data-tgp="${esc(r.key)}" data-n="${n}" style="--v:${pc}%;--n:${n}" aria-label="done this week"><button class="tgb" type="button" data-tgd="${esc(r.key)}" data-d="1" aria-label="log one">+</button><span class="num tgv">${v}/${n}</span></div></div>`}).join('')}
 let tgT=null;
-$('targets').oninput=e=>{const s=e.target.closest('[data-tgp]');if(!s)return;const v=+s.value;
-  s.style.setProperty('--v',v+'%');const row=s.closest('.tg2');row.querySelector('.tgv').textContent=v+'%';row.classList.toggle('full',v>=100);
-  WEEK={...WEEK,tp:{...((WEEK&&WEEK.tp)||{}),[s.dataset.tgp]:v}};
-  clearTimeout(tgT);tgT=setTimeout(()=>save('weeks/w-'+WK,WEEK),500)};
-$('targets').onchange=e=>{const s=e.target.closest('[data-tgp]');if(s&&+s.value>=100&&typeof burstEl==='function')burstEl(s,30,true)};
-$('targets').onclick=e=>{const b=e.target.closest('[data-tg]');if(!b)return;const r=M.targets.find(x=>x.key===b.dataset.tg);editExtra('weekday',r)};
+function tgSet(s,v){const n=+s.dataset.n;v=Math.max(0,Math.min(n,v));const was=+s.value;s.value=v;
+  s.style.setProperty('--v',v/n*100+'%');const row=s.closest('.tg2');row.querySelector('.tgv').textContent=v+'/'+n;row.classList.toggle('full',v>=n);
+  WEEK={...WEEK,tc:{...((WEEK&&WEEK.tc)||{}),[s.dataset.tgp]:v}};
+  clearTimeout(tgT);tgT=setTimeout(()=>save('weeks/w-'+WK,WEEK),500);return was}
+$('targets').oninput=e=>{const s=e.target.closest('[data-tgp]');if(s)tgSet(s,+s.value)};
+$('targets').onchange=e=>{const s=e.target.closest('[data-tgp]');if(s&&+s.value>=+s.dataset.n&&typeof burstEl==='function')burstEl(s,30,true)};
+$('targets').onclick=e=>{const d=e.target.closest('[data-tgd]');if(d){const s=d.parentNode.querySelector('[data-tgp]');const v=+s.value+(+d.dataset.d);const was=tgSet(s,v);if(+s.value>=+s.dataset.n&&was<+s.value&&typeof burstEl==='function')burstEl(s,30,true);return}const b=e.target.closest('[data-tg]');if(!b)return;const r=M.targets.find(x=>x.key===b.dataset.tg);editExtra('weekday',r)};
 $('addTarget').onclick=()=>addExtra('weekday','DAILY TARGETS – review Sundays 19:00');
 let notesT;$('weekNotes').oninput=()=>{clearTimeout(notesT);$('notesSaved').textContent='typing…';notesT=setTimeout(()=>{WEEK={...WEEK,notes:$('weekNotes').value,lc};save('weeks/w-'+WK,WEEK);$('notesSaved').textContent='saved'},700)};
 

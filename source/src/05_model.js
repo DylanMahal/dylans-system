@@ -42,7 +42,7 @@ function rebuild(){
   Object.entries(extra.weekday).forEach(([sec,rows])=>{const s=/^AS NEEDED/.test(sec)?'asneeded':/^(PAUSED|NOT STARTED)/.test(sec)?'paused':null;if(!s)return;rows.forEach(r=>{const n=norm(r.item);if(!v2.has(n))v2.set(n,{status:s,times:[]});else if(s==='paused')v2.get(n).status='paused'})});
   M.stack.forEach(s=>{const v=v2.get(norm(s.name));s.status=v?v.status:'notinplan';if(typeof STOVR!=='undefined'&&STOVR.map[norm(s.name)])s.status=STOVR.map[norm(s.name)];s.times=v?[...new Set(v.times.filter(Boolean))]:[];s.cau=cautionsFor(s.name)});
   M.liveBudget=M.stack.filter(s=>s.inb&&s.status!=='paused').reduce((a,s)=>a+(s.monthly||0),0);
-  M.targets=(extra.weekday['DAILY TARGETS – review Sundays 19:00']||[]);
+  M.targets=(extra.weekday['DAILY TARGETS – review Sundays 19:00']||[]).filter(r=>!/messag|\bmsgs?\b/i.test(r.item||''));
   if(booted)renderAllViews();
 }
 function cautionsFor(name){const out=new Set();const n=norm(name);for(const kind of ['weekday','weekend']){M.plans&&M.plans[kind]&&M.plans[kind].forEach(b=>b.items.forEach(i=>{if(norm(i.item)===n&&i.caution)out.add(i.caution)}));M.extra&&M.extra[kind]&&Object.values(M.extra[kind]).forEach(rows=>rows.forEach(r=>{if(norm(r.item)===n&&r.caution)out.add(r.caution)}))}return [...out]}

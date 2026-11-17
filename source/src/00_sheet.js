@@ -55,6 +55,15 @@ let D=parseGrids(GR);
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const gbp=(n,d=0)=>(n<0?'−':'')+'£'+Math.abs(Number(n)||0).toLocaleString('en-GB',{minimumFractionDigits:d,maximumFractionDigits:d});
+/* USD → GBP: amounts can be typed in dollars anywhere a £ is asked for; the app only ever stores and shows £.
+   rate is fetched at most every 12h and cached; falls back to the last known (or a sane default) offline. */
+const FXR={r:(()=>{try{return JSON.parse(localStorage.getItem('fx:usdgbp')||'{}').r||0.78}catch(e){return 0.78}})(),
+  async get(){let c={};try{c=JSON.parse(localStorage.getItem('fx:usdgbp')||'{}')}catch(e){}if(c.r&&Date.now()-c.t<432e5)return FXR.r=c.r;
+    try{const j=await (await fetch('https://open.er-api.com/v6/latest/USD')).json();const r=j&&j.rates&&+j.rates.GBP;if(r>0.3&&r<2){FXR.r=r;try{localStorage.setItem('fx:usdgbp',JSON.stringify({r,t:Date.now()}))}catch(e){}}}catch(e){}return FXR.r}};
+const usd2gbp=n=>Math.round(n*FXR.r*100)/100;
+/* "$12.50" / "12.5$" / "12 usd" → £ number; anything else → null */
+const parseUsd=s=>{const m=/^\s*(?:\$|us\$|usd)\s*([\d.,]+)\s*$|^\s*([\d.,]+)\s*(?:\$|usd)\s*$/i.exec(String(s||''));if(!m)return null;const n=+(m[1]||m[2]).replace(/,/g,'');return isFinite(n)?usd2gbp(n):null};
+setTimeout(()=>FXR.get(),3000);
 const norm=s=>String(s||'').trim().toLowerCase();
 const LS={get(k){try{return JSON.parse(localStorage.getItem('ds3:'+k))}catch(e){return null}},set(k,v){try{localStorage.setItem('ds3:'+k,JSON.stringify(v))}catch(e){}}};
 /* private word list: personal labels live in the account (kv sys/lex), never in this public code.

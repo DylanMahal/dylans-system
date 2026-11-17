@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1794935415">
+<link rel="stylesheet" href="app.css?v=1794936489">
 </head>
 <body class="fx">
 <style>
@@ -494,9 +494,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
       <div class="grid" style="align-content:start">
         <div class="panel"><div class="ph"><span class="tag">savings</span><span id="saveTot"></span></div><div class="pb"><div id="saves"></div><button class="addrow" type="button" id="addSave">+ add saving</button></div></div>
         <div class="panel"><div class="ph"><span class="tag">price → hours of work</span><span id="rateLbl"></span></div><div class="pb">
-          <div class="calc"><span class="dim">£</span><input id="calcIn" type="number" inputmode="decimal" min="0" step="0.01" value="40" aria-label="Price in pounds"><span class="dim">=</span><span class="res num" id="calcOut"></span></div>
+          <div class="calc"><button type="button" class="curb" id="calcCur" aria-label="switch £ / $">£</button><input id="calcIn" type="number" inputmode="decimal" min="0" step="0.01" value="40" aria-label="Price in pounds"><span class="dim">=</span><span class="res num" id="calcOut"></span></div>
           <p class="dim" style="margin:10px 0 0;font-size:12px" id="calcNote"></p></div></div>
-        <div class="panel"><div class="ph"><span class="tag">actual vs budget</span><span class="row" style="gap:6px"><button class="iconbtn" type="button" id="avPrev">‹</button><b id="avMon" style="min-width:86px;text-align:center"></b><button class="iconbtn" type="button" id="avNext">›</button></span></div><div class="pb" id="avBody"></div></div>
+        <div class="panel"><div class="ph"><span class="tag">actual vs budget</span><span class="row" style="gap:6px"><button type="button" class="curb" id="avCur" aria-label="enter amounts in £ or $">£</button><button class="iconbtn" type="button" id="avPrev">‹</button><b id="avMon" style="min-width:86px;text-align:center"></b><button class="iconbtn" type="button" id="avNext">›</button></span></div><div class="pb" id="avBody"></div></div>
       </div>
     </div>
   </section>
@@ -528,9 +528,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794935415"</script>
-<script src="config.js?v=1794935415"></script>
+<script>window.APP_V="1794936489"</script>
+<script src="config.js?v=1794936489"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794935415"></script>
+<script src="app.js?v=1794936489"></script>
 </body>
 </html>
