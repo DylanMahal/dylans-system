@@ -43,6 +43,8 @@ async function loadGym(force){
 }
 watch('gym/active',d=>{ACTIVE=d&&d.ex?d:null;if(cur==='gym')renderGym()});
 watch('gym/routines',d=>{ROUTINES={list:[],...(d||{})};if(cur==='gym')renderGym()});
+let GUNITS={};load('gym/units').then(d=>{GUNITS=d||{};if(cur==='gym')renderGym()});watch('gym/units',d=>{GUNITS=d||{};if(cur==='gym')renderGym()});
+const LB=2.20462,isLb=id=>GUNITS[id]==='lb',uL=id=>isLb(id)?'lbs':'kg',uIn=(id,v)=>{if(v===''||v==null||!isFinite(+v))return v??'';return isLb(id)?kgs(Math.round(+v*LB*10)/10):kgs(v)},uOut=(id,v)=>{if(v===''||!isFinite(+v))return v;return isLb(id)?String(Math.round(+v/LB*10000)/10000):v},wU=(id,v)=>uIn(id,v)+' '+uL(id);
 watch('gym/lib',d=>{GLIB={custom:[],...(d||{})};indexEx();if(cur==='gym')renderGym()});
 watchPrefix('gym/w-',(evt,path,data)=>{const id=path.slice(6);WORKOUTS=WORKOUTS.filter(w=>w.id!==id);if(evt!=='DELETE'&&data)WORKOUTS.unshift(data);WORKOUTS.sort((a,b)=>(b.startedAt||b.date)<(a.startedAt||a.date)?-1:1);recountUsed();if(cur==='gym')renderGym()});
 watchPrefix('gym/xp-',(evt,path,data)=>{const id=path.slice(7);if(evt==='DELETE')delete PHOTOS[id];else if(data&&data.img)PHOTOS[id]=data.img;if(cur==='gym')renderGym()});
@@ -54,9 +56,10 @@ function prevSets(x){const h=exHistory(exKey(x),ACTIVE&&ACTIVE.id)[0];return h?h
 function bests(key,beforeId){let kg=0,e=0,vol=0,reps=0,sec=0,km=0;exHistory(key,beforeId).forEach(o=>o.x.sets.forEach(s=>{if(s.t==='w'||s.done===false)return;kg=Math.max(kg,+s.kg||0);e=Math.max(e,e1(s));vol=Math.max(vol,(+s.kg||0)*(+s.r||0));reps=Math.max(reps,+s.r||0);sec=Math.max(sec,+s.sec||0);km=Math.max(km,+s.km||0)}));return {kg,e,vol,reps,sec,km}}
 function setLabel(sets,i){const s=sets[i];if(s.t==='w')return 'W';if(s.t==='d')return 'D';if(s.t==='f')return 'F';let n=0;for(let j=0;j<=i;j++)if(!sets[j].t||sets[j].t==='n')n++;return String(n)}
 function volOf(x,s){const ty=exOf(x).ty;return (ty==='wr'||ty==='wbw')?(+s.kg||0)*(+s.r||0):0}
-function stats(w){let vol=0,n=0,reps=0;(w.ex||[]).forEach(x=>x.sets.forEach(s=>{if(s.done){n++;vol+=volOf(x,s);reps+=+s.r||0}}));return {vol,n,reps}}
-function fmtSet(x,s){const ty=exOf(x).ty;const T=XTYPES[ty]||XTYPES.wr;const p=[];
-  if(T.f.includes('kg')&&s.kg!==''&&s.kg!=null)p.push((T.pfx||'')+kgs(s.kg)+'kg');if(T.f.includes('km')&&s.km)p.push(kgs(s.km)+'km');if(T.f.includes('m')&&s.m)p.push(s.m+'m');
+function NS(w){return (w.ex||[]).some(x=>x.sets&&x.sets.length)?stats(w).n:(w.nsets||0)}
+function stats(w){let vol=0,n=0,reps=0;(w.ex||[]).forEach(x=>x.sets.forEach(s=>{if(s.done){if(s.t!=='w')n++;vol+=volOf(x,s);reps+=+s.r||0}}));return {vol,n,reps}}
+function fmtSet(x,s){const xid=exOf(x).id,ty=exOf(x).ty;const T=XTYPES[ty]||XTYPES.wr;const p=[];
+  if(T.f.includes('kg')&&s.kg!==''&&s.kg!=null)p.push((T.pfx||'')+uIn(xid,s.kg)+(isLb(xid)?'lb':'kg'));if(T.f.includes('km')&&s.km)p.push(kgs(s.km)+'km');if(T.f.includes('m')&&s.m)p.push(s.m+'m');
   if(T.f.includes('r')&&s.r)p.push((p.length?'× ':'')+s.r);if(T.f.includes('sec')&&s.sec)p.push(mmss(s.sec));let o=p.join(' ');if(s.rpe)o+=' @'+s.rpe;return o||'—'}
 function bestSet(x){return x.sets.filter(s=>s.done!==false&&s.t!=='w').sort((a,b)=>e1(b)-e1(a)||(+b.r||0)-(+a.r||0)||(+b.sec||0)-(+a.sec||0))[0]}
 
@@ -96,11 +99,11 @@ function exCard(x,xi){
   <div class="exh"><button class="exhead" type="button" data-exinfo="${xi}">${thumb(e)}<span><b class="exname">${esc(e.n)}</b><span class="dim exsub">${esc(e.pm.join(', '))}${T!==XTYPES.wr?' · '+T.l:''}</span>${(()=>{const sc=rlEx(e.id,ACTIVE.id,x);return sc==null?'':rlChip(sc,18)})()}</span></button><button class="iconbtn" type="button" data-exmenu="${xi}" aria-label="Exercise options">⋯</button></div>
   <input class="exnote" data-note="${xi}" placeholder="add notes here…" value="${esc(x.note||'')}" aria-label="Notes">
   <button class="resttag" type="button" data-restpick="${xi}">⧗ rest timer: ${x.rest?mmss(x.rest):'off'}</button>
-  <div class="sgrid shead" style="grid-template-columns:${cols}"><span>set</span><span>previous</span>${T.f.map(f=>`<span>${(f==='kg'&&T.pfx)?T.pfx+'kg':FLAB[f]}</span>`).join('')}<span>rpe</span><span>✓</span></div>
+  <div class="sgrid shead" style="grid-template-columns:${cols}"><span>set</span><span>previous</span>${T.f.map(f=>f==='kg'?`<button class="uswap" type="button" data-unit="${xi}" title="Switch kg / lbs">${(T.pfx||'')+uL(e.id)} ⇄</button>`:`<span>${FLAB[f]}</span>`).join('')}<span>rpe</span><span>✓</span></div>
   ${x.sets.map((s,si)=>{const p=prev[si];const pr=s.done&&s.t!=='w'&&isPR(e,s,b);return `<div class="sgrid srow${s.done?' done':''}${pr?' pr':''}" data-s="${xi}:${si}" style="grid-template-columns:${cols}">
     <button class="stype t-${s.t||'n'}" type="button" data-stype="${xi}:${si}" title="Set type">${setLabel(x.sets,si)}</button>
     <button class="sprev" type="button" data-prev="${xi}:${si}" ${p?'':'disabled'}>${p?esc(fmtSet(x,p)):'—'}</button>
-    ${T.f.map(f=>{const v=f==='sec'?(s.sec?mmss(s.sec):''):(s[f]??'');const ph=p?(f==='sec'?(p.sec?mmss(p.sec):''):(p[f]??'')):'';return `<input class="sin num" inputmode="${f==='r'||f==='m'?'numeric':f==='sec'?'text':'decimal'}" data-f="${f}" data-at="${xi}:${si}" value="${esc(v)}" placeholder="${esc(ph)}" aria-label="${FLAB[f]}">`}).join('')}
+    ${T.f.map(f=>{const v=f==='sec'?(s.sec?mmss(s.sec):''):f==='kg'?uIn(e.id,s.kg):(s[f]??'');const ph=p?(f==='sec'?(p.sec?mmss(p.sec):''):f==='kg'?uIn(e.id,p.kg):(p[f]??'')):'';return `<input class="sin num" inputmode="${f==='r'||f==='m'?'numeric':f==='sec'?'text':'decimal'}" data-f="${f}" data-at="${xi}:${si}" value="${esc(v)}" placeholder="${esc(ph)}" aria-label="${FLAB[f]}">`}).join('')}
     <button class="srpe${s.rpe?' on':''}" type="button" data-rpe="${xi}:${si}">${s.rpe||'·'}</button>
     <button class="scheck" type="button" data-done="${xi}:${si}" aria-pressed="${!!s.done}" aria-label="Complete set">✓</button>
     ${pr?'<span class="prtag">PR</span>':''}</div>`}).join('')}
@@ -109,7 +112,7 @@ function exCard(x,xi){
 function isPR(e,s,b){if(e.ty==='wr'||e.ty==='wbw')return b.e>0&&e1(s)>b.e;if(e.ty==='bw'||e.ty==='r')return b.reps>0&&+s.r>b.reps;if(e.ty==='dur')return b.sec>0&&+s.sec>b.sec;if(e.ty==='dd')return b.km>0&&+s.km>b.km;return false}
 function rCard(r,hot){return `<div class="rcard${hot?' hot':''}"><div class="rtop"><b>${esc(r.name)}</b><span class="row" style="gap:4px">${hot?'<span class="chipy hot">today</span>':''}<button class="iconbtn" type="button" data-rmenu="${esc(r.id)}" aria-label="Routine options">⋯</button></span></div>
   <div class="rthumbs">${r.ex.slice(0,6).map(x=>thumb(exOf(x),'rth')).join('')}</div><span class="dim rsum">${esc(r.ex.map(x=>exOf(x).n).join(', ')||'no exercises yet')}</span><button class="btn p" type="button" data-start="${esc(r.id)}">start routine</button></div>`}
-function wCard(w){const st=w.nsets!=null?{vol:w.vol,n:w.nsets}:stats(w);const dur=w.endedAt&&w.startedAt?fmtDur(new Date(w.endedAt)-new Date(w.startedAt)):'';
+function wCard(w){const st={vol:w.vol??stats(w).vol,n:NS(w)};const dur=w.endedAt&&w.startedAt?fmtDur(new Date(w.endedAt)-new Date(w.startedAt)):'';
   return `<div class="wcard" data-w="${esc(w.id)}">${(WPH[w.id]||[])[0]?`<img class="wcimg" src="${WPH[w.id][0]}" alt="">`:''}<div class="rtop"><b>${esc(w.name)}</b><span class="dim">${esc(nice(w.date).toLowerCase())}</span></div><div class="wcrank">${rlChip(rlSession(w),18)}</div>
   <div class="wmeta num"><span>${dur||'—'}</span><span>${fmtVol(st.vol)} kg</span><span>${st.n||0} sets</span>${(w.prs||[]).length?`<span class="pink">${w.prs.length} PR</span>`:''}</div>
   <div class="wex">${(w.ex||[]).map(x=>{const bs=bestSet(x);return `<div><span>${x.sets.filter(s=>s.done!==false).length} × ${esc(exOf(x).n)}</span><span class="dim num">${bs?esc(fmtSet(x,bs)):''}</span></div>`}).join('')}</div></div>`}
@@ -127,6 +130,7 @@ $('g-workout').addEventListener('click',e=>{
   const t=e.target.closest('button');if(!t)return;const d=t.dataset;
   if(d.act==='empty')return startWorkout(null);
   if(d.start)return startWorkout(ROUTINES.list.find(r=>r.id===d.start));
+  if(d.unit!=null)return toggleUnit(exOf(ACTIVE.ex[+d.unit]).id);
   if(d.rmenu)return routineMenu(d.rmenu);
   if(d.act==='newroutine'){GYMV='routines';renderGym();return editRoutine(null)}
   if(d.act==='explore'){GYMV='exercises';return renderGym()}
@@ -155,7 +159,7 @@ $('g-workout').addEventListener('input',e=>{const t=e.target;const d=t.dataset;
   if(t.id==='wName'){ACTIVE.name=t.value;saveActive();return}
   if(t.id==='wNote'){ACTIVE.note=t.value;t.style.height='auto';t.style.height=t.scrollHeight+'px';saveActive();return}
   if(d.note!=null){ACTIVE.ex[+d.note].note=t.value;saveActive();return}
-  if(d.f){const [xi,si]=SXY(d.at);const s=ACTIVE.ex[xi].sets[si];const f=d.f;s[f]=f==='sec'?pmmss(t.value):t.value.replace(',','.');saveActive()}
+  if(d.f){const [xi,si]=SXY(d.at);const s=ACTIVE.ex[xi].sets[si];const f=d.f;const v=t.value.replace(',','.');s[f]=f==='sec'?pmmss(t.value):f==='kg'?uOut(exOf(ACTIVE.ex[xi]).id,v):v;saveActive()}
 });
 $('g-workout').addEventListener('change',e=>{if(e.target.dataset.f)renderWorkout()});
 
@@ -175,11 +179,12 @@ function exMenu(xi){const x=ACTIVE.ex[xi];const e=exOf(x);const T=XTYPES[e.ty]||
    <button class="opt" type="button" data-m="info">ⓘ exercise info &amp; history</button>
    <button class="opt" type="button" data-m="ss">⛓ ${x.ss?'remove from superset':'superset with…'}</button>
    <button class="opt" type="button" data-m="replace">⇄ replace exercise</button>
-   ${T.f.includes('kg')?'<button class="opt" type="button" data-m="warm">🔥 add warm-up sets</button><button class="opt" type="button" data-m="plates">◎ plate calculator</button>':''}
+   ${T.f.includes('kg')?'<button class="opt" type="button" data-m="unit">⇄ use '+(isLb(e.id)?'kg':'lbs')+' for this exercise</button><button class="opt" type="button" data-m="warm">🔥 add warm-up sets</button><button class="opt" type="button" data-m="plates">◎ plate calculator</button>':''}
    <button class="opt" type="button" data-m="up">↑ move up</button><button class="opt" type="button" data-m="down">↓ move down</button>
    <button class="opt bad" type="button" data-m="rm">✕ remove exercise</button></div>`);
   $('sheetBody').onclick=ev=>{const b=ev.target.closest('[data-m]');if(!b)return;const m=b.dataset.m;
     if(m==='info')return openExercise(e.id);
+    if(m==='unit'){closeSheet();return toggleUnit(e.id)}
     if(m==='rm'){closeSheet();return mut(()=>ACTIVE.ex.splice(xi,1))}
     if(m==='up'||m==='down'){closeSheet();const j=xi+(m==='up'?-1:1);if(j<0||j>=ACTIVE.ex.length)return;return mut(()=>{const a=ACTIVE.ex;[a[xi],a[j]]=[a[j],a[xi]]})}
     if(m==='replace'){return pickExercises(list=>{const n=list[0];if(!n)return;mut(()=>{const y=exEntry(n,{sets:x.sets.length,rest:x.rest,ss:x.ss});ACTIVE.ex[xi]=y})},{single:true})}
@@ -223,7 +228,7 @@ function saveScreen(w,done){let imgs=[];
   const draw=()=>{const ph=$('swPh');if(!ph)return;ph.innerHTML=imgs.map((s,i)=>`<div class="swimg"><img src="${s}" alt=""><button type="button" data-swdel="${i}" aria-label="Remove photo">✕</button></div>`).join('')+(imgs.length<4?`<label class="swadd"><input type="file" accept="image/*" id="swFile" hidden multiple><span>＋</span><small>add photo</small></label>`:'');
     const f=$('swFile');if(f)f.onchange=async e=>{for(const file of [...e.target.files].slice(0,4-imgs.length)){try{imgs.push(await resizeImg(file,1080))}catch(x){}}draw()}};
   openSheet('save workout',`<input class="inp swtitle" id="swName" value="${esc(w.name)}" aria-label="Workout title">
-  <div class="wstats big" style="margin:12px 0"><div><span class="dim">duration</span><b class="num">${fmtDur(new Date(w.endedAt)-new Date(w.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(w.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${w.nsets}</b></div><div><span class="dim">records</span><b class="num pink">${w.prs.length}</b></div></div>
+  <div class="wstats big" style="margin:12px 0"><div><span class="dim">duration</span><b class="num">${fmtDur(new Date(w.endedAt)-new Date(w.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(w.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${NS(w)}</b></div><div><span class="dim">records</span><b class="num pink">${w.prs.length}</b></div></div>
   <div class="dim" style="font-size:12px;margin-bottom:6px">when · ${esc(nice(w.date).toLowerCase())} · ${new Date(w.startedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>
   <div class="swph" id="swPh"></div>
   <textarea class="inp" id="swDesc" rows="3" placeholder="how did it go? share more about your workout…" style="margin-top:10px">${esc(w.note||'')}</textarea>
@@ -235,7 +240,7 @@ function saveScreen(w,done){let imgs=[];
 function workoutNo(w){return WORKOUTS.slice().reverse().findIndex(x=>x.id===w.id)+1}
 function showSummary(w){const muscles=muscleSets([w]);const top=Object.entries(muscles).sort((a,b)=>b[1]-a[1]).slice(0,6);const mx=Math.max(1,...top.map(t=>t[1]));
   openSheet('workout complete',`${(WPH[w.id]||[]).length?`<div class="swgal">${WPH[w.id].map(s=>`<img src="${s}" alt="">`).join('')}</div>`:''}${(()=>{const sc=rlSession(w),r=rlOf(sc);const ups=w.ex.map(x=>{const ex=exOf(x);const a=rlEx(ex.id,w.id),b=rlEx(ex.id);return b==null?null:[ex.n,a,b]}).filter(Boolean);return `<div class="rlsum" style="--rc:${RL[r.t][1]}">${rlBadge(sc,72)}<div><span class="dim">session rank</span><b>${r.name}</b></div></div>${ups.length?`<div class="rlups">${ups.map(([n,a,b])=>`<div>${rlBadge(b,22)}<span>${esc(n)}</span><b style="color:${RL[rlOf(b).t][1]}">${rlOf(b).name}</b>${a!=null&&Math.floor(b)>Math.floor(a)?'<em>▲ rank up</em>':''}</div>`).join('')}</div>`:''}`})()}<div class="sumhero"><span class="tag">workout #${workoutNo(w)}</span><b class="glitch" data-text="${esc(w.name)}">${esc(w.name)}</b><span class="dim">${esc(nice(w.date).toLowerCase())}</span></div>
-  <div class="wstats big"><div><span class="dim">duration</span><b class="num">${fmtDur(new Date(w.endedAt)-new Date(w.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(w.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${w.nsets}</b></div><div><span class="dim">records</span><b class="num pink">${w.prs.length}</b></div></div>
+  <div class="wstats big"><div><span class="dim">duration</span><b class="num">${fmtDur(new Date(w.endedAt)-new Date(w.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(w.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${NS(w)}</b></div><div><span class="dim">records</span><b class="num pink">${w.prs.length}</b></div></div>
   ${w.prs.length?`<div class="prlist">${w.prs.map(p=>`<div><span class="medal">🏆</span> ${esc(p.n)} · ${esc(p.kind)} <b class="num">${esc(String(p.v))}</b></div>`).join('')}</div>`:''}
   ${top.length?`<div class="mbars" style="margin-top:12px">${top.map(([m,v])=>`<div><span>${esc(m)}</span><i style="--w:${v/mx*100}%"></i><b class="num">${kgs(v)}</b></div>`).join('')}</div>`:''}
   <div class="bigbtns" style="margin-top:16px">${w.routineId?'<button class="btn" type="button" id="updR">update routine</button>':'<button class="btn" type="button" id="saveR">save as routine</button>'}<button class="btn p" type="button" id="sumOk">done</button></div>`);
@@ -263,21 +268,38 @@ setInterval(()=>{
 },250);
 
 /* ---------- routines (with folders) ---------- */
-function renderRoutines(){const folders={};ROUTINES.list.forEach(r=>(folders[r.folder||'my routines']=folders[r.folder||'my routines']||[]).push(r));
-  $('g-routines').innerHTML=`<div class="ph2"><span class="tag">${ROUTINES.list.length} routines</span><button class="btn p" type="button" data-r="new">+ new routine</button></div>
-  ${Object.entries(folders).map(([f,rs])=>`<div class="fold"><span class="dim">${esc(f)} · ${rs.length}</span></div><div class="rgrid">${rs.map(r=>rCard(r,false)).join('')}</div>`).join('')||'<div class="dim">No routines yet.</div>'}`}
+const FOLDC=new Set(LS.get('gymfold')||[]);
+function allFolders(){const f=[...(ROUTINES.folders||[])];ROUTINES.list.forEach(r=>{if(r.folder&&!f.includes(r.folder))f.push(r.folder)});return f}
+function saveR(){save('gym/routines',ROUTINES);renderGym()}
+function renderRoutines(){const fs=allFolders();const loose=ROUTINES.list.filter(r=>!r.folder);
+  const grp=(f,rs)=>{const shut=FOLDC.has(f);return `<div class="fold fhead"><button type="button" class="fbtn" data-fold="${esc(f)}">${shut?'▸':'▾'} ${esc(f)} <span class="dim">· ${rs.length}</span></button><button class="iconbtn" type="button" data-fmenu="${esc(f)}" aria-label="Folder options">⋯</button></div>${shut?'':`<div class="rgrid">${rs.map(r=>rCard(r,false)).join('')||'<div class="dim">Empty — move routines here from their ⋯ menu.</div>'}</div>`}`};
+  $('g-routines').innerHTML=`<div class="ph2"><span class="tag">${ROUTINES.list.length} routines</span><span class="row" style="gap:6px"><button class="btn" type="button" data-r="folder">+ folder</button><button class="btn p" type="button" data-r="new">+ new routine</button></span></div>
+  ${fs.map(f=>grp(f,ROUTINES.list.filter(r=>r.folder===f))).join('')}${loose.length?(fs.length?`<div class="fold"><span class="dim">no folder · ${loose.length}</span></div>`:'')+`<div class="rgrid">${loose.map(r=>rCard(r,false)).join('')}</div>`:''}${!ROUTINES.list.length&&!fs.length?'<div class="dim">No routines yet.</div>':''}`}
+function newFolder(then){const n=(prompt('Folder name')||'').trim();if(!n)return;ROUTINES.folders=allFolders();if(!ROUTINES.folders.includes(n))ROUTINES.folders.push(n);then&&then(n);saveR()}
+function folderMenu(f){openSheet(f,`<div class="optlist"><button class="opt" type="button" data-m="new">+ new routine in this folder</button><button class="opt" type="button" data-m="ren">✎ rename folder</button><button class="opt" type="button" data-m="up">↑ move up</button><button class="opt" type="button" data-m="down">↓ move down</button><button class="opt bad" type="button" data-m="del">✕ delete folder (keeps routines)</button></div>`);
+  $('sheetBody').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;const m=b.dataset.m;ROUTINES.folders=allFolders();const i=ROUTINES.folders.indexOf(f);
+    if(m==='new')return editRoutine(null,f);
+    if(m==='ren'){const n=(prompt('Rename folder',f)||'').trim();if(!n||n===f)return;closeSheet();if(ROUTINES.folders.includes(n))ROUTINES.folders.splice(i,1);else ROUTINES.folders[i]=n;ROUTINES.list.forEach(r=>{if(r.folder===f)r.folder=n});return saveR()}
+    if(m==='up'||m==='down'){const j=i+(m==='up'?-1:1);closeSheet();if(j<0||j>=ROUTINES.folders.length)return;const a=ROUTINES.folders;[a[i],a[j]]=[a[j],a[i]];return saveR()}
+    if(m==='del'){if(b.dataset.arm){ROUTINES.folders.splice(i,1);ROUTINES.list.forEach(r=>{if(r.folder===f)r.folder=''});closeSheet();saveR()}else{b.dataset.arm=1;b.textContent='tap again to delete folder'}}}}
+function moveMenu(r){const fs=allFolders();openSheet('move “'+r.name+'” to',`<div class="optlist">${fs.map(f=>`<button class="opt" type="button" data-f="${esc(f)}">${r.folder===f?'● ':'▤ '}${esc(f)}</button>`).join('')}<button class="opt" type="button" data-f="">${r.folder?'○ ':'● '}no folder</button><button class="opt" type="button" data-nf="1">+ new folder…</button></div>`);
+  $('sheetBody').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.nf){closeSheet();return newFolder(n=>r.folder=n)}if(b.dataset.f==null)return;r.folder=b.dataset.f;closeSheet();saveR()}}
 $('g-routines').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
   if(b.dataset.r==='new')return editRoutine(null);
+  if(b.dataset.r==='folder')return newFolder();
+  if(b.dataset.fold!=null){const f=b.dataset.fold;FOLDC.has(f)?FOLDC.delete(f):FOLDC.add(f);LS.set('gymfold',[...FOLDC]);return renderRoutines()}
+  if(b.dataset.fmenu!=null)return folderMenu(b.dataset.fmenu);
   if(b.dataset.rmenu)return routineMenu(b.dataset.rmenu);
   if(b.dataset.start){if(ACTIVE){flash('finish_current_first');return}startWorkout(ROUTINES.list.find(r=>r.id===b.dataset.start))}});
 function routineMenu(id){const r=ROUTINES.list.find(x=>x.id===id);if(!r)return;
-  openSheet(r.name,`<div class="optlist"><button class="opt" type="button" data-m="edit">✎ edit routine</button><button class="opt" type="button" data-m="dup">⧉ duplicate</button><button class="opt bad" type="button" data-m="del">✕ delete routine</button></div>`);
+  openSheet(r.name,`<div class="optlist"><button class="opt" type="button" data-m="edit">✎ edit routine</button><button class="opt" type="button" data-m="move">▤ move to folder${r.folder?' · '+esc(r.folder):''}</button><button class="opt" type="button" data-m="dup">⧉ duplicate</button><button class="opt bad" type="button" data-m="del">✕ delete routine</button></div>`);
   $('sheetBody').onclick=e=>{const b=e.target.closest('[data-m]');if(!b)return;const m=b.dataset.m;
     if(m==='edit')return editRoutine(r);
+    if(m==='move')return moveMenu(r);
     if(m==='dup'){ROUTINES.list.push({...clone(r),id:rid(),name:r.name+' (copy)'});save('gym/routines',ROUTINES);closeSheet();renderGym();return}
     if(m==='del'){if(b.dataset.arm){ROUTINES.list=ROUTINES.list.filter(x=>x.id!==id);save('gym/routines',ROUTINES);closeSheet();renderGym()}else{b.dataset.arm=1;b.textContent='tap again to delete'}}}}
-function editRoutine(r){
-  const R2=r?clone(r):{id:rid(),name:gymTypeFor()==='lower'?'Lower':'Upper',folder:'',ex:[]};const folders=[...new Set(ROUTINES.list.map(x=>x.folder).filter(Boolean))];
+function editRoutine(r,inF){
+  const R2=r?clone(r):{id:rid(),name:gymTypeFor()==='lower'?'Lower':'Upper',folder:inF||'',ex:[]};const folders=allFolders();
   const draw=()=>{openSheet(r?'edit routine':'new routine',`<input class="inp" id="rName" value="${esc(R2.name)}" aria-label="Routine name" style="font-size:18px;margin-bottom:8px">
     <input class="inp" id="rFolder" value="${esc(R2.folder||'')}" placeholder="folder (optional, e.g. PPL, cut block)" list="rFolders" style="margin-bottom:12px"><datalist id="rFolders">${folders.map(f=>`<option value="${esc(f)}">`).join('')}</datalist>
     <div class="rex">${R2.ex.map((x,i)=>{const e=exOf(x);return `<div class="rexrow">${thumb(e,'rth')}<span class="rexn">${esc(e.n)}</span><label class="dim">sets <input class="inp num" data-rs="${i}" value="${x.sets}" inputmode="numeric" style="width:46px"></label><label class="dim">reps <input class="inp num" data-rp="${i}" value="${esc(x.reps||'')}" placeholder="8-12" style="width:62px"></label><label class="dim">rest <select class="inp" data-rr="${i}">${[0,30,60,90,120,150,180,240,300].map(s=>`<option value="${s}" ${s===(x.rest??120)?'selected':''}>${s?mmss(s):'off'}</option>`).join('')}</select></label><span class="row" style="gap:4px"><button class="iconbtn" type="button" data-rm="${i}:-1">↑</button><button class="iconbtn" type="button" data-rm="${i}:1">↓</button><button class="iconbtn" type="button" data-rx="${i}">✕</button></span></div>`}).join('')||'<div class="dim" style="font-size:12px">Add the exercises you do in this session.</div>'}</div>
@@ -291,7 +313,7 @@ function editRoutine(r){
       if(b.dataset.rx!=null){R2.ex.splice(+b.dataset.rx,1);draw()}
       if(b.id==='rAdd')pickExercises(list=>{list.forEach(n=>R2.ex.push({id:n.id,n:n.n,sets:3,rest:n.ty==='dur'||n.ty==='dd'?0:120,reps:'',note:''}));draw()},{back:draw});
       if(b.id==='rCancel')closeSheet();
-      if(b.id==='rSave'){R2.name=(R2.name||'').trim()||'Routine';const i=ROUTINES.list.findIndex(x=>x.id===R2.id);if(i>=0)ROUTINES.list[i]=R2;else ROUTINES.list.push(R2);save('gym/routines',ROUTINES);closeSheet();renderGym();flash('saved')}};
+      if(b.id==='rSave'){R2.name=(R2.name||'').trim()||'Routine';const i=ROUTINES.list.findIndex(x=>x.id===R2.id);if(i>=0)ROUTINES.list[i]=R2;else ROUTINES.list.push(R2);if(R2.folder){ROUTINES.folders=allFolders()}save('gym/routines',ROUTINES);closeSheet();renderGym();flash('saved')}};
   };draw();
 }
 
@@ -353,17 +375,17 @@ function openExercise(id,tab='summary'){const e=EXMAP.get(id)||exOf({id,n:id});c
   const head=`<div class="exhero">${imgOf(e)?`<div class="exanim"><img id="exA" src="${esc(imgOf(e))}" alt="${esc(e.n)}"></div>`:''}<div><div class="dim">${esc(T.l)} · ${esc(e.eq||'')}</div><div><b>primary:</b> ${esc(e.pm.join(', '))}</div>${e.sm.length?`<div class="dim">secondary: ${esc(e.sm.join(', '))}</div>`:''}${e.custom?`<button class="iconbtn" type="button" id="exEdit" style="margin-top:6px">edit exercise</button>`:''}</div></div>
     <div class="seg" style="margin:10px 0" id="exTabs">${tabs.map(t=>`<button type="button" data-t="${t}" aria-pressed="${t===tab}">${t}</button>`).join('')}</div>`;
   let body='';
-  if(tab==='summary'){const b=bests(e.id);body=rlExBlock(e)+`<div class="wstats big">${weighted?`<div><span class="dim">heaviest</span><b class="num">${b.kg?kgs(b.kg)+' kg':'—'}</b></div><div><span class="dim">best e1RM</span><b class="num">${b.e?kgs(Math.round(b.e*10)/10)+' kg':'—'}</b></div>`:`<div><span class="dim">most reps</span><b class="num">${b.reps||'—'}</b></div>`}<div><span class="dim">sessions</span><b class="num">${h.length}</b></div></div>
+  if(tab==='summary'){const b=bests(e.id);body=rlExBlock(e)+`<div class="wstats big">${weighted?`<div><span class="dim">heaviest</span><b class="num">${b.kg?wU(e.id,b.kg):'—'}</b></div><div><span class="dim">best e1RM</span><b class="num">${b.e?wU(e.id,Math.round(b.e*10)/10):'—'}</b></div>`:`<div><span class="dim">most reps</span><b class="num">${b.reps||'—'}</b></div>`}<div><span class="dim">sessions</span><b class="num">${h.length}</b></div></div>
     ${e.how&&e.how.length?`<div class="tag" style="margin-top:14px">how to</div><ol class="howto">${e.how.map(s=>`<li>${esc(s)}</li>`).join('')}</ol>`:''}`}
   if(tab==='history')body=h.slice().reverse().map(o=>`<div class="hx"><span class="dim">${esc(nice(o.w.date))} · ${esc(o.w.name)}</span><div class="hsets">${o.x.sets.filter(s=>s.done!==false).map((s,i,a)=>`<span class="set t-${s.t||'n'}">${setLabel(a,i)} · ${esc(fmtSet(o.x,s))}</span>`).join('')}</div>${o.x.note?`<div class="dim" style="font-size:12px">“${esc(o.x.note)}”</div>`:''}</div>`).join('')||'<div class="dim">Not logged yet.</div>';
   if(tab==='charts'){const metrics=weighted?[['e1rm','best est. 1RM'],['heavy','heaviest weight'],['setvol','best set volume'],['vol','session volume'],['reps','total reps']]:e.ty==='dur'?[['sec','longest time']]:e.ty==='dd'?[['km','distance'],['sec','time']]:[['best','most reps in a set'],['reps','total reps']];
     const m=openExercise.metric&&metrics.some(x=>x[0]===openExercise.metric)?openExercise.metric:metrics[0][0];
     const val=o=>{const ss=o.x.sets.filter(s=>s.done!==false&&s.t!=='w');const mx=f=>Math.max(0,...ss.map(f));return {e1rm:mx(e1),heavy:mx(s=>+s.kg||0),setvol:mx(s=>(+s.kg||0)*(+s.r||0)),vol:ss.reduce((a,s)=>a+(+s.kg||0)*(+s.r||0),0),reps:ss.reduce((a,s)=>a+(+s.r||0),0),best:mx(s=>+s.r||0),sec:mx(s=>+s.sec||0),km:mx(s=>+s.km||0)}[m]};
     const pts=h.map(val);body=`<div class="chips" id="exMet">${metrics.map(([k,l])=>`<button class="chip" type="button" data-k="${k}" aria-pressed="${k===m}">${l}</button>`).join('')}</div>${pts.length>1?spark(pts,{h:170,labels:[nice(h[0].w.date),nice(h[h.length-1].w.date)]}):'<div class="dim">Log this exercise twice to see a chart.</div>'}`}
-  if(tab==='records'){const recs=[];if(weighted){const b=bests(e.id);recs.push(['estimated 1RM',b.e?kgs(Math.round(b.e*10)/10)+' kg':'—'],['heaviest weight',b.kg?kgs(b.kg)+' kg':'—'],['best set volume',b.vol?fmtVol(b.vol)+' kg':'—']);
+  if(tab==='records'){const recs=[];if(weighted){const b=bests(e.id);recs.push(['estimated 1RM',b.e?wU(e.id,Math.round(b.e*10)/10):'—'],['heaviest weight',b.kg?wU(e.id,b.kg):'—'],['best set volume',b.vol?fmtVol(b.vol)+' kg':'—']);
       const bySess=Math.max(0,...h.map(o=>o.x.sets.filter(s=>s.t!=='w').reduce((a,s)=>a+(+s.kg||0)*(+s.r||0),0)));recs.push(['best session volume',bySess?fmtVol(bySess)+' kg':'—']);}
     const rr={};h.forEach(o=>o.x.sets.forEach(s=>{if(s.t==='w'||!(+s.r>0))return;const r=+s.r;if(r<=15)rr[r]=Math.max(rr[r]||0,+s.kg||0)}));
-    body=`<div class="reclist">${recs.map(([k,v])=>`<div><span>${k}</span><b class="num">${v}</b></div>`).join('')}</div>${weighted&&Object.keys(rr).length?`<div class="tag" style="margin:14px 0 6px">rep records · best weight for</div><div class="reclist">${Object.entries(rr).sort((a,b)=>a[0]-b[0]).map(([r,kg])=>`<div><span>${r} rep${r>1?'s':''}</span><b class="num">${kgs(kg)} kg</b></div>`).join('')}</div>`:''}${!weighted?`<div class="reclist"><div><span>sessions</span><b class="num">${h.length}</b></div></div>`:''}`}
+    body=`<div class="reclist">${recs.map(([k,v])=>`<div><span>${k}</span><b class="num">${v}</b></div>`).join('')}</div>${weighted&&Object.keys(rr).length?`<div class="tag" style="margin:14px 0 6px">rep records · best weight for</div><div class="reclist">${Object.entries(rr).sort((a,b)=>a[0]-b[0]).map(([r,kg])=>`<div><span>${r} rep${r>1?'s':''}</span><b class="num">${wU(e.id,kg)}</b></div>`).join('')}</div>`:''}${!weighted?`<div class="reclist"><div><span>sessions</span><b class="num">${h.length}</b></div></div>`:''}`}
   openSheet(e.n,head+`<div id="exBody">${body}</div>`);
   $('exTabs').onclick=ev=>{const b=ev.target.closest('[data-t]');if(b)openExercise(e.id,b.dataset.t)};
   if($('exMet'))$('exMet').onclick=ev=>{const b=ev.target.closest('[data-k]');if(b){openExercise.metric=b.dataset.k;openExercise(e.id,'charts')}};
@@ -386,7 +408,7 @@ $('g-history').addEventListener('click',e=>{const b=e.target.closest('button');i
   if(b.dataset.cday){const ws=WORKOUTS.filter(w=>w.date===b.dataset.cday);if(ws.length)openWorkout(ws[0].id)}});
 $('v-gym').addEventListener('click',e=>{const c=e.target.closest('.wcard[data-w]');if(!c||e.target.closest('button'))return;openWorkout(c.dataset.w)});
 function openWorkout(id){const w=WORKOUTS.find(x=>x.id===id);if(!w)return;
-  openSheet(w.name,`<div class="dim" style="margin-bottom:10px">${esc(nice(w.date))}${w.endedAt&&w.startedAt?' · '+fmtDur(new Date(w.endedAt)-new Date(w.startedAt)):''} · ${fmtVol(w.vol||stats(w).vol)} kg · ${w.nsets||stats(w).n} sets</div>${(WPH[w.id]||[]).length?`<div class="swgal">${WPH[w.id].map(s=>`<img src="${s}" alt="">`).join('')}</div>`:''}${w.note?`<div class="dim" style="margin-bottom:10px">“${esc(w.note)}”</div>`:''}
+  openSheet(w.name,`<div class="dim" style="margin-bottom:10px">${esc(nice(w.date))}${w.endedAt&&w.startedAt?' · '+fmtDur(new Date(w.endedAt)-new Date(w.startedAt)):''} · ${fmtVol(w.vol||stats(w).vol)} kg · ${NS(w)} sets</div>${(WPH[w.id]||[]).length?`<div class="swgal">${WPH[w.id].map(s=>`<img src="${s}" alt="">`).join('')}</div>`:''}${w.note?`<div class="dim" style="margin-bottom:10px">“${esc(w.note)}”</div>`:''}
   ${(w.ex||[]).map(x=>{const e=exOf(x);return `<div class="hx"><div class="row" style="gap:8px">${thumb(e,'rth')}<b>${esc(e.n)}</b>${x.ss?'<span class="chipy">superset</span>':''}</div>${x.note?`<span class="dim"> · ${esc(x.note)}</span>`:''}<div class="hsets">${x.sets.map((s,i)=>`<span class="set t-${s.t||'n'}">${setLabel(x.sets,i)} · ${esc(fmtSet(x,s))}</span>`).join('')}</div></div>`}).join('')}
   ${(w.prs||[]).length?`<div class="prlist">${w.prs.map(p=>`<div><span class="medal">🏆</span> ${esc(p.n)} · ${esc(p.kind)} <b class="num">${esc(String(p.v))}</b></div>`).join('')}</div>`:''}
   <div class="bigbtns" style="margin-top:14px"><button class="btn d" type="button" id="wDel">delete</button><button class="btn" type="button" id="wEdit">edit</button><span style="flex:1"></span><button class="btn" type="button" id="wRoutine">save as routine</button><button class="btn p" type="button" id="wRepeat">repeat</button></div>`);
@@ -408,9 +430,9 @@ function bodyMap(m){const mx=Math.max(1,...Object.values(m));const c=k=>{const v
 function renderStats(){const el=$('g-stats');const weeks=weekKeyN(STAT_P);const since=weeks[0];
   const ws=WORKOUTS.filter(w=>isoWeek(new Date(w.date+'T12:00'))>=since);
   const per=weeks.map(k=>WORKOUTS.filter(w=>isoWeek(new Date(w.date+'T12:00'))===k));
-  const val=a=>({volume:a.reduce((s,w)=>s+(w.vol||stats(w).vol),0),sets:a.reduce((s,w)=>s+(w.nsets||stats(w).n),0),duration:a.reduce((s,w)=>s+(w.endedAt&&w.startedAt?(new Date(w.endedAt)-new Date(w.startedAt))/60000:0),0),workouts:a.length})[STAT_M];
+  const val=a=>({volume:a.reduce((s,w)=>s+(w.vol||stats(w).vol),0),sets:a.reduce((s,w)=>s+(NS(w)),0),duration:a.reduce((s,w)=>s+(w.endedAt&&w.startedAt?(new Date(w.endedAt)-new Date(w.startedAt))/60000:0),0),workouts:a.length})[STAT_M];
   const vals=per.map(val);const mx=Math.max(1,...vals);
-  const tot={w:ws.length,vol:ws.reduce((s,w)=>s+(w.vol||stats(w).vol),0),sets:ws.reduce((s,w)=>s+(w.nsets||stats(w).n),0),dur:ws.reduce((s,w)=>s+(w.endedAt&&w.startedAt?(new Date(w.endedAt)-new Date(w.startedAt)):0),0)};
+  const tot={w:ws.length,vol:ws.reduce((s,w)=>s+(w.vol||stats(w).vol),0),sets:ws.reduce((s,w)=>s+(NS(w)),0),dur:ws.reduce((s,w)=>s+(w.endedAt&&w.startedAt?(new Date(w.endedAt)-new Date(w.startedAt)):0),0)};
   const m30=muscleSets(WORKOUTS.filter(w=>(Date.now()-new Date(w.date+'T12:00'))<30*864e5));const mList=Object.entries(m30).filter(([k])=>k!=='other').sort((a,b)=>b[1]-a[1]);const mmx=Math.max(1,...mList.map(x=>x[1]));
   const recs=[...new Set(WORKOUTS.flatMap(w=>(w.ex||[]).map(exKey)))].map(id=>{const e=EXMAP.get(id)||exOf({id});const b=bests(id);return {e,b}}).filter(o=>o.b.e>0).sort((a,b)=>b.b.e-a.b.e).slice(0,10);
   el.innerHTML=`<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px"><div class="seg" id="stP">${[[4,'4 weeks'],[12,'3 months'],[52,'1 year']].map(([n,l])=>`<button type="button" data-p="${n}" aria-pressed="${STAT_P===n}">${l}</button>`).join('')}</div><span class="tag">🔥 ${streakWeeks()} week streak</span></div>
@@ -428,3 +450,5 @@ function openSheet(title,html){$('sheetTitle').textContent=title;$('sheetBody').
 function closeSheet(){$('sheet').classList.remove('on');$('sheet').setAttribute('aria-hidden','true');if(!$('drawer').classList.contains('on'))$('scrim').classList.remove('on');sheetStack=0}
 $('sheetX').onclick=closeSheet;
 
+
+function toggleUnit(id){GUNITS={...GUNITS};if(isLb(id))delete GUNITS[id];else GUNITS[id]='lb';save('gym/units',GUNITS);renderGym();flash(isLb(id)?'lbs':'kg')}

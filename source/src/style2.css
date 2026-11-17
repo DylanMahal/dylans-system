@@ -1170,3 +1170,6 @@ body.vfullon{overflow:hidden}
 .curb{flex:none;min-width:34px;padding:0 8px;border:1px solid var(--line2);background:#0a0a0a;color:var(--dim);font:inherit;cursor:pointer}
 .curb.usd{color:var(--cyan);border-color:var(--cyan)}
 .curh{font-size:11px;margin:-4px 0 6px;min-height:0}
+.fhead{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.fbtn{background:none;border:0;color:inherit;font:inherit;text-transform:inherit;letter-spacing:inherit;padding:4px 0;cursor:pointer;text-align:left}
+.uswap{background:none;border:0;color:inherit;font:inherit;padding:0;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px;white-space:nowrap}
