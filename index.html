@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1794871818">
+<link rel="stylesheet" href="app.css?v=1794935415">
 </head>
 <body class="fx">
 <style>
@@ -38,6 +38,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 #bootfx.vplaying #bfxPost{opacity:0;transition:opacity .22s linear}
 /* while the animation is carrying the boot, leave it up even if the clip limps into life */
 #bootfx.animon.vplaying #bfxPost{opacity:1}
+#bootfx.animon.vplaying.vsync #bfxPost{opacity:0}
 /* portrait: the clip and the animated frame turn sideways together to fill the screen. this has to live
    here, after the #bfxPost rule above, or that rule's inset/size win and the frame lands rotated off-centre */
 @media (orientation:portrait){#bootfx #bfxV,#bootfx #bfxPost{inset:auto;left:50%;top:50%;width:100vh;height:100vw;width:100dvh;height:100dvw;transform:translate(-50%,-50%) rotate(90deg)}}
@@ -73,7 +74,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
   var lite=quick||fxOff||matchMedia('(prefers-reduced-motion: reduce)').matches;if(lite)el.classList.add('lite');
   var $=function(i){return document.getElementById(i)};
   /* a saved boot video exists on this device: show its first frame straight away and never start the generated scene */
-  var expectVid=false,poster=null;try{expectVid=!quick&&localStorage.getItem('ds3:bootvid')==='1';poster=localStorage.getItem('ds3:bootposter')}catch(e){}
+  var expectVid=false,poster=null,animT=0;try{expectVid=!quick&&localStorage.getItem('ds3:bootvid')==='1';poster=localStorage.getItem('ds3:bootposter')}catch(e){}
   /* the still frame goes on an <img> of its own: a <video> that carries a poster but has no
      source yet is what iPadOS decorates with its own play button, and no stylesheet can be
      relied on to hide that. the video itself stays invisible until it is genuinely playing. */
@@ -83,7 +84,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
      video underneath is only there to carry the sound once the screen is tapped. */
   if(expectVid&&window.caches)try{caches.open('ds-media').then(function(c){return c.match('bootanim')})
     .then(function(r){return r?r.blob():null})
-    .then(function(b){if(b&&b.size>1000&&!closing){dg('anim:'+b.size);$('bfxPost').src=URL.createObjectURL(b);el.classList.add('animon')}})
+    .then(function(b){if(b&&b.size>1000&&!closing){dg('anim:'+b.size);var im=$('bfxPost');im.onload=function(){if(!animT&&im.src.indexOf('blob:')===0){animT=performance.now();dg('animload')}};im.src=URL.createObjectURL(b);el.classList.add('animon')}})
     .catch(function(){})}catch(e){}
   var readyRes;var ready=new Promise(function(r){readyRes=r});setTimeout(function(){readyRes()},expectVid?1800:0);
   var SPD=lite?1:5.4,t0=performance.now(),MIN=lite?400:10200,done=false,closing=false,target=4,shown=0,raf=0;
@@ -208,7 +209,15 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
        until the screen was tapped. If no frame has advanced, retry muted, then drop the clip
        and run the generated scene instead. */
     var vStarted=false;
-    V.addEventListener('timeupdate',function(){if(V.currentTime>0.04&&!vStarted){vStarted=true;dg('rolling m='+V.muted)}});
+    V.addEventListener('timeupdate',function(){if(V.currentTime>0.04&&!vStarted){vStarted=true;dg('rolling m='+V.muted);vsync()}});
+    /* the animated image keeps its own clock (and iPad decodes it slower than real time), so it
+       drifts from the sound. once the video is genuinely rolling it becomes the picture: jump it
+       to where the image has got to, then fade the image away so sound and picture share a clock */
+    function vsync(){var done1=false;function reveal(){if(done1)return;done1=true;el.classList.add('vsync');dg('vsync')}
+      var off=animT?(performance.now()-animT)/1000:0,d=V.duration||13.2;
+      if(off>.25&&off<d-1.6&&Math.abs(off-V.currentTime)>.2){dg('seek:'+Math.round(off*100)/100);
+        V.addEventListener('seeked',reveal,{once:true});setTimeout(reveal,700);try{V.currentTime=off}catch(x){reveal()}}
+      else reveal()}
     function bail(){if(vStarted||closing||!VID)return;dg('vidbail');try{V.pause()}catch(x){}
       VID=false;vEnded=false;el.classList.remove('vidmode');el.classList.remove('vplaying');expectVid=false;
       try{localStorage.removeItem('ds3:bootvid')}catch(x){}
@@ -519,9 +528,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794871818"</script>
-<script src="config.js?v=1794871818"></script>
+<script>window.APP_V="1794935415"</script>
+<script src="config.js?v=1794935415"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794871818"></script>
+<script src="app.js?v=1794935415"></script>
 </body>
 </html>
