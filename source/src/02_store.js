@@ -14,7 +14,7 @@ async function remoteWrite(p){
   if(!R||busy[p])return;busy[p]=true;setSync('busy','saving');
   try{
     while(pend[p]!==undefined&&pend[p]!==null){const v=pend[p];pend[p]=null;
-      try{lastW[p]=JSON.stringify(v);await KV.set(p,v)}
+      try{lastW[p]=stab(v);await KV.set(p,v)}
       catch(e){pend[p]=pend[p]??v;setSync('','offline · will retry');busy[p]=false;scheduleRetry();return}}
     setSync('on','synced');
   }finally{busy[p]=false}
@@ -26,6 +26,8 @@ function save(p,v,now){LS.set(p,v);if(!R){LS.set('outbox:'+p,1);return}pend[p]=v
 const pendDel={};
 async function removeRemote(p){try{await KV.del(p);delete pendDel[p]}catch(e){scheduleRetry()}}
 function removeDoc(p){try{localStorage.removeItem('ds3:'+p)}catch(e){}delete pend[p];if(!R)return;pendDel[p]=1;removeRemote(p)}
+/* key-order-independent JSON: Postgres jsonb reorders keys, so a plain stringify never matched our own echoes */
+const stab=v=>JSON.stringify(v,(k,x)=>x&&typeof x==='object'&&!Array.isArray(x)?Object.keys(x).sort().reduce((o,k2)=>(o[k2]=x[k2],o),{}):x);
 const clone=o=>o==null?o:JSON.parse(JSON.stringify(o));
 async function load(p){if(R&&ONLINE){try{const d=await KV.get(p);if(d!==undefined){LS.set(p,d);return clone(d)}return LS.get(p)}catch(e){}}return LS.get(p)}
 async function listDocs(prefix){if(R&&ONLINE){try{const rows=await KV.list(prefix);rows.forEach(r=>LS.set(r.path,r.data));return rows.map(r=>({path:r.path,data:clone(r.data),at:r.updated_at}))}catch(e){}}
@@ -35,7 +37,7 @@ const subs={},psubs=[];
 function watch(p,cb){(subs[p]=subs[p]||[]).push(cb)}
 function watchPrefix(prefix,cb){psubs.push([prefix,cb])}
 function onRemote(evt,path,data){
-  if(evt!=='DELETE'){if(pend[path]!=null||busy[path])return;const s=JSON.stringify(data);if(lastW[path]===s)return;lastW[path]=s;LS.set(path,data)}
+  if(evt!=='DELETE'){if(pend[path]!=null||busy[path])return;const s=stab(data);if(lastW[path]===s)return;lastW[path]=s;LS.set(path,data)}
   else{try{localStorage.removeItem('ds3:'+path)}catch(e){}}
   if(subs[path]&&evt!=='DELETE')subs[path].forEach(cb=>{try{cb(clone(data))}catch(e){console.error(e)}});
   psubs.forEach(([pre,cb])=>{if(path.startsWith(pre))cb(evt,path,evt==='DELETE'?null:clone(data))});

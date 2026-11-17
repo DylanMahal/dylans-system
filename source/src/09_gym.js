@@ -41,7 +41,9 @@ async function loadGym(force){
   const ws=[];PHOTOS={};rows.forEach(x=>{if(x.path.startsWith('gym/w-')&&x.data&&x.data.date)ws.push(x.data);else if(x.path.startsWith('gym/s-')&&x.data&&x.data.date&&(x.data.nsets||0)>0)ws.push(convertOld(x.data));else if(x.path.startsWith('gym/xp-')&&x.data&&x.data.img)PHOTOS[x.path.slice(7)]=x.data.img;else if(x.path.startsWith('gym/wp-')&&x.data&&x.data.imgs)WPH[x.path.slice(7)]=x.data.imgs});
   WORKOUTS=ws.sort((a,b)=>(b.startedAt||b.date)<(a.startedAt||a.date)?-1:1);indexEx();recountUsed();gymLoaded=true;renderGym();
 }
-watch('gym/active',d=>{ACTIVE=d&&d.ex?d:null;if(cur==='gym')renderGym()});
+let gymDefer=false;function typingInGym(){const a=document.activeElement;return a&&a.closest&&a.closest('#g-workout')&&/INPUT|TEXTAREA/.test(a.tagName)}
+watch('gym/active',d=>{if(typingInGym()&&ACTIVE&&d&&d.id===ACTIVE.id){gymDefer=d;return}ACTIVE=d&&d.ex?d:null;if(cur==='gym')renderGym()});
+document.addEventListener('focusout',()=>setTimeout(()=>{if(gymDefer&&!typingInGym()){ACTIVE=gymDefer.ex?gymDefer:ACTIVE;gymDefer=false;if(cur==='gym')renderGym()}},0));
 watch('gym/routines',d=>{ROUTINES={list:[],...(d||{})};if(cur==='gym')renderGym()});
 let GUNITS={};load('gym/units').then(d=>{GUNITS=d||{};if(cur==='gym')renderGym()});watch('gym/units',d=>{GUNITS=d||{};if(cur==='gym')renderGym()});
 const LB=2.20462,isLb=id=>GUNITS[id]==='lb',uL=id=>isLb(id)?'lbs':'kg',uIn=(id,v)=>{if(v===''||v==null||!isFinite(+v))return v??'';return isLb(id)?kgs(Math.round(+v*LB*10)/10):kgs(v)},uOut=(id,v)=>{if(v===''||!isFinite(+v))return v;return isLb(id)?String(Math.round(+v/LB*10000)/10000):v},wU=(id,v)=>uIn(id,v)+' '+uL(id);
@@ -80,17 +82,18 @@ function renderWorkout(){if(ACTIVE&&!ACTIVE.editing)ascPrime();
   const el=$('g-workout');
   if(!ACTIVE){
     const sug=gymTypeFor();const folders={};ROUTINES.list.forEach(r=>(folders[r.folder||'my routines']=folders[r.folder||'my routines']||[]).push(r));
-    el.innerHTML=`<div class="gstart">${rlWindow()}
+    patch(el,`<div class="gstart">${rlWindow()}
       <button class="bigstart" type="button" data-act="empty"><span class="tag">quick start</span><b>start empty workout</b><span class="dim">log as you go</span></button>
       <div class="ph2"><span class="tag">routines</span><span class="row" style="gap:6px"><button class="iconbtn" type="button" data-act="newroutine">+ new routine</button><button class="iconbtn" type="button" data-act="explore">explore exercises</button></span></div>
       ${Object.entries(folders).map(([f,rs])=>`<div class="fold"><span class="dim">${esc(f)} · ${rs.length}</span></div><div class="rgrid">${rs.map(r=>rCard(r,norm(r.name).includes(sug))).join('')}</div>`).join('')||'<div class="dim" style="font-size:12px">No routines yet. Make an "Upper" and a "Lower" one so starting a session is one tap.</div>'}
       ${WORKOUTS[0]?`<div class="ph2"><span class="tag">last workout</span></div>${wCard(WORKOUTS[0])}`:''}
-    </div>`;return}
+    </div>`);return}
   const st=stats(ACTIVE);const ed=!!ACTIVE.editing;
-  el.innerHTML=`<div class="wbar"><input class="wname" id="wName" value="${esc(ACTIVE.name)}" aria-label="Workout name"><div class="wstats"><div><span class="dim">${ed?'date':'duration'}</span><b class="num" id="wDur">${ed?esc(nice(ACTIVE.date).toLowerCase()):fmtDur(Date.now()-new Date(ACTIVE.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(st.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${st.n}</b></div><div><span class="dim">session rank</span>${rlChip(rlLive(),18)}</div></div><div class="row"><button class="btn" type="button" data-act="discard">${ed?'cancel':'discard'}</button><button class="btn p" type="button" data-act="finish">${ed?'save':'finish'}</button></div></div>
+  patch(el,`<div class="wbar"><input class="wname" id="wName" value="${esc(ACTIVE.name)}" aria-label="Workout name"><div class="wstats"><div><span class="dim">${ed?'date':'duration'}</span><b class="num" id="wDur">${ed?esc(nice(ACTIVE.date).toLowerCase()):fmtDur(Date.now()-new Date(ACTIVE.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(st.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${st.n}</b></div><div><span class="dim">session rank</span>${rlChip(rlLive(),18)}</div></div><div class="row"><button class="btn" type="button" data-act="discard">${ed?'cancel':'discard'}</button><button class="btn p" type="button" data-act="finish">${ed?'save':'finish'}</button></div></div>
   <textarea class="wnote" id="wNote" rows="1" placeholder="workout notes">${esc(ACTIVE.note||'')}</textarea>
   <div class="exlist">${ACTIVE.ex.map((x,xi)=>exCard(x,xi)).join('')}</div>
-  <button class="addex" type="button" data-act="addex">+ add exercises</button>`;
+  <button class="addex" type="button" data-act="addex">+ add exercises</button>`);
+  const wn=$('wNote');if(wn&&wn.value){wn.style.height='auto';wn.style.height=wn.scrollHeight+'px'}
 }
 function exCard(x,xi){
   const e=exOf(x);const T=XTYPES[e.ty]||XTYPES.wr;const prev=prevSets(x);const b=bests(e.id,ACTIVE.id);const col=ssColor(x.ss);
