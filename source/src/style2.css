@@ -1177,7 +1177,6 @@ body.vfullon{overflow:hidden}
 .view{position:relative}
 .view.loading::after{content:"";position:absolute;left:0;right:0;top:-6px;height:2px;background:linear-gradient(90deg,transparent,var(--pink),transparent);background-size:40% 100%;background-repeat:no-repeat;animation:vload 1s linear infinite;z-index:5}
 @keyframes vload{from{background-position:-40% 0}to{background-position:140% 0}}
-.switching,.glitchall{animation:none!important}
 .srow,.exc{-webkit-tap-highlight-color:transparent}
 .scheck,.stype,.srpe,.sprev,.addset{touch-action:manipulation}
 .sin{touch-action:manipulation}

@@ -82,14 +82,14 @@ function renderWorkout(){if(ACTIVE&&!ACTIVE.editing)ascPrime();
   const el=$('g-workout');
   if(!ACTIVE){
     const sug=gymTypeFor();const folders={};ROUTINES.list.forEach(r=>(folders[r.folder||'my routines']=folders[r.folder||'my routines']||[]).push(r));
-    patch(el,`<div class="gstart">${rlWindow()}
+    domPatch(el,`<div class="gstart">${rlWindow()}
       <button class="bigstart" type="button" data-act="empty"><span class="tag">quick start</span><b>start empty workout</b><span class="dim">log as you go</span></button>
       <div class="ph2"><span class="tag">routines</span><span class="row" style="gap:6px"><button class="iconbtn" type="button" data-act="newroutine">+ new routine</button><button class="iconbtn" type="button" data-act="explore">explore exercises</button></span></div>
       ${Object.entries(folders).map(([f,rs])=>`<div class="fold"><span class="dim">${esc(f)} · ${rs.length}</span></div><div class="rgrid">${rs.map(r=>rCard(r,norm(r.name).includes(sug))).join('')}</div>`).join('')||'<div class="dim" style="font-size:12px">No routines yet. Make an "Upper" and a "Lower" one so starting a session is one tap.</div>'}
       ${WORKOUTS[0]?`<div class="ph2"><span class="tag">last workout</span></div>${wCard(WORKOUTS[0])}`:''}
     </div>`);return}
   const st=stats(ACTIVE);const ed=!!ACTIVE.editing;
-  patch(el,`<div class="wbar"><input class="wname" id="wName" value="${esc(ACTIVE.name)}" aria-label="Workout name"><div class="wstats"><div><span class="dim">${ed?'date':'duration'}</span><b class="num" id="wDur">${ed?esc(nice(ACTIVE.date).toLowerCase()):fmtDur(Date.now()-new Date(ACTIVE.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(st.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${st.n}</b></div><div><span class="dim">session rank</span>${rlChip(rlLive(),18)}</div></div><div class="row"><button class="btn" type="button" data-act="discard">${ed?'cancel':'discard'}</button><button class="btn p" type="button" data-act="finish">${ed?'save':'finish'}</button></div></div>
+  domPatch(el,`<div class="wbar"><input class="wname" id="wName" value="${esc(ACTIVE.name)}" aria-label="Workout name"><div class="wstats"><div><span class="dim">${ed?'date':'duration'}</span><b class="num" id="wDur">${ed?esc(nice(ACTIVE.date).toLowerCase()):fmtDur(Date.now()-new Date(ACTIVE.startedAt))}</b></div><div><span class="dim">volume</span><b class="num">${fmtVol(st.vol)} kg</b></div><div><span class="dim">sets</span><b class="num">${st.n}</b></div><div><span class="dim">session rank</span>${rlChip(rlLive(),18)}</div></div><div class="row"><button class="btn" type="button" data-act="discard">${ed?'cancel':'discard'}</button><button class="btn p" type="button" data-act="finish">${ed?'save':'finish'}</button></div></div>
   <textarea class="wnote" id="wNote" rows="1" placeholder="workout notes">${esc(ACTIVE.note||'')}</textarea>
   <div class="exlist">${ACTIVE.ex.map((x,xi)=>exCard(x,xi)).join('')}</div>
   <button class="addex" type="button" data-act="addex">+ add exercises</button>`);

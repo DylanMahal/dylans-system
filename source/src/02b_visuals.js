@@ -58,9 +58,8 @@ let artLast=0;function artLoop(ts){ART.raf=requestAnimationFrame(artLoop);if(doc
 // your own image per section, dithered by the same shader
 
 /* motion helpers */
-function staggerIn(root){if(!FX||!root||!root.animate)return;const els=[...root.querySelectorAll(':scope > *, .panel, .exc, .rcard, .wcard, .blk, .tr:not(.hd), .kv > *, .trk, .streak, .jitem, .spend, .cat')].filter((el,i,a)=>a.indexOf(el)===i&&el.offsetParent);
-  const vh=innerHeight;let n=0;els.forEach(el=>{if(n>=14)return;const r=el.getBoundingClientRect();if(r.bottom<0||r.top>vh)return;/* only what's on screen */
-    el.animate([{transform:'translateY(10px)',opacity:0},{transform:'none',opacity:1}],{duration:260,delay:n++*22,easing:'cubic-bezier(.2,.8,.2,1)',fill:'backwards'})})}
+function staggerIn(root){if(!FX||!root||!root.animate)return;const els=[...root.querySelectorAll(':scope > *, .panel, .exc, .rcard, .wcard, .blk, .tr:not(.hd), .kv > *, .trk, .streak, .jitem, .spend, .cat')].filter((el,i,a)=>a.indexOf(el)===i&&el.offsetParent).slice(0,40);
+  els.forEach((el,i)=>el.animate([{transform:'translateY(18px)',opacity:.15,clipPath:'inset(0 0 100% 0)'},{transform:'none',opacity:1,clipPath:'inset(0 0 0% 0)'}],{duration:420,delay:Math.min(i*28,500),easing:'cubic-bezier(.2,.9,.1,1)',fill:'backwards'}))}
 addEventListener('scroll',()=>{if(!FX)return;const c=ART.canvas;if(c&&c.parentNode)c.style.transform=`translateY(${Math.min(60,scrollY*.35)}px)`},{passive:true});
 
 // own-image banners removed; clear any old stored images once
