@@ -11,11 +11,13 @@ const hSave=()=>save('habits/list',HAB),hSaveLog=()=>{save('habits/log',HLOG);hW
 /* habits linked to Today: every plan item except tasks/work/sleep/meals etc. Ticks live in the Today day docs (days/d-*), so ticking here or in Today is the same tick */
 const HL_SKIP=new Set(['Task','Work','Sleep','Meal','Break','Leisure','Social','Research','Plan','Study']);
 const HL_META={Habit:['✅','#57f5a8','habits'],Training:['🏋️','#ff2a6d','training'],Mindset:['🎯','#ffb000','mindset'],Circadian:['☀️','#ffb000','circadian']};Object.assign(HL_META,LX('hl',{}));
+/* mindset streaks = these Today items only, whatever their plan type */
+const HL_MIND=/chess|leet ?code|deep ?work/i;
 let DNAMES={},dnLoaded=false;
 const hlKind=d=>{const w=new Date(d+'T12:00').getDay();return w===0||w===6?'weekend':'weekday'};
 const hlItems=(d,name)=>{if(!M.plans)return [];const dow=DOW[new Date(d+'T12:00').getDay()];return (M.plans[hlKind(d)]||[]).flatMap(b=>b.items).filter(i=>i.item.trim()===name&&(!i.days||i.days.has(dow)))};
 function hLinked(){if(!M.plans)return [];const hide=new Set(HAB.hide||[]);const map=new Map();
-  for(const kind of ['weekday','weekend'])(M.plans[kind]||[]).forEach(b=>b.items.forEach(i=>{if(HL_SKIP.has(i.type)||!i.item)return;const n=i.item.trim();const id='tl:'+n.toLowerCase();if(map.has(id)||hide.has(id))return;const m=HL_META[i.type]||['⭐','#e6e6e6',(i.type||'other').toLowerCase()];
+  for(const kind of ['weekday','weekend'])(M.plans[kind]||[]).forEach(b=>b.items.forEach(i=>{if(!i.item)return;const n=i.item.trim();const mind=HL_MIND.test(n);if(!mind&&(HL_SKIP.has(i.type)||i.type==='Mindset'))return;const id='tl:'+n.toLowerCase();if(map.has(id)||hide.has(id))return;const m=mind?HL_META.Mindset:HL_META[i.type]||['⭐','#e6e6e6',(i.type||'other').toLowerCase()];
     map.set(id,{id,n,ic:m[0],col:m[1],grp:m[2],type:'daily',link:n,created:hFirstDay()})}));return [...map.values()]}
 function hFirstDay(){const k=Object.keys(DNAMES).sort()[0];return k||DAYK}
 function hTodayTicked(name){return visibleItems().filter(i=>i.item.trim()===name&&DAY.ticks[i.tk])}
