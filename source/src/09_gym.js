@@ -84,8 +84,7 @@ function renderWorkout(){if(ACTIVE&&!ACTIVE.editing)ascPrime();
     const sug=gymTypeFor();const folders={};ROUTINES.list.forEach(r=>(folders[r.folder||'my routines']=folders[r.folder||'my routines']||[]).push(r));
     domPatch(el,`<div class="gstart">${rlWindow()}
       <button class="bigstart" type="button" data-act="empty"><span class="tag">quick start</span><b>start empty workout</b><span class="dim">log as you go</span></button>
-      <div class="ph2"><span class="tag">routines</span><span class="row" style="gap:6px"><button class="iconbtn" type="button" data-act="newroutine">+ new routine</button><button class="iconbtn" type="button" data-act="explore">explore exercises</button></span></div>
-      ${Object.entries(folders).map(([f,rs])=>`<div class="fold"><span class="dim">${esc(f)} · ${rs.length}</span></div><div class="rgrid">${rs.map(r=>rCard(r,norm(r.name).includes(sug))).join('')}</div>`).join('')||'<div class="dim" style="font-size:12px">No routines yet. Make an "Upper" and a "Lower" one so starting a session is one tap.</div>'}
+      ${Object.entries(folders).map(([f,rs])=>`<div class="rgrid">${rs.map(r=>rCard(r,norm(r.name).includes(sug))).join('')}</div>`).join('')||'<div class="dim" style="font-size:12px">No routines yet. Make an "Upper" and a "Lower" one so starting a session is one tap.</div>'}
       ${WORKOUTS[0]?`<div class="ph2"><span class="tag">last workout</span></div>${wCard(WORKOUTS[0])}`:''}
     </div>`);return}
   const st=stats(ACTIVE);const ed=!!ACTIVE.editing;
@@ -118,7 +117,7 @@ function rCard(r,hot){return `<div class="rcard${hot?' hot':''}"><div class="rto
 function wCard(w){const st={vol:w.vol??stats(w).vol,n:NS(w)};const dur=w.endedAt&&w.startedAt?fmtDur(new Date(w.endedAt)-new Date(w.startedAt)):'';
   return `<div class="wcard" data-w="${esc(w.id)}">${(WPH[w.id]||[])[0]?`<img class="wcimg" src="${WPH[w.id][0]}" alt="">`:''}<div class="rtop"><b>${esc(w.name)}</b><span class="dim">${esc(nice(w.date).toLowerCase())}</span></div><div class="wcrank">${rlChip(rlSession(w),18)}</div>
   <div class="wmeta num"><span>${dur||'—'}</span><span>${fmtVol(st.vol)} kg</span><span>${st.n||0} sets</span>${(w.prs||[]).length?`<span class="pink">${w.prs.length} PR</span>`:''}</div>
-  <div class="wex">${(w.ex||[]).map(x=>{const bs=bestSet(x);return `<div><span>${x.sets.filter(s=>s.done!==false).length} × ${esc(exOf(x).n)}</span><span class="dim num">${bs?esc(fmtSet(x,bs)):''}</span></div>`}).join('')}</div></div>`}
+  <div class="wex">${(w.ex||[]).map(x=>{const bs=bestSet(x);return `<div><span>${x.sets.filter(s=>s.done!==false&&s.t!=='w').length} × ${esc(exOf(x).n)}</span><span class="dim num">${bs?esc(fmtSet(x,bs)):''}</span></div>`}).join('')}</div></div>`}
 function newSetsFor(x,count){const ps=prevSets(x);return Array.from({length:count},(_,i)=>({t:(ps[i]&&ps[i].t)||'n',kg:'',r:'',done:false}))}
 function exEntry(e,opt={}){const x={id:e.id,n:e.n,rest:opt.rest??(e.ty==='dur'||e.ty==='dd'?0:120),note:opt.note||'',ss:opt.ss||null,sets:[]};const ps=prevSets(x);x.sets=newSetsFor(x,opt.sets||Math.max(1,Math.min(ps.length||3,8)));if(opt.reps)x.sets.forEach(s=>s.tr=opt.reps);return x}
 function startWorkout(r){
