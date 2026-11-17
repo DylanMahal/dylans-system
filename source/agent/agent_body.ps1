@@ -6,7 +6,7 @@ $CfgFile = Join-Path $Dir 'config.json'
 $TokFile = Join-Path $Dir 'token.dat'
 $StateFile = Join-Path $Dir 'state.json'
 $LogFile = Join-Path $Dir 'agent.log'
-$VERSION = '1.0.2'
+$VERSION = '1.0.3'
 Add-Type -AssemblyName System.Web.Extensions
 $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
 $ser.MaxJsonLength = 104857600
@@ -168,16 +168,25 @@ function ApplyOps($ops) {
             if ($have -ne $want) { throw "Row $checkRow column $k reads '$have' but '$want' was expected (the sheet changed). Skipped." }
           }
         }
-        $target = 0
-        if ($kind -eq 'insert') { $at = [int]$op['at']; $src = [int]$op['copy']; [void]$ws.Rows.Item($at).Insert(); if ($src -ge $at) { $src++ }; [void]$ws.Rows.Item($src).Copy($ws.Rows.Item($at)); $target = $at }
+        $target = 0; $inserted = 0
+        if ($kind -eq 'insert') { $at = [int]$op['at']; $src = [int]$op['copy']; [void]$ws.Rows.Item($at).Insert(); $inserted = $at; if ($src -ge $at) { $src++ }; [void]$ws.Rows.Item($src).Copy($ws.Rows.Item($at)); $target = $at }
         elseif ($kind -eq 'delete') { [void]$ws.Rows.Item([int]$op['row']).Delete() }
         else { $target = [int]$op['row'] }
-        if ($target -gt 0 -and $op.ContainsKey('values') -and $null -ne $op['values']) {
-          foreach ($k in $op['values'].Keys) {
-            $cell = $ws.Cells.Item($target, [int]$k); $val = $op['values'][$k]
-            if ($null -eq $val -or ($val -is [string] -and $val -eq '')) { [void]$cell.ClearContents() }
-            else { if ($val -is [decimal] -or $val -is [int]) { $val = [double]$val }; $cell.Value2 = $val }
+        try {
+          if ($target -gt 0 -and $op.ContainsKey('values') -and $null -ne $op['values']) {
+            foreach ($k in @($op['values'].Keys)) {
+              $col = [int]([string]$k); $cell = $ws.Cells.Item($target, $col); $val = $op['values'][$k]
+              if ($null -eq $val -or ($val -is [string] -and $val -eq '')) { [void]$cell.ClearContents(); continue }
+              if ($val -is [string]) { $cell.Value2 = [string]$val; continue }
+              if ($val -is [bool]) { $cell.Value2 = [bool]$val; continue }
+              $d = [double]$val
+              try { $cell.Value2 = $d } catch { $cell.Formula = $d.ToString('R', $inv) }
+            }
           }
+        } catch {
+          # never leave a half-made row behind: a failed insert is rolled back so a retry can't stack copies
+          if ($inserted -gt 0) { try { [void]$ws.Rows.Item($inserted).Delete() } catch {} }
+          throw ("{0} (line {1}: {2})" -f $_.Exception.Message, $_.InvocationInfo.ScriptLineNumber, ($_.InvocationInfo.Line.Trim() -replace '\s+',' ').Substring(0, [Math]::Min(90, ($_.InvocationInfo.Line.Trim()).Length)))
         }
         [void]$results.Add(@{ id = $id; ok = $true })
       } catch { [void]$results.Add(@{ id = $id; ok = $false; error = $_.Exception.Message }) }
@@ -205,6 +214,16 @@ while ($true) {
   $msg = ''; $ok = $true; $force = $false
   try {
     if (-not (Test-Path -LiteralPath $Xlsx)) { throw "Can't find $Xlsx" }
+    # 0. one-off: remove rows that are exact copies of the row above in the plan sheets (left by failed inserts before 1.0.3)
+    if (-not $State['dedup103']) {
+      $n = WithWorkbook { param($wb)
+        $gone = 0
+        foreach ($sn in @('Day Plan v2', 'Weekend Plan')) { $ws = $wb.Worksheets.Item($sn); $last = [int]$ws.UsedRange.Row + [int]$ws.UsedRange.Rows.Count - 1
+          for ($r = $last; $r -gt 4; $r--) { $a = @(1..9 | ForEach-Object { [string]$ws.Cells.Item($r, $_).Formula }); $b = @(1..9 | ForEach-Object { [string]$ws.Cells.Item($r - 1, $_).Formula })
+            if (($a -join '') -ne '' -and ($a -join [char]31) -eq ($b -join [char]31)) { [void]$ws.Rows.Item($r).Delete(); $gone++ } } }
+        if ($gone -gt 0) { $wb.Save() }; return $gone }
+      Log "dedup: removed $n duplicated rows"; $State['dedup103'] = $true; SaveState; $force = $true
+    }
     # 1. apply queued edits from any device
     $ops = GetDoc 'sync/ops'
     if ($ops -and $ops['at'] -and ([string]$ops['at']) -ne ([string]$State['opsAt']) -and $ops['ops'] -and $ops['ops'].Count -gt 0) {
