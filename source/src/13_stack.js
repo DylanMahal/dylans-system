@@ -4,7 +4,7 @@ const STATUSL={active:'in plan',asneeded:'as needed',paused:'paused',notinplan:'
 let stF='active',catF=null,sortK='monthly',sortD=-1;
 /* focus group: a cross-cutting chip for everything that supports one goal. its name and the private part of its
    word list come from sys/lex (w.fx, fxk); the generic support compounds below are just the public fallback. */
-const FXK_BASE=['tyrosine','zinc','magnesium','bromantane','memantine','theanine','citicoline','cdp choline','alpha gpc','alcar','acetyl l carnitine','nac','omega','fish oil','iron','vitamin d','caffeine','rhodiola','ginkgo','saffron','lions mane','uridine','phosphatidylserine','guanfacine','modafinil'];
+const FXK_BASE=['tyrosine','zinc','magnesium','bromantane','memantine','theanine','citicoline','cdp choline','alpha gpc','alcar','acetyl l carnitine','nac','omega','fish oil','iron','vitamin d','caffeine','rhodiola','ginkgo','saffron','lions mane','uridine','phosphatidylserine','guanfacine','modafinil','astaxanthin','astax','nebivolol','taurine','9 me bc','9mebc','mexidol','lemborexant','nacet','n acetylcysteine ethyl','adhd','medikinet','vyvanse','elvanse','ritalin','methylphenidate','lisdexamfetamine'];
 const fxN=x=>' '+norm(x).replace(/[^a-z0-9]+/g,' ').trim()+' ';
 const fxMatch=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(FXK_BASE.concat(LX('fxk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
 const stFilter=k=>s=>k==='all'||(k==='fx'?fxMatch(s):k==='inb'?s.inb:k==='opt'?!s.inb:k==='edited'?s.edited:s.status===k);

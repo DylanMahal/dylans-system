@@ -1,6 +1,6 @@
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
-const CACHE='system-1794937074';
-const SHELL=['./','index.html','app.css?v=1794937074','app.js?v=1794937074','config.js?v=1794937074','vendor/supabase.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
+const CACHE='system-1794937548';
+const SHELL=['./','index.html','app.css?v=1794937548','app.js?v=1794937548','config.js?v=1794937548','vendor/supabase.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=='ds-media').map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET')return;
