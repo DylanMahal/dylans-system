@@ -31,7 +31,6 @@ function morphEl(x,y){for(const at of [...x.attributes])if(!y.hasAttribute(at.na
   const tag=x.nodeName;
   if(tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT'){if(tag==='TEXTAREA')x.defaultValue=y.value;if(document.activeElement!==x&&x.value!==y.value)x.value=y.value;if(x.checked!==y.checked)x.checked=y.checked;if(tag!=='SELECT')return}
   morphKids(x,y)}
-(function loopGlitch(){setTimeout(()=>{if(FX&&!document.hidden)glitchAll();loopGlitch()},55000+Math.random()*15000)})();
 const SCR='!<>-_\\/[]{}—=+*^?#01ABCDEF';
 function scramble(el,final,dur=520){final=String(final);if(!FX){el.textContent=final;return}const t0=performance.now();(function f(t){const p=Math.min((t-t0)/dur,1);let s='';for(let i=0;i<final.length;i++){s+=(i/final.length<p||final[i]===' ')?final[i]:SCR[Math.random()*SCR.length|0]}el.textContent=s;if(p<1)requestAnimationFrame(f)})(t0)}
 const cx=$('curx'),cxy=$('curxy');
