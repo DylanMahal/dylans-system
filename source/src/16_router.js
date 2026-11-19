@@ -3,7 +3,7 @@ const VIEWS=[['today','today','◉'],['week','week','▦'],['streaks','streaks',
 $('tabs').innerHTML=VIEWS.map(([v,l],i)=>`<button type="button" data-v="${v}"><span class="k">${i+1}</span>${l}</button>`).join('');
 $('bnav').innerHTML=VIEWS.map(([v,l,ic])=>`<button type="button" data-v="${v}"><i>${ic}</i><span>${l}</span></button>`).join('')+'<span class="bnind" id="bnind"></span>';
 let cur=null,goTok=0;
-function go(v,fromHash,dirHint){
+function go(v,fromHash,dirHint){if(typeof inkExitFull==="function")inkExitFull();
   if(!VIEWS.some(x=>x[0]===v))v='today';if(v===cur)return;
   const oi=VIEWS.findIndex(x=>x[0]===cur),ni=VIEWS.findIndex(x=>x[0]===v);const dir=dirHint||(oi<0?0:ni>oi?1:-1);cur=v;
   VIEWS.forEach(([x])=>$('v-'+x).classList.toggle('on',x===v));

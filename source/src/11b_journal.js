@@ -50,7 +50,7 @@ $('jPrompts').innerHTML=`<button class="chip pr" type="button" data-pr="recap">d
 $('jPrompts').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b)return;if(b.dataset.pr==='recap'){jInsertRecap(b);return}const p=PROMPTS.find(x=>x[0]===b.dataset.pr)[1];JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+p;renderJEditor();const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ();if(b.dataset.pr==='woop')autoTick(/^WOOP/)};
 
 /* --- handwriting: drawn straight over the typed page (shared layer in 11a) --- */
-const JL=inkLayer({host:$('jPage'),canvas:$('jCanvas'),bar:$('jTools'),paper:false,get:()=>JE&&JE.ink||null,make:()=>{if(!JE.ink)JE.ink={h:IH,strokes:[]};return JE.ink},changed:saveJ});
+const JL=inkLayer({host:$('jPage'),canvas:$('jCanvas'),bar:$('jTools'),full:$('jEditor'),paper:false,get:()=>JE&&JE.ink||null,make:()=>{if(!JE.ink)JE.ink={h:IH,strokes:[]};return JE.ink},changed:saveJ});
 
 /* ---- day recap: pull what the app already knows about a day ---- */
 async function jRecap(d){

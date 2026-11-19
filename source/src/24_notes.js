@@ -2,7 +2,7 @@
    notes: notes/n-<id> {id,html,folder,pin,created,upd} · notes/folders {list:[name]}
    tasks: tasks/all {list:[task],projects:[{id,n,col}]}  task {id,t,d,tm,p,proj,rep,note,sub:[{t,x}],done,created} */
 let JTAB=LS.get('jtab')||'journal';
-function setJTab(t){JTAB=t;LS.set('jtab',t);document.querySelectorAll('#jTabs [data-jt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.jt===t));
+function setJTab(t){if(typeof inkExitFull==='function')inkExitFull();JTAB=t;LS.set('jtab',t);document.querySelectorAll('#jTabs [data-jt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.jt===t));
   $('jPaneJ').hidden=t!=='journal';$('jPaneN').hidden=t!=='notes';$('jPaneT').hidden=t!=='tasks';
   if(t==='notes')loadNotes();if(t==='tasks')loadTasks();if(t==='journal'){if(jLoaded)renderJEditor();else loadJournal()}}
 document.addEventListener('click',e=>{const b=e.target.closest('#jTabs [data-jt]');if(b)setJTab(b.dataset.jt)});
@@ -24,7 +24,7 @@ function renderNotes(listOnly){const el=$('jPaneN');if(!el)return;const q=(($('n
     <div class="chips" id="nFolders" style="margin:8px 0">${['all',...NFOLD.list].map(f=>`<button type="button" class="chip${NF===f?' on':''}" data-nf="${esc(f)}">${esc(f)}</button>`).join('')}<button type="button" class="chip" id="nAddF">+ folder</button></div>
     <div class="nlistw" id="nList">${listHtml}</div></div>
     <div class="neditor panel">${NCUR&&NOTES[NCUR]?nEditorHtml(NOTES[NCUR]):'<div class="pb dim nempty">pick a note or start a new one ✎</div>'}</div></div>`;
-  nBind();if(NCUR&&NOTES[NCUR])nInkMount()}
+  nBind();if(NCUR&&NOTES[NCUR])nInkMount();else inkExitFull()}
 function nEditorHtml(n){return `<div class="ntool"><button type="button" class="iconbtn nback" id="nBack">‹ notes</button><span class="ntbtns">${[['h','H','heading'],['b','<b>B</b>','bold'],['i','<i>I</i>','italic'],['u','<u>U</u>','underline'],['s','<s>S</s>','strike'],['ul','•','bullets'],['ol','1.','numbers'],['chk','☑','checklist'],['q','❝','quote'],['code','&lt;/&gt;','code'],['hr','—','divider']].map(([k,l,t])=>`<button type="button" data-nc="${k}" title="${t}">${l}</button>`).join('')}</span></div>
   <div class="nmeta dim num">${new Date(n.upd).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).toLowerCase()} · <select id="nFold" class="nfsel">${NFOLD.list.map(f=>`<option ${n.folder===f?'selected':''}>${esc(f)}</option>`).join('')}</select> <button type="button" class="iconbtn" id="nPin">${n.pin?'unpin':'pin'}</button> <button type="button" class="iconbtn" id="nCopy">copy</button> <button type="button" class="iconbtn" id="nDel">delete</button> <span id="nSaved"></span></div>
   <div class="ned" id="nEd" contenteditable="true" spellcheck="true">${n.html||'<h2><br></h2>'}</div>`}

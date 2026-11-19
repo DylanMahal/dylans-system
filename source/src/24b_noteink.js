@@ -5,11 +5,12 @@ function nInkDirty(){const n=NOTES[NCUR];if(!n)return;n.upd=new Date().toISOStri
 function nInkMount(){
   const ed=document.querySelector('#jPaneN .neditor'),ned=$('nEd');if(!ed||!ned||!NCUR||!NOTES[NCUR])return;
   if(NL){NL.destroy();NL=null}
+  document.documentElement.classList.toggle('inkfull-on',!!document.querySelector('.inkfull'));
   const host=document.createElement('div');host.className='inkhost';ned.replaceWith(host);
   const cv=document.createElement('canvas');cv.className='inkcv';host.append(ned,cv);
   const bar=document.createElement('div');bar.id='nTools';const tb=ed.querySelector('.ntool');tb?tb.after(bar):ed.prepend(bar);
   const id=NCUR;
-  NL=inkLayer({host,canvas:cv,bar,paper:true,stack:NSTK[id]||(NSTK[id]={undo:[],redo:[]}),
+  NL=inkLayer({host,canvas:cv,bar,full:ed,paper:true,stack:NSTK[id]||(NSTK[id]={undo:[],redo:[]}),
     get:()=>{const n=NOTES[id];return n&&n.ink||null},
     make:()=>{const n=NOTES[id];if(!n.ink)n.ink={h:IH,strokes:[],bg:'blank'};return n.ink},changed:nInkDirty});
   NL.refresh();NL.size()}

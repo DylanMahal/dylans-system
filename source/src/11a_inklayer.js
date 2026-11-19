@@ -15,11 +15,11 @@ function inkLayer(o){
     <input type="range" min="1" max="12" value="${INKS.w}" aria-label="Pen width"><span class="sep"></span>
     <button type="button" data-ik="undo">undo</button><button type="button" data-ik="redo">redo</button><button type="button" data-ik="page">+ page</button>
     ${o.paper?`<select aria-label="Paper">${INK_BG.map(b=>`<option value="${b}">${b}</option>`).join('')}</select>`:''}
-    <button type="button" data-ik="clear">clear</button><button type="button" data-ik="po" title="Ignore fingers so your palm can rest on the screen">pencil only</button>`;
+    <button type="button" data-ik="clear">clear</button><button type="button" data-ik="po" title="Ignore fingers so your palm can rest on the screen">pencil only</button><button type="button" data-ik="full" title="Fullscreen">⛶ full</button>`;
   const touch=()=>{L.last=Date.now();o.changed&&o.changed()};
   L.refresh=()=>{bar.querySelectorAll('[data-ik^="t:"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ik==='t:'+INKS.tool));
     bar.querySelectorAll('[data-ik^="c:"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ik==='c:'+INKS.col));
-    const po=bar.querySelector('[data-ik="po"]');po.setAttribute('aria-pressed',INKS.po);bar.querySelector('input[type=range]').value=INKS.w;
+    const po=bar.querySelector('[data-ik="po"]');po.setAttribute('aria-pressed',INKS.po);const fb=bar.querySelector('[data-ik="full"]');if(fb&&o.full){const on=o.full.classList.contains('inkfull');fb.textContent=on?'✕ exit full':'⛶ full';fb.setAttribute('aria-pressed',on)}bar.querySelector('input[type=range]').value=INKS.w;
     const bg=bar.querySelector('select');if(bg)bg.value=inkBgOf(o.get());
     const ink=INKS.tool!=='type';cv.style.touchAction='none';host.classList.toggle('inking',ink);
     host.querySelectorAll('.inkdead').forEach(x=>x.remove());
@@ -71,6 +71,7 @@ function inkLayer(o){
   bar.onclick=e=>{const b=e.target.closest('[data-ik]');if(!b)return;const a=b.dataset.ik;
     if(a.startsWith('t:')){const t=a.slice(2);INKS.tool=t;inkSet();L.refresh();if(t!=='type'){const a=document.activeElement;if(a&&a.blur&&a!==document.body)a.blur()}return}
     if(a.startsWith('c:')){INKS.col=a.slice(2);if(INKS.tool==='eraser')INKS.tool='pen';inkSet();L.refresh();return}
+    if(a==='full'){if(o.full){o.full.classList.toggle('inkfull');document.documentElement.classList.toggle('inkfull-on',!!document.querySelector('.inkfull'));L.refresh();setTimeout(()=>L.size(),60)}return}
     if(a==='po'){INKS.po=!INKS.po;inkSet();L.refresh();return}
     if(a==='page'){const k=o.make();k.h=(k.h||IH)+IH;L.size();touch();return}
     if(a==='undo'||a==='redo'){const from=a==='undo'?L.stack.undo:L.stack.redo,to=a==='undo'?L.stack.redo:L.stack.undo;const u=from.pop();if(!u)return;const k=o.make();
@@ -83,3 +84,7 @@ function inkLayer(o){
   L.destroy=()=>{ro.disconnect();cancelAnimationFrame(raf)};
   L.reset=()=>{L.stack.undo=[];L.stack.redo=[];L.drawing=null};
   return L}
+
+/* fullscreen: Esc, or leaving the page, closes it */
+const inkExitFull=()=>{document.querySelectorAll('.inkfull').forEach(x=>x.classList.remove('inkfull'));document.documentElement.classList.remove('inkfull-on')};
+addEventListener('keydown',e=>{if(e.key==='Escape'&&document.querySelector('.inkfull')){inkExitFull();document.querySelectorAll('[data-ik="full"]').forEach(b=>{b.textContent='⛶ full';b.setAttribute('aria-pressed',false)})}});
