@@ -17,7 +17,7 @@ load('today/titles').then(d=>{TITLES=d||{};if(typeof M!=='undefined'&&M.plans)re
 watch('today/titles',d=>{TITLES=d||{};if(typeof M!=='undefined'&&M.plans)rebuild()});
 window.addEventListener('sys-patch',e=>{try{const o=JSON.parse(e.detail);if(o.titles){TITLES={...TITLES,...o.titles};save('today/titles',TITLES)}
 for(const [k,v] of Object.entries(o.p||{})){if(v===null)dropPatch(k);else patch(k,v,v._ctx)}
-if(o.titles)rebuild();document.documentElement.dataset.patched=String(Date.now())}catch(x){document.documentElement.dataset.patched='err '+x.message}});
+(o.nopct||[]).forEach(k=>{NOPCT.m[k]=1});if(o.nopct)save('today/nopct',NOPCT,true);if(o.titles)rebuild();document.documentElement.dataset.patched=String(Date.now())}catch(x){document.documentElement.dataset.patched='err '+x.message}});
 window.addEventListener('sys-dump',()=>{const r={};for(const kind of ['weekday','weekend']){r[kind]={blocks:M.plans[kind].map(b=>({row:b.row,title:b.title,items:b.items.map(i=>({key:i.key,time:i.time,item:i.item,type:i.type,dose:i.dose,route:i.route,sched:i.sched,notes:i.notes,caution:i.caution}))})),extra:M.extra[kind]}}
 document.documentElement.dataset.dump=JSON.stringify({r,t:TITLES,e:EDITS.p})});
 let NOPCT={m:{}};
