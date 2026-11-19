@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1794959610">
+<link rel="stylesheet" href="app.css?v=1795096347">
 </head>
 <body class="fx">
 <style>
@@ -304,7 +304,6 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
   <!-- TODAY -->
   <section class="view" id="v-today" aria-label="Today">
     <div class="banner slim"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/today"><span class="slash">/</span>today</h2><span class="sub" id="todaySub">weekday plan</span></div></div>
-    <div id="todayTasks"></div>
     <div class="hud">
       <div class="panel clockp">
         <div class="ph"><span class="tag">sys.clock</span><span id="planName"></span></div>
@@ -326,6 +325,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
       <span class="asc num" id="asc"></span>
       <span class="target-mark num" id="pctTxt"></span>
     </div></div>
+    <div id="todayTasks"></div>
     <div id="todayCal"></div>
     <div class="strip" id="strip" role="group" aria-label="Blocks of the day"></div>
     <div class="tools">
@@ -528,9 +528,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1794959610"</script>
-<script src="config.js?v=1794959610"></script>
+<script>window.APP_V="1795096347"</script>
+<script src="config.js?v=1795096347"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1794959610"></script>
+<script src="app.js?v=1795096347"></script>
 </body>
 </html>
