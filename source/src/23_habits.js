@@ -47,11 +47,11 @@ const hGet=id=>HAB.list.find(z=>z.id===id)||hLinked().find(z=>z.id===id);
 function renderHabits(){if(!habLoaded){loadHabits();return}const el=$('habBody');const L=HAB.list.filter(h=>!h.arch);const LK=hLinked();const ALL=L.concat(LK);
   const today=ALL.filter(h=>hDue(h,DAYK));const done=today.filter(h=>hDone(h,DAYK)).length;
   $('habSub').textContent=ALL.length?`${done}/${today.length} today · ${Math.max(0,...ALL.map(h=>hStreak(h).n))} best current streak`:'build streaks that stick';
-  const grps=[];LK.forEach(h=>{let g=grps.find(x=>x.n===h.grp);if(!g)grps.push(g={n:h.grp,col:h.col,L:[]});g.L.push(h)});
+  const grps=[];LK.forEach(h=>{let g=grps.find(x=>x.n===h.grp);if(!g)grps.push(g={n:h.grp,col:h.col,L:[]});g.L.push(h)});L.forEach(h=>{const g=h.grp&&grps.find(x=>x.n===h.grp);if(g)g.L.push(h)});
   const gh=grps.map(g=>{const due=g.L.filter(h=>hDue(h,DAYK));const ok=due.filter(h=>hDone(h,DAYK)).length;const open=(HAB.open||[]).includes(g.n);
     return `<div class="panel hgrp${open?' open':''}"><button type="button" class="ph hgh" data-hg="${esc(g.n)}"><span class="tag" style="color:${g.col}">${esc(g.n)}</span><span class="num dim">${ok}/${due.length} today${due.length&&ok===due.length?' ✓':''} <span class="hchev">${open?'▾':'▸'}</span></span></button>${open?`<div class="pb"><div class="hgrid sm">${g.L.sort((a,b)=>hDue(b,DAYK)-hDue(a,DAYK)).map(hTile).join('')}</div></div>`:''}</div>`}).join('');
-  el.innerHTML=`<div class="hgrid">${L.map(hTile).join('')}<button type="button" class="htile hnew" id="hNew"><span class="hring"><b>＋</b></span><span class="hn">new habit</span></button></div>
-    ${gh?`<div class="flab" style="margin:16px 0 6px">from today · ticks sync both ways</div>${gh}`:''}
+  el.innerHTML=`<div class="hgrid">${L.filter(h=>!(h.grp&&grps.some(g=>g.n===h.grp))).map(hTile).join('')}<button type="button" class="htile hnew" id="hNew"><span class="hring"><b>＋</b></span><span class="hn">new habit</span></button></div>
+    ${gh?`<div style="margin-top:16px">${gh}</div>`:''}
     ${ALL.length?`<div class="dim" style="font-size:11px;text-align:center;margin-top:10px">hold a habit to complete it · tap for stats</div>`:''}
     ${L.length?`<div class="panel" style="margin-top:14px"><div class="ph"><span class="tag">last 12 weeks</span><span class="dim">${Math.round(L.reduce((a,h)=>a+hRate(h,30),0)/Math.max(1,L.length))}% in the last 30 days</span></div><div class="pb">${hHeat(null)}</div></div>`:''}`;
   hBind()}
@@ -113,7 +113,7 @@ function hDetail(id){const h=hGet(id);if(!h)return;const st=hStreak(h);
 function hEdit(h){const isNew=!h;h=h?clone(h):{id:rid(),n:'',ic:'💪',col:HCOLS[HAB.list.length%HCOLS.length],type:'daily',per:3,days:[1,2,3,4,5],q:1,unit:'',remind:'',created:DAYK};
   const draw=()=>{$('sheetBody').innerHTML=`<label class="fl">habit<input class="inp" id="heN" value="${esc(h.n)}" placeholder="e.g. gym, skincare, no sugar"></label>
     <div class="dim" style="font-size:11px;margin:4px 0">icon</div><div class="hicons">${HICONS.map(i=>`<button type="button" data-hi="${i}" class="${h.ic===i?'on':''}">${i}</button>`).join('')}</div>
-    <div class="dim" style="font-size:11px;margin:10px 0 4px">colour</div><div class="hcols">${HCOLS.map(c=>`<button type="button" data-hc="${c}" class="${h.col===c?'on':''}" style="background:${c}"></button>`).join('')}</div>
+    <div class="dim" style="font-size:11px;margin:10px 0 4px">folder</div><div class="seg mini" style="flex-wrap:wrap">${[''].concat([...new Set(hLinked().map(x=>x.grp))]).map(g=>`<button type="button" data-hf="${esc(g)}" aria-pressed="${(h.grp||'')===g}">${g?esc(g):'none'}</button>`).join('')}</div>
     <div class="dim" style="font-size:11px;margin:10px 0 4px">type</div><div class="seg mini">${[['daily','every day'],['days','some days'],['week','x per week'],['neg','break a habit']].map(([k,l])=>`<button type="button" data-ht="${k}" aria-pressed="${h.type===k}">${l}</button>`).join('')}</div>
     ${h.type==='days'?`<div class="hdow">${[1,2,3,4,5,6,0].map(i=>`<button type="button" data-hw="${i}" class="${(h.days||[]).includes(i)?'on':''}">${DOW[i]}</button>`).join('')}</div>`:''}
     ${h.type==='week'?`<label class="fl" style="margin-top:8px">times per week<input class="inp num" id="heP" value="${h.per||3}" inputmode="numeric"></label>`:''}
@@ -123,7 +123,7 @@ function hEdit(h){const isNew=!h;h=h?clone(h):{id:rid(),n:'',ic:'💪',col:HCOLS
   openSheet(isNew?'new habit':'edit habit','');draw();
   const read=()=>{const v=id=>$(id)?$(id).value:null;h.n=(v('heN')||'').trim();if(v('heP')!=null)h.per=Math.max(1,Math.min(7,+v('heP')||3));if(v('heQ')!=null)h.q=Math.max(1,+v('heQ')||1);if(v('heU')!=null)h.unit=v('heU').trim();h.remind=v('heR')||''};
   $('sheetBody').onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
-    if(d.hi||d.hc||d.ht||d.hw){read();if(d.hi)h.ic=d.hi;if(d.hc)h.col=d.hc;if(d.ht)h.type=d.ht;if(d.hw){const i=+d.hw;h.days=(h.days||[]).includes(i)?h.days.filter(x=>x!==i):(h.days||[]).concat(i)}draw();return}
+    if(d.hi||d.hc||d.ht||d.hw||d.hf!==undefined){read();if(d.hf!==undefined){h.grp=d.hf;const g=hLinked().find(x=>x.grp===d.hf);h.col=g?g.col:HCOLS[0]}if(d.hi)h.ic=d.hi;if(d.hc)h.col=d.hc;if(d.ht)h.type=d.ht;if(d.hw){const i=+d.hw;h.days=(h.days||[]).includes(i)?h.days.filter(x=>x!==i):(h.days||[]).concat(i)}draw();return}
     if(b.id==='heDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}HAB.list=HAB.list.filter(x=>x.id!==h.id);hSave();closeSheet();renderHabits();return}
     if(b.id==='heOk'){read();if(!h.n){$('heN').focus();return}const i=HAB.list.findIndex(x=>x.id===h.id);if(i>=0)HAB.list[i]=h;else HAB.list.push(h);hSave();hWidget();closeSheet();renderHabits();if(typeof pushSync==='function')pushSync()}}}
 /* widget feed: a small summary doc any future widget can read */
