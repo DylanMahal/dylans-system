@@ -11,20 +11,20 @@ document.addEventListener('click',e=>{const b=e.target.closest('#jTabs [data-jt]
 let NOTES={},NFOLD={list:['notes']},notesLoaded=false,NCUR=null,NF=LS.get('nfold')||'all',nSaveT=null;
 async function loadNotes(){if(notesLoaded){renderNotes();return}const [rows,f]=await Promise.all([listDocs('notes/n-'),load('notes/folders')]);
   rows.forEach(r=>{if(r.data)NOTES[r.data.id]=r.data});NFOLD={list:['notes'],...(f||{})};notesLoaded=true;renderNotes()}
-watchPrefix('notes/n-',(evt,path,data)=>{const id=path.slice(8);if(evt==='DELETE')delete NOTES[id];else if(data){if(NCUR===id&&document.activeElement&&document.activeElement.id==='nEd')return;NOTES[id]=data}if(cur==='journal'&&JTAB==='notes')renderNotes(true)});
+watchPrefix('notes/n-',(evt,path,data)=>{const id=path.slice(8);if(evt==='DELETE')delete NOTES[id];else if(data){if(NCUR===id&&((document.activeElement&&document.activeElement.id==='nEd')||nInkBusy()))return;NOTES[id]=data}if(cur==='journal'&&JTAB==='notes')renderNotes(true)});
 watch('notes/folders',d=>{if(d)NFOLD={list:['notes'],...d}});
 const nText=h=>{const d=document.createElement('div');d.innerHTML=h||'';d.querySelectorAll('li,p,div,h1,h2,h3,br').forEach(x=>x.append(' '));return d.textContent.replace(/\s+/g,' ').trim()};
-const nTitle=n=>{const d=document.createElement('div');d.innerHTML=n.html||'';const f=[...d.childNodes].map(x=>x.textContent.trim()).find(Boolean);return (f||'new note').slice(0,80)};
+const nTitle=n=>{const d=document.createElement('div');d.innerHTML=n.html||'';const f=[...d.childNodes].map(x=>x.textContent.trim()).find(Boolean);return (f||(n.ink&&n.ink.strokes&&n.ink.strokes.length?'handwritten note':'new note')).slice(0,80)};
 function nAgo(t){const d=new Date(t),n=new Date();return ymd(d)===ymd(n)?d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):((n-d)<6*864e5?d.toLocaleDateString('en-GB',{weekday:'long'}):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'})).toLowerCase()}
 function renderNotes(listOnly){const el=$('jPaneN');if(!el)return;const q=(($('nQ')||{}).value||'').toLowerCase();
   const all=Object.values(NOTES).filter(n=>NF==='all'||n.folder===NF).filter(n=>!q||nText(n.html).toLowerCase().includes(q)).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.upd>a.upd?1:-1));
-  const listHtml=`${all.map(n=>{const t=nTitle(n);const body=nText(n.html).slice(t.length).trim();return `<button type="button" class="nitem${n.id===NCUR?' on':''}" data-n="${n.id}"><b>${n.pin?'📌 ':''}${esc(t)}</b><span class="dim"><span class="num">${nAgo(n.upd)}</span> ${esc(body.slice(0,70))||'no additional text'}</span></button>`}).join('')||'<div class="dim" style="padding:14px 4px">no notes</div>'}`;
+  const listHtml=`${all.map(n=>{const t=nTitle(n);const body=nText(n.html).slice(t.length).trim();const th=nThumb(n);return `<button type="button" class="nitem${n.id===NCUR?' on':''}${th?' hasth':''}" data-n="${n.id}">${th}<b>${n.pin?'📌 ':''}${esc(t)}</b><span class="dim"><span class="num">${nAgo(n.upd)}</span> ${esc(body.slice(0,70))||(th?'handwriting':'no additional text')}</span></button>`}).join('')||'<div class="dim" style="padding:14px 4px">no notes</div>'}`;
   if(listOnly&&$('nList')){$('nList').innerHTML=listHtml;return}
   el.innerHTML=`<div class="ngrid${NCUR?' editing':''}"><div class="nside"><div class="row" style="gap:6px"><input class="inp" id="nQ" type="search" placeholder="search notes" value="${esc(q)}" style="flex:1"><button class="btn p" type="button" id="nNew" title="new note">✎</button></div>
     <div class="chips" id="nFolders" style="margin:8px 0">${['all',...NFOLD.list].map(f=>`<button type="button" class="chip${NF===f?' on':''}" data-nf="${esc(f)}">${esc(f)}</button>`).join('')}<button type="button" class="chip" id="nAddF">+ folder</button></div>
     <div class="nlistw" id="nList">${listHtml}</div></div>
     <div class="neditor panel">${NCUR&&NOTES[NCUR]?nEditorHtml(NOTES[NCUR]):'<div class="pb dim nempty">pick a note or start a new one ✎</div>'}</div></div>`;
-  nBind()}
+  nBind();if(NCUR&&NOTES[NCUR])nInkMount()}
 function nEditorHtml(n){return `<div class="ntool"><button type="button" class="iconbtn nback" id="nBack">‹ notes</button><span class="ntbtns">${[['h','H','heading'],['b','<b>B</b>','bold'],['i','<i>I</i>','italic'],['u','<u>U</u>','underline'],['s','<s>S</s>','strike'],['ul','•','bullets'],['ol','1.','numbers'],['chk','☑','checklist'],['q','❝','quote'],['code','&lt;/&gt;','code'],['hr','—','divider']].map(([k,l,t])=>`<button type="button" data-nc="${k}" title="${t}">${l}</button>`).join('')}</span></div>
   <div class="nmeta dim num">${new Date(n.upd).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).toLowerCase()} · <select id="nFold" class="nfsel">${NFOLD.list.map(f=>`<option ${n.folder===f?'selected':''}>${esc(f)}</option>`).join('')}</select> <button type="button" class="iconbtn" id="nPin">${n.pin?'unpin':'pin'}</button> <button type="button" class="iconbtn" id="nCopy">copy</button> <button type="button" class="iconbtn" id="nDel">delete</button> <span id="nSaved"></span></div>
   <div class="ned" id="nEd" contenteditable="true" spellcheck="true">${n.html||'<h2><br></h2>'}</div>`}
@@ -51,7 +51,7 @@ function nCmd(c){const ed=$('nEd');if(!ed)return;ed.focus();const X=(a,v)=>docum
   else if(c==='chk'){X('insertUnorderedList');const n=getSelection().anchorNode;const ul=n&&(n.nodeType===1?n:n.parentElement).closest('ul');if(ul){ul.classList.toggle('chk');ul.querySelectorAll('li').forEach(li=>{if(!li.dataset.c)li.dataset.c='0'})}}
   nDirty()}
 function nDirty(){if(!NCUR)return;NOTES[NCUR].html=$('nEd').innerHTML;NOTES[NCUR].upd=new Date().toISOString();if($('nSaved'))$('nSaved').textContent='…';clearTimeout(nSaveT);nSaveT=setTimeout(nSave,600)}
-function nSave(){clearTimeout(nSaveT);if(!NCUR||!NOTES[NCUR])return;const n=NOTES[NCUR];if(!nText(n.html)&&!/<img|<hr/.test(n.html)){removeDoc('notes/n-'+n.id)}else save('notes/n-'+n.id,n,true);if($('nSaved'))$('nSaved').textContent='saved';renderNotes(true)}
+function nSave(){clearTimeout(nSaveT);if(!NCUR||!NOTES[NCUR])return;const n=NOTES[NCUR];if(!nText(n.html)&&!/<img|<hr/.test(n.html)&&!(n.ink&&n.ink.strokes&&n.ink.strokes.length)){removeDoc('notes/n-'+n.id)}else save('notes/n-'+n.id,n,true);if($('nSaved'))$('nSaved').textContent='saved';renderNotes(true)}
 function nFlush(){if(nSaveT)nSave()}
 addEventListener('pagehide',nFlush);
 

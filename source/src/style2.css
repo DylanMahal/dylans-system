@@ -1182,3 +1182,7 @@ body.vfullon{overflow:hidden}
 .sin{touch-action:manipulation}
 /* phones: stronger TV look (thin lines vanish on a small high-dpi screen) */
 @media (max-width:600px){.fx .scanfx{background:repeating-linear-gradient(to bottom,rgba(255,255,255,.055) 0 1px,transparent 1px 3px),radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.35) 100%)}.fx #noise{opacity:.065}}
+
+/* notes: handwriting */
+.nitem{position:relative}.nitem.hasth{padding-right:56px}.nitem .nth{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:42px;height:42px;object-fit:contain;background:#0a0a0a;border:1px solid var(--line2)}
+.nmode{padding:4px 12px}#nInkPane{padding:0 12px 24px}#nTools select{appearance:none;background:none;border:1px solid var(--line2);color:var(--dim);font-size:11px;padding:5px 9px}
