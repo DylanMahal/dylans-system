@@ -7,7 +7,10 @@ let stF='active',catF=null,sortK='monthly',sortD=-1;
 const FXK_BASE=['tyrosine','zinc','magnesium','bromantane','memantine','theanine','citicoline','cdp choline','alpha gpc','alcar','acetyl l carnitine','nac','omega','fish oil','iron','vitamin d','caffeine','rhodiola','ginkgo','saffron','lions mane','uridine','phosphatidylserine','guanfacine','modafinil','astaxanthin','astax','nebivolol','taurine','9 me bc','9mebc','mexidol','lemborexant','nacet','n acetylcysteine ethyl','adhd','medikinet','vyvanse','elvanse','ritalin','methylphenidate','lisdexamfetamine'];
 const fxN=x=>' '+norm(x).replace(/[^a-z0-9]+/g,' ').trim()+' ';
 const fxMatch=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(FXK_BASE.concat(LX('fxk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
-const stFilter=k=>s=>k==='all'||(k==='fx'?fxMatch(s):k==='inb'?s.inb:k==='opt'?!s.inb:k==='edited'?s.edited:s.status===k);
+/* sleep group: same idea, for anything that aids sleep. extra private names come from sys/lex (slk). */
+const SLK_BASE=['melatonin','glycine','magnesium','theanine','lemborexant','apigenin','ashwagandha','gaba','valerian','tryptophan','5 htp','5htp','inositol','taurine','passionflower','lemon balm','magnolia','cbd','cbn','trazodone','doxylamine','diphenhydramine','mirtazapine','zopiclone','zolpidem','daridorexant','suvorexant','ramelteon','hydroxyzine','tart cherry','montmorency','kava','chamomile','lavender','sleep'];
+const slMatch=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(SLK_BASE.concat(LX('slk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
+const stFilter=k=>s=>k==='all'||(k==='fx'?fxMatch(s):k==='sl'?slMatch(s):k==='inb'?s.inb:k==='opt'?!s.inb:k==='edited'?s.edited:s.status===k);
 function renderStack(){
   const st=M.stack;const c=s=>st.filter(x=>x.status===s).length;
   $('stackSub').textContent=`${st.length} ${LW('items','items')}`;
@@ -15,7 +18,7 @@ function renderStack(){
     .map(([k,v,s],i)=>`<div class="panel"><div class="ph"><span class="tag">${k}</span></div><div class="pb"><span class="v num ${i===1?'pink':''}" data-scr="${esc(v)}">${v}</span><span class="s">${s}</span></div></div>`).join('');
   const pb=st.filter(s=>s.inb&&s.status==='paused'&&s.monthly>0);
   $('stackWarn').innerHTML='';
-  const sts=[['all','all'],['active','in plan'],['asneeded','as needed'],['paused','paused'],['notinplan','not in plan'],['inb','in budget'],['opt','optional'],['fx',LW('fx','ADHD')]];
+  const sts=[['all','all'],['active','in plan'],['asneeded','as needed'],['paused','paused'],['notinplan','not in plan'],['inb','in budget'],['opt','optional'],['fx',LW('fx','ADHD')],['sl',LW('sl','sleep')]];
   $('stChips').innerHTML=sts.map(([k,l])=>`<button class="chip" type="button" data-s="${k}" aria-pressed="${stF===k}">${l}<span class="c">${st.filter(stFilter(k)).length}</span></button>`).join('');
   $('catChips').innerHTML=STACK_CATS.map(cc=>`<button class="chip" type="button" data-c="${esc(cc)}" aria-pressed="${catF===cc}"><i style="background:${STC[cc]}"></i>${esc(cc.split(' / ')[0].toLowerCase())}<span class="c">${st.filter(s=>s.cat===cc).length}</span></button>`).join('');
   renderStackTbl();
