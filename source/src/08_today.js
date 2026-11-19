@@ -2,7 +2,15 @@
 let L=logical(),DAYK=ymd(L),DOWN=DOW[L.getDay()];
 let planKind=(DOWN==='Sat'||DOWN==='Sun')?'weekend':'weekday',planForced=false;
 let DAY={ticks:{},water:0,msg:{},dw:0};let filt='all';
-function visibleItems(){return M.plans[planKind].flatMap(b=>b.items.filter(i=>!i.days||i.days.has(DOWN)))}
+/* injectables follow the protocols page: shown only on the days their protocol is due, hidden entirely until one exists */
+let PROTO_READY=false;
+function protoFor(i){if(!PROTO_READY)return null;const a=norm(i.item);return PROTO.list.find(c=>{const b=norm(c.name);return b&&(a===b||(Math.min(a.length,b.length)>=4&&(a.includes(b)||b.includes(a))))})||null}
+function protoManaged(i){const r=norm(i.route||'');return !!r&&(PX.spot||[]).some(s=>norm(s)===r)}
+function protoOk(i,d){if(!PROTO_READY)return true;const c=protoFor(i);if(c)return scheduledOn(c,d||DAYK);return !protoManaged(i)}
+function eff(i){const c=protoFor(i);const tm=c&&c.times&&c.times[0];if(!tm||tm==='any'||tm===i.time)return i;const t=parseT(tm);return t===null?i:{...i,time:tm,t:t<300?t+1440:t}}
+const onToday=i=>(!i.days||i.days.has(DOWN))&&protoOk(i);
+function todaySync(){if(typeof M!=='undefined'&&M.plans&&M.plans[planKind]&&$('blocks'))renderToday()}
+function visibleItems(){return M.plans[planKind].flatMap(b=>b.items.filter(onToday).map(eff))}
 /* items flagged "doesn't count" stay on the list and can be ticked, but are left out of the day % */
 let NOPCT={m:{}};
 load('today/nopct').then(d=>{if(d)NOPCT={m:{},...d};if(typeof M!=='undefined'&&M.plans)updateCounts()}).catch(()=>{});
@@ -25,7 +33,7 @@ function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks(
   $('dateline').innerHTML=`<span class="num">${esc(tdate)}</span><span class="chipy">${planKind}</span>${gym?`<button class="chipy hot" type="button" data-go="gym" style="background:none;cursor:pointer">gym day · ${gymTypeFor()} → log</button>`:''}${planKind==='weekday'&&!gym?'<span class="chipy">non-gym · dinner 19:30</span>':''}${late?'<span class="chipy hot">after midnight · still logging '+esc(DOWN)+'</span>':''}`;
   $('strip').innerHTML=blocks.map(b=>`<button type="button" data-b="${b.bi}" style="flex:${Math.max(b.e-b.s,20)}"><span class="t num">${fmtM(b.s)}</span><span class="n">${esc(b.short.toLowerCase())}</span><span class="fill"></span></button>`).join('')+`<span class="nowline" id="nowline"></span>`;
   const open=new Set([...document.querySelectorAll('#blocks .blk.open')].map(e=>e.dataset.b));
-  $('blocks').innerHTML=blocks.map(b=>{const its=b.items.filter(i=>!i.days||i.days.has(DOWN));
+  $('blocks').innerHTML=blocks.map(b=>{const its=b.items.filter(onToday).map(eff);
     return `<div class="blk${open.has(String(b.bi))?' open':''}" id="blk-${b.bi}" data-b="${b.bi}"><button class="bh" type="button" aria-expanded="${open.has(String(b.bi))}"><span class="ar">▸</span><span class="tm num">${fmtM(b.s)}–${fmtM(b.e)}</span><span class="ti">${esc(b.title)}</span><span class="ct num"></span><span class="mini"><span></span></span></button><div class="items">${its.map(itemRow).join('')}<button class="addrow" type="button" data-addblock="${b.row}">+ add item to ${esc(b.short.toLowerCase())}</button></div></div>`}).join('');
   const ex=M.extra[planKind];const showK=Object.keys(ex).filter(k=>/^(AS NEEDED|WEEKLY)/.test(k));
   $('todayExtra').innerHTML=showK.map(k=>`<div class="blk" data-x="1"><button class="bh" type="button" aria-expanded="false"><span class="ar">▸</span><span class="tm">${/WEEKLY/.test(k)?'weekly':'any time'}</span><span class="ti">${/WEEKLY/.test(k)?'weekly':'as needed'}</span><span class="ct">${ex[k].length} items</span><span></span></button><div class="items">${ex[k].map(r=>`<div class="it" role="checkbox" tabindex="0" aria-checked="false" data-k="${esc(r.tk)}" data-cmp="${CMP.has(r.type)?1:0}"><span class="box"></span><span class="t">${esc(r.day||'—')}</span><span><span class="nm">${esc(r.item)}</span>${r.edited?'<span class="delta">Δ</span>':''}<span class="dd">${esc([r.dose,r.route,r.sched].filter(x=>x&&x!=='—').join(' · '))}</span>${r.caution?'<span class="warnflag">⚠</span>':''}${r.notes?`<span class="nt">${esc(r.notes)}</span>`:''}${r.caution?`<span class="ca">${esc(r.caution)}</span>`:''}</span><span class="row" style="gap:6px;justify-content:flex-end"><button class="ed" type="button" data-editx="${esc(r.key)}" data-sec="${esc(k)}">✎</button><span class="ty c">${esc(r.type||'')}</span></span></div>`).join('')}<button class="addrow" type="button" data-addsec="${esc(k)}">+ add</button></div></div>`).join('');
@@ -37,7 +45,7 @@ function updateCounts(){
   $('pct').textContent=p+'%';$('pct').className='pct num '+(p>=80?'ok':'');
   const W=40,f=Math.round(p/100*W);$('asc').innerHTML=`<span class="f">${'█'.repeat(f)}</span><span class="e">${'░'.repeat(W-f)}</span>`;
   $('pctTxt').textContent=`${done}/${total} ticked · target 80%`;
-  M.plans[planKind].forEach(b=>{const its=b.items.filter(i=>!i.days||i.days.has(DOWN));const el=$('blk-'+b.bi);if(!el)return;const d=its.filter(i=>DAY.ticks[i.tk]).length;
+  M.plans[planKind].forEach(b=>{const its=b.items.filter(onToday);const el=$('blk-'+b.bi);if(!el)return;const d=its.filter(i=>DAY.ticks[i.tk]).length;
     el.querySelector('.ct').textContent=`${d}/${its.length}`;el.querySelector('.mini span').style.width=(its.length?d/its.length*100:0)+'%';el.classList.toggle('done',its.length>0&&d===its.length);
     const sb=document.querySelector(`#strip button[data-b="${b.bi}"] .fill`);if(sb)sb.style.width=(its.length?d/its.length*100:0)+'%'});
   return {done,total,p};

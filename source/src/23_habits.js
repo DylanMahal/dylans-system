@@ -15,7 +15,7 @@ const HL_META={Habit:['✅','#57f5a8','habits'],Training:['🏋️','#ff2a6d','t
 const HL_MIND=/chess|leet ?code|deep ?work/i;
 let DNAMES={},dnLoaded=false;
 const hlKind=d=>{const w=new Date(d+'T12:00').getDay();return w===0||w===6?'weekend':'weekday'};
-const hlItems=(d,name)=>{if(!M.plans)return [];const dow=DOW[new Date(d+'T12:00').getDay()];return (M.plans[hlKind(d)]||[]).flatMap(b=>b.items).filter(i=>i.item.trim()===name&&(!i.days||i.days.has(dow)))};
+const hlItems=(d,name)=>{if(!M.plans)return [];const dow=DOW[new Date(d+'T12:00').getDay()];return (M.plans[hlKind(d)]||[]).flatMap(b=>b.items).filter(i=>i.item.trim()===name&&(!i.days||i.days.has(dow))&&protoOk(i,d))};
 function hLinked(){if(!M.plans)return [];const hide=new Set(HAB.hide||[]);const map=new Map();
   for(const kind of ['weekday','weekend'])(M.plans[kind]||[]).forEach(b=>b.items.forEach(i=>{if(!i.item)return;const n=i.item.trim();const mind=HL_MIND.test(n);if(!mind&&(HL_SKIP.has(i.type)||i.type==='Mindset'))return;const id='tl:'+n.toLowerCase();if(map.has(id))return;const m=mind?HL_META.Mindset:HL_META[i.type]||['⭐','#e6e6e6',(i.type||'other').toLowerCase()];
     map.set(id,{id,n,ic:m[0],col:m[1],grp:m[2],type:'daily',link:n,names:[n],created:hFirstDay()})}));
