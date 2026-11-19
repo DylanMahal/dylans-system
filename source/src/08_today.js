@@ -3,6 +3,12 @@ let L=logical(),DAYK=ymd(L),DOWN=DOW[L.getDay()];
 let planKind=(DOWN==='Sat'||DOWN==='Sun')?'weekend':'weekday',planForced=false;
 let DAY={ticks:{},water:0,msg:{},dw:0};let filt='all';
 function visibleItems(){return M.plans[planKind].flatMap(b=>b.items.filter(i=>!i.days||i.days.has(DOWN)))}
+/* items flagged "doesn't count" stay on the list and can be ticked, but are left out of the day % */
+let NOPCT={m:{}};
+load('today/nopct').then(d=>{if(d)NOPCT={m:{},...d};if(typeof M!=='undefined'&&M.plans)updateCounts()}).catch(()=>{});
+watch('today/nopct',d=>{NOPCT=d?{m:{},...d}:{m:{}};if(typeof M!=='undefined'&&M.plans&&$('pct'))updateCounts()});
+function setNoPct(key,off){if(off)NOPCT.m[key]=1;else delete NOPCT.m[key];save('today/nopct',NOPCT,true);if($('pct'))updateCounts()}
+function countedItems(){return visibleItems().filter(i=>!NOPCT.m[i.key])}
 function nowM(){let m=mins(new Date());if(m<300)m+=1440;return m}
 function itemRow(i){
   const ds=[i.dose&&i.dose!=='—'?i.dose:null,i.route&&i.route!=='—'?i.route:null].filter(Boolean).join(' · ');
@@ -27,7 +33,7 @@ function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks(
 }
 function applyTicks(){document.querySelectorAll('#v-today .it').forEach(el=>el.setAttribute('aria-checked',!!DAY.ticks[el.dataset.k]));updateCounts()}
 function updateCounts(){
-  const vis=visibleItems();const total=vis.length;const done=vis.filter(i=>DAY.ticks[i.tk]).length;const p=total?Math.round(done/total*100):0;
+  const vis=countedItems();const total=vis.length;const done=vis.filter(i=>DAY.ticks[i.tk]).length;const p=total?Math.round(done/total*100):0;
   $('pct').textContent=p+'%';$('pct').className='pct num '+(p>=80?'ok':'');
   const W=40,f=Math.round(p/100*W);$('asc').innerHTML=`<span class="f">${'█'.repeat(f)}</span><span class="e">${'░'.repeat(W-f)}</span>`;
   $('pctTxt').textContent=`${done}/${total} ticked · target 80%`;

@@ -61,7 +61,7 @@ let widgetT=null;function schedWidget(){clearTimeout(widgetT);widgetT=setTimeout
 let widgetLast='';
 function publishWidget(){if(!R||!booted||!M.plans)return;
   const vis=visibleItems().filter(i=>i.t!==null).sort((a,b)=>a.t-b.t);
-  const done=visibleItems().filter(i=>DAY.ticks[i.tk]).length,total=visibleItems().length;
+  const done=countedItems().filter(i=>DAY.ticks[i.tk]).length,total=countedItems().length;
   const w={at:new Date().toISOString(),date:DAYK,plan:planKind,pct:total?Math.round(done/total*100):0,done,total,
     items:vis.map(i=>({t:fmtM(i.t),n:i.item,d:!!DAY.ticks[i.tk],c:!!i.cmp})),water:DAY.water||0,waterTarget:(SET&&SET.water)||8,dw:DAY.dw||0,lc:typeof leetWeek==='function'?leetWeek():0,
     habits:habLoaded?hAll().filter(h=>hDue(h,DAYK)).slice(0,12).map(h=>({l:h.n,d:hDone(h,DAYK)})):[]};
