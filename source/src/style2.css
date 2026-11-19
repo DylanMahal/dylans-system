@@ -1227,3 +1227,24 @@ html.inkfull-on,html.inkfull-on body{overflow:hidden}
 .nmeta{gap:8px;padding:6px 12px 10px;align-items:center}
 .nmeta .iconbtn,.nmeta .nfsel{-webkit-appearance:none;appearance:none;height:30px;display:inline-flex;align-items:center;padding:0 12px;border-radius:15px;border:1px solid var(--line2);background:transparent;color:var(--dim);font:11px var(--mono);line-height:1}
 .nmeta .nfsel{color:var(--fg);padding-right:12px}.nmeta .iconbtn:hover{color:var(--fg);border-color:#444}
+
+/* ---- notes editor: header, one-row toolbar, readable body ---- */
+.nhead{display:flex;align-items:center;gap:10px;padding:14px 18px 2px}.nsp{flex:1}.nstat{font-size:11px;color:var(--dim);margin-right:4px}
+.nhead .nback{height:36px;padding:0 15px;border-radius:18px;border:1px solid var(--line2);background:rgba(255,255,255,.05);color:var(--fg);font:12px var(--mono)}
+.nhead .nfsel{-webkit-appearance:none;appearance:none;height:36px;padding:0 32px 0 16px;border-radius:18px;border:1px solid var(--line2);background:rgba(255,255,255,.05) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%23999' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1l4 4 4-4'/%3E%3C/svg%3E") no-repeat right 13px center;color:var(--fg);font:12px var(--mono)}
+.nicon{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:6px;width:38px;height:38px;padding:0;border:0;border-radius:11px;background:none;color:var(--dim);cursor:pointer;font:12px var(--mono)}
+.nicon:hover{background:rgba(255,255,255,.06);color:var(--fg)}.nicon[aria-pressed="true"]{color:var(--pink);background:rgba(255,42,109,.12)}.nicon.ok{color:#5eead4}
+.nicon .lbl{display:none}.nicon.arm{width:auto;padding:0 13px;color:#ff6b6b;background:rgba(255,107,107,.14)}.nicon.arm .lbl{display:inline}.nbad:hover{color:#ff6b6b}
+.ndate{text-align:center;color:var(--dim);font-size:11.5px;padding:12px 18px 0}
+.neditor .ned{padding:16px 26px 80px;font:17px/1.7 -apple-system,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;letter-spacing:.005em;color:#ececec}
+.neditor .ned h2{font-size:28px;line-height:1.25;font-weight:750;letter-spacing:-.015em;margin:.1em 0 .45em}
+.ned b,.ned strong{font-weight:800;color:#fff;-webkit-text-stroke:.35px currentColor}.ned i,.ned em{font-style:italic}
+.ned [style*="background"]{border-radius:4px;padding:1px 3px;-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.ned blockquote{margin:.7em 0;padding:2px 0 2px 16px;font-size:17px}.ned pre{font:14px/1.55 var(--mono)}
+/* bar: contextual groups */
+.ib-ctx,.ib-fmt{display:flex;align-items:center;gap:8px}.ib-fmt{gap:2px}.inkbar.typing .ib-ctx{display:none}.inkbar:not(.typing) .ib-fmt{display:none}
+.inkbar .ft{font:600 16px/1 -apple-system,system-ui,sans-serif;color:inherit}.inkbar .ft.fb{font-weight:900}.inkbar .ft.fi{font-style:italic;font-weight:500;font-family:Georgia,serif;font-size:17px}.inkbar .ft.fu{text-decoration:underline;text-underline-offset:3px}.inkbar .ft.fs{text-decoration:line-through}
+.ib-fmt .ib-sep{margin:0 6px}
+.ib-hlpop{left:50%;right:auto;transform:translateX(-50%);width:auto;flex-direction:row;align-items:center;gap:12px;padding:10px 16px}
+.inkbar .ib-hlpop .ib-dot{width:28px;height:28px;border-radius:50%}.inkbar .ib-hlpop .ib-none{width:auto;height:28px;padding:0 12px;border-radius:14px;border:1px solid var(--line2);font-size:11px}
+.neditor .ned h2{background:none!important;-webkit-text-fill-color:currentColor!important;color:#fff;text-shadow:none!important;-webkit-background-clip:border-box;animation:none}

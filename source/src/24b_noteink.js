@@ -8,12 +8,15 @@ function nInkMount(){
   document.documentElement.classList.toggle('inkfull-on',!!document.querySelector('.inkfull'));
   const host=document.createElement('div');host.className='inkhost';ned.replaceWith(host);
   const cv=document.createElement('canvas');cv.className='inkcv';host.append(ned,cv);
-  const bar=document.createElement('div');bar.id='nTools';const tb=ed.querySelector('.ntool');tb?tb.after(bar):ed.prepend(bar);
+  const bar=document.createElement('div');bar.id='nTools';const tb=ed.querySelector('.nhead');tb?tb.after(bar):ed.prepend(bar);
   const id=NCUR;
-  NL=inkLayer({host,canvas:cv,bar,full:ed,paper:true,stack:NSTK[id]||(NSTK[id]={undo:[],redo:[]}),
+  NL=inkLayer({host,canvas:cv,bar,full:ed,fmt:NFMT_HTML,paper:true,stack:NSTK[id]||(NSTK[id]={undo:[],redo:[]}),
     get:()=>{const n=NOTES[id];return n&&n.ink||null},
     make:()=>{const n=NOTES[id];if(!n.ink)n.ink={h:IH,strokes:[],bg:'blank'};return n.ink},changed:nInkDirty});
-  NL.refresh();NL.size()}
+  const hp=document.createElement('div');hp.className='ib-pop ib-hlpop';
+  hp.innerHTML=NHL.map(c=>`<button type="button" class="ib-dot" data-nc="hl:${c}" style="--c:${c.replace(/,[.\d]+\)/,')').replace('rgba','rgb')}" aria-label="Highlight colour"></button>`).join('')+'<button type="button" class="ib-none" data-nc="hl:none" title="Remove highlight">none</button>';
+  bar.append(hp);NL.refresh();NL.size()}
+document.addEventListener('pointerdown',e=>{const p=document.querySelector('#nTools .ib-hlpop.open');if(p&&!e.target.closest('.ib-hlpop,[data-nc="hl"]'))p.classList.remove('open')},true);
 /* list thumbnail for handwritten notes (cached per note + last-edit time) */
 const NTH=new Map();
 function nThumb(n){const S=n.ink&&n.ink.strokes;if(!S||!S.length)return '';const key=n.id+'|'+n.upd;let u=NTH.get(key);

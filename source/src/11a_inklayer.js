@@ -22,11 +22,12 @@ function inkLayer(o){
   const L={stack:o.stack||{undo:[],redo:[]},scale:1,H:IH,drawing:null,last:0,lw:0,lh:0};
   bar.className='inkbar';
   bar.innerHTML=`<div class="ib-seg" role="group" aria-label="Tool">${[['type','Type'],['pen','Pen'],['hl','Highlighter'],['eraser','Eraser']].map(([k,t])=>`<button type="button" data-ik="t:${k}" aria-label="${t}" title="${t}">${INK_I[k]}</button>`).join('')}</div>
-    <span class="ib-sep"></span><div class="ib-cols"></div><span class="ib-sep"></span>
+    <div class="ib-ctx"><span class="ib-sep"></span><div class="ib-cols"></div><span class="ib-sep"></span>
     <div class="ib-sizes">${[[2,5],[4,8],[7,12]].map(([w,d])=>`<button type="button" class="ib-size" data-ik="s:${w}" aria-label="Size ${w}"><i style="width:${d}px;height:${d}px"></i></button>`).join('')}</div>
     <span class="ib-sep"></span>
-    <button type="button" data-ik="undo" aria-label="Undo" title="Undo">${INK_I.undo}</button><button type="button" data-ik="redo" aria-label="Redo" title="Redo">${INK_I.redo}</button>
-    <span class="ib-sep"></span>
+    <button type="button" data-ik="undo" aria-label="Undo" title="Undo">${INK_I.undo}</button><button type="button" data-ik="redo" aria-label="Redo" title="Redo">${INK_I.redo}</button></div>
+    ${o.fmt?`<div class="ib-fmt"><span class="ib-sep"></span>${o.fmt}</div>`:''}
+    <span class="ib-sep ib-last"></span>
     <button type="button" data-ik="full" aria-label="Fullscreen" title="Fullscreen">${INK_I.full}</button><button type="button" data-ik="more" aria-label="More" title="More">${INK_I.more}</button>
     <div class="ib-pop">${o.paper?`<div class="ib-row"><span>Paper</span><div class="ib-seg">${INK_BG.map(b=>`<button type="button" data-ik="bg:${b}">${b}</button>`).join('')}</div></div>`:''}
       <button type="button" class="ib-act" data-ik="po"><span class="ib-l">Pencil only <small>fingers scroll, only the pen draws</small></span><i class="ib-sw"></i></button>
@@ -43,8 +44,7 @@ function inkLayer(o){
     bar.querySelector('[data-ik="po"]').setAttribute('aria-pressed',INKS.po);
     bar.querySelectorAll('[data-ik^="bg:"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ik==='bg:'+inkBgOf(o.get())));
     const fb=bar.querySelector('[data-ik="full"]');if(o.full){const on=o.full.classList.contains('inkfull');fb.innerHTML=on?INK_I.exit:INK_I.full;fb.setAttribute('aria-pressed',on);fb.title=on?'Exit fullscreen':'Fullscreen'}else fb.style.display='none';
-    cv.style.touchAction='none';host.classList.toggle('inking',ink);
-    const fmt=host.closest('.neditor');if(fmt){const f=fmt.querySelector('.ntbtns');if(f)f.style.display=ink?'none':''}
+    cv.style.touchAction='none';host.classList.toggle('inking',ink);bar.classList.toggle('typing',!ink);
     host.querySelectorAll('.inkdead').forEach(x=>x.remove());
     host.querySelectorAll('textarea,[contenteditable]').forEach(x=>{if(!ink){x.style.display='';return}
       let d;if(x.tagName==='TEXTAREA'){d=document.createElement('div');d.className=x.className;d.textContent=x.value;d.style.height=x.style.height;d.style.whiteSpace='pre-wrap';d.style.overflowWrap='anywhere'}

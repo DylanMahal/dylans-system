@@ -25,8 +25,19 @@ function renderNotes(listOnly){const el=$('jPaneN');if(!el)return;const q=(($('n
     <div class="nlistw" id="nList">${listHtml}</div></div>
     <div class="neditor panel">${NCUR&&NOTES[NCUR]?nEditorHtml(NOTES[NCUR]):'<div class="pb dim nempty">pick a note or start a new one ✎</div>'}</div></div>`;
   nBind();if(NCUR&&NOTES[NCUR])nInkMount();else inkExitFull()}
-function nEditorHtml(n){return `<div class="ntool"><button type="button" class="iconbtn nback" id="nBack">‹ notes</button><span class="ntbtns">${[['h','H','heading'],['b','<b>B</b>','bold'],['i','<i>I</i>','italic'],['u','<u>U</u>','underline'],['s','<s>S</s>','strike'],['ul','•','bullets'],['ol','1.','numbers'],['chk','☑','checklist'],['q','❝','quote'],['code','&lt;/&gt;','code'],['hr','—','divider']].map(([k,l,t])=>`<button type="button" data-nc="${k}" title="${t}">${l}</button>`).join('')}</span></div>
-  <div class="nmeta dim num">${new Date(n.upd).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).toLowerCase()} · <select id="nFold" class="nfsel">${NFOLD.list.map(f=>`<option ${n.folder===f?'selected':''}>${esc(f)}</option>`).join('')}</select> <button type="button" class="iconbtn" id="nPin">${n.pin?'unpin':'pin'}</button> <button type="button" class="iconbtn" id="nCopy">copy</button> <button type="button" class="iconbtn" id="nDel">delete</button> <span id="nSaved"></span></div>
+const NSV=d=>`<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const NFMT=[['h','<span class="ft">H</span>','Heading'],['b','<span class="ft fb">B</span>','Bold'],['i','<span class="ft fi">I</span>','Italic'],['u','<span class="ft fu">U</span>','Underline'],['s','<span class="ft fs">S</span>','Strikethrough'],['hl',NSV('<path d="M14 4l6 6-8 8H7l-3-3 10-11z"/><path d="M5 21h14"/>'),'Highlight text'],'|',
+ ['ul',NSV('<path d="M9 7h11M9 12h11M9 17h11"/><circle cx="4.5" cy="7" r=".9"/><circle cx="4.5" cy="12" r=".9"/><circle cx="4.5" cy="17" r=".9"/>'),'Bullets'],['ol',NSV('<path d="M10 7h10M10 12h10M10 17h10M4 6l1.5-1v4.5M4 14.5h3l-3 3.5h3"/>'),'Numbers'],['chk',NSV('<circle cx="7.5" cy="12" r="3.6"/><path d="M6 12l1.2 1.2L9.2 11M14 12h6"/>'),'Checklist'],'|',
+ ['q',NSV('<path d="M5 18V12a5 5 0 015-5M13 18V12a5 5 0 015-5"/>'),'Quote'],['code',NSV('<path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/>'),'Code'],['hr',NSV('<path d="M4 12h16"/>'),'Divider']];
+const NFMT_HTML=NFMT.map(f=>f==='|'?'<span class="ib-sep"></span>':`<button type="button" data-nc="${f[0]}" title="${f[2]}" aria-label="${f[2]}">${f[1]}</button>`).join('');
+const NHL=['rgba(255,225,77,.42)','rgba(125,255,155,.36)','rgba(255,126,182,.42)','rgba(106,215,255,.38)'];
+function nEditorHtml(n){return `<div class="nhead"><button type="button" class="nback" id="nBack">‹ Notes</button>
+  <select id="nFold" class="nfsel" aria-label="Folder">${NFOLD.list.map(f=>`<option ${n.folder===f?'selected':''}>${esc(f)}</option>`).join('')}</select>
+  <span class="nsp"></span><span id="nSaved" class="nstat"></span>
+  <button type="button" class="nicon" id="nPin" title="${n.pin?'Unpin':'Pin'}" aria-label="Pin" aria-pressed="${!!n.pin}">${NSV('<path d="M12 17v5M8 3h8l-1 6 3 4H6l3-4z"/>')}</button>
+  <button type="button" class="nicon" id="nCopy" title="Copy text" aria-label="Copy">${NSV('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/>')}</button>
+  <button type="button" class="nicon nbad" id="nDel" title="Delete note" aria-label="Delete">${NSV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>')}<span class="lbl">Delete?</span></button></div>
+  <div class="ndate">${new Date(n.upd).toLocaleString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
   <div class="ned" id="nEd" contenteditable="true" spellcheck="true">${n.html||'<h2><br></h2>'}</div>`}
 function nBind(){const el=$('jPaneN');
   el.oninput=e=>{if(e.target.id==='nQ'){clearTimeout(nBind.t);nBind.t=setTimeout(()=>renderNotes(true),150);return}if(e.target.id==='nEd')nDirty()};
@@ -40,11 +51,16 @@ function nBind(){const el=$('jPaneN');
     if(b.id==='nBack'){nFlush();NCUR=null;renderNotes();return}
     if(!NCUR)return;const n=NOTES[NCUR];
     if(b.id==='nPin'){n.pin=!n.pin;nSave();renderNotes();return}
-    if(b.id==='nCopy'){navigator.clipboard&&navigator.clipboard.writeText($('nEd').innerText).then(()=>{b.textContent='copied ✓'});return}
-    if(b.id==='nDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}delete NOTES[NCUR];removeDoc('notes/n-'+NCUR);NCUR=null;renderNotes();return}
+    if(b.id==='nCopy'){navigator.clipboard&&navigator.clipboard.writeText($('nEd').innerText).then(()=>{b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1400)});return}
+    if(b.id==='nDel'){if(!b.dataset.arm){b.dataset.arm=1;b.classList.add('arm');setTimeout(()=>{delete b.dataset.arm;b.classList.remove('arm')},2500);return}delete NOTES[NCUR];removeDoc('notes/n-'+NCUR);NCUR=null;renderNotes();return}
     if(d.nc){nCmd(d.nc);return}};
-  el.onmousedown=e=>{if(e.target.closest('[data-nc]'))e.preventDefault()}}
-function nCmd(c){const ed=$('nEd');if(!ed)return;ed.focus();const X=(a,v)=>document.execCommand(a,false,v);
+  el.onmousedown=el.onpointerdown=e=>{if(e.target.closest('[data-nc]'))e.preventDefault()}}
+function nCmd(c){const ed=$('nEd');if(!ed)return;
+  const pop=document.querySelector('#nTools .ib-hlpop');
+  if(c==='hl'){pop&&pop.classList.toggle('open');return}
+  ed.focus();const X=(a,v)=>document.execCommand(a,false,v);
+  if(c.startsWith('hl:')){const v=c.slice(3);X('styleWithCSS',false,true);X('hiliteColor',false,v==='none'?'transparent':v);X('styleWithCSS',false,false);pop&&pop.classList.remove('open');nDirty();return}
+  pop&&pop.classList.remove('open');
   if(c==='h'){const blk=(getSelection().anchorNode||{}).parentElement;X('formatBlock',blk&&blk.closest&&blk.closest('h2')?'div':'h2')}
   else if(c==='b')X('bold');else if(c==='i')X('italic');else if(c==='u')X('underline');else if(c==='s')X('strikeThrough');
   else if(c==='ul')X('insertUnorderedList');else if(c==='ol')X('insertOrderedList');else if(c==='q')X('formatBlock','blockquote');else if(c==='code')X('formatBlock','pre');else if(c==='hr')X('insertHorizontalRule');
