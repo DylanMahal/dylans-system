@@ -1248,3 +1248,5 @@ html.inkfull-on,html.inkfull-on body{overflow:hidden}
 .ib-hlpop{left:50%;right:auto;transform:translateX(-50%);width:auto;flex-direction:row;align-items:center;gap:12px;padding:10px 16px}
 .inkbar .ib-hlpop .ib-dot{width:28px;height:28px;border-radius:50%}.inkbar .ib-hlpop .ib-none{width:auto;height:28px;padding:0 12px;border-radius:14px;border:1px solid var(--line2);font-size:11px}
 .neditor .ned h2{background:none!important;-webkit-text-fill-color:currentColor!important;color:#fff;text-shadow:none!important;-webkit-background-clip:border-box;animation:none}
+
+#bootfx,#bootfx *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}#bootfx img,#bootfx video{pointer-events:none;-webkit-user-drag:none}

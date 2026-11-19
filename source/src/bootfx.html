@@ -252,7 +252,11 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
   function skipToEnd(){try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}if(VID){var d=V.duration||13.6;try{V.currentTime=Math.max(0,d-1.3);if(V.paused){var pr=V.play();if(pr&&pr.catch)pr.catch(function(){V.muted=true;muted=true;V.play().catch(function(){})})}}catch(e){tvOff()}}else close(true)}
   el.addEventListener('touchstart',function(e){var t=e.touches[0];if(e.touches.length===1)holdStart(t.clientX,t.clientY);else holdEnd()},{passive:true,capture:true});
   el.addEventListener('mousedown',function(e){holdStart(e.clientX,e.clientY)},true);
-  ['touchend','touchcancel','mouseup','mouseleave'].forEach(function(t){el.addEventListener(t,holdEnd,true)});
+  ['touchend','mouseup','mouseleave'].forEach(function(t){el.addEventListener(t,holdEnd,true)});
+  /* iOS turns a long press on the animated image into its own gesture and cancels the touch; a cancel must not cancel the skip */
+  el.addEventListener('touchcancel',function(){},true);
+  el.addEventListener('contextmenu',function(e){e.preventDefault()},true);
+  el.addEventListener('touchstart',function(e){if(e.touches.length===1&&e.cancelable&&!closing)e.preventDefault()},{passive:false,capture:true});
   el.addEventListener('touchmove',function(e){if(!hold)return;var t=e.touches[0],r=hold.r;if(Math.abs(t.clientX-parseFloat(r.style.left))>30||Math.abs(t.clientY-parseFloat(r.style.top))>30)holdEnd()},{passive:true,capture:true});
   el.addEventListener('contextmenu',function(e){e.preventDefault()});
   setTimeout(function(){if(!closing){done=true;target=100}},12000);
