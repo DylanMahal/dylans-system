@@ -36,13 +36,13 @@ function pctSel(on){return `<label for="f_pct">counts toward day %</label><selec
 function editPlanItem(kind,it){const pre=kind==='weekday'?'wd':'we';
   const lead=(typeof NITEMS!=='undefined'&&NITEMS.m[it.key]!=null)?NITEMS.m[it.key]:'';
   openEditor({title:`edit · ${kind==='weekday'?'weekday plan':'weekend plan'}${it.row?' · row '+it.row:''}`,fields:F_PLAN,values:pick(it,F_PLAN),
-    extra:`<label for="f_notify">🔔 notification</label><select id="f_notify"><option value="" ${lead===''?'selected':''}>off</option>${[0,5,10,15,30,60].map(m=>`<option value="${m}" ${lead===m?'selected':''}>${m?m+' min before':'at the time'}</option>`).join('')}</select>${pctSel(!NOPCT.m[it.key])}${it.t==null?'<div class="hint2">this item has no time yet — add one above for the notification to fire</div>':''}`,
-    readExtra:()=>({n:$('f_notify').value,c:$('f_pct').value}),onExtra:v=>{if(typeof setItemNotify==='function')setItemNotify(it.key,v.n===''?null:+v.n);setNoPct(it.key,v.c==='0')},
+    extra:`<label for="f_notify">🔔 notification</label><select id="f_notify"><option value="" ${lead===''?'selected':''}>off</option>${[0,5,10,15,30,60].map(m=>`<option value="${m}" ${lead===m?'selected':''}>${m?m+' min before':'at the time'}</option>`).join('')}</select>${pctSel(!noPct(it))}${it.t==null?'<div class="hint2">this item has no time yet — add one above for the notification to fire</div>':''}`,
+    readExtra:()=>({n:$('f_notify').value,c:$('f_pct').value}),onExtra:v=>{if(typeof setItemNotify==='function')setItemNotify(it.key,v.n===''?null:+v.n);setNoPct(it,v.c==='0')},
     onSave:(v,ch)=>patch(it.key,it.isNew?v:ch),onDelete:()=>{if(it.isNew)dropPatch(it.key);else patch(it.key,{_del:true})},onRevert:it.edited&&!it.isNew?()=>dropPatch(it.key):null})}
-function addPlanItem(kind,block){const pre=kind==='weekday'?'wd':'we';const nk=`${pre}:n:${rid()}`;const b=M.plans[kind].find(x=>x.row===block);
+function addPlanItem(kind,block){const pre=kind==='weekday'?'wd':'we';const nk=`${pre}:n:${rid()}`;let addV=null;const b=M.plans[kind].find(x=>x.row===block);
   openEditor({title:`add to ${b?b.short.toLowerCase():'block'}`,fields:F_PLAN,values:{time:b?fmtM(b.s):'',type:'Task',sched:'Daily'},isNew:true,
-    extra:pctSel(true),readExtra:()=>$('f_pct').value,onExtra:c=>{if(c==='0')setNoPct(nk,true)},
-    onSave:v=>patch(nk,{...v,_new:true},{block,kind})})}
+    extra:pctSel(true),readExtra:()=>$('f_pct').value,onExtra:c=>{if(c==='0'&&addV)setNoPct({tk:pre+'|'+(addV.time||'')+'|'+addV.item},true)},
+    onSave:v=>{addV=v;patch(nk,{...v,_new:true},{block,kind})}})}
 function editExtra(kind,r){const pre=kind==='weekday'?'wx':'ex';const isT=/^DAILY TARGETS/.test(r.sec||'');const F=isT?F_TGT:F_EXTRA;
   openEditor({title:`edit · ${(r.sec||'').split(/[–(]/)[0].trim().toLowerCase()}${r.row?' · row '+r.row:''}`,fields:F,values:pick(r,F),
     onSave:(v,ch)=>patch(r.key,r.isNew?v:ch),onDelete:()=>{if(r.isNew)dropPatch(r.key);else patch(r.key,{_del:true})},onRevert:r.edited&&!r.isNew?()=>dropPatch(r.key):null})}

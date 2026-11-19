@@ -17,15 +17,17 @@ load('today/titles').then(d=>{TITLES=d||{};if(typeof M!=='undefined'&&M.plans)re
 watch('today/titles',d=>{TITLES=d||{};if(typeof M!=='undefined'&&M.plans)rebuild()});
 window.addEventListener('sys-patch',e=>{try{const o=JSON.parse(e.detail);if(o.titles){TITLES={...TITLES,...o.titles};save('today/titles',TITLES)}
 for(const [k,v] of Object.entries(o.p||{})){if(v===null)dropPatch(k);else patch(k,v,v._ctx)}
-(o.nopct||[]).forEach(k=>{NOPCT.m[k]=1});if(o.nopct)save('today/nopct',NOPCT,true);if(o.titles)rebuild();document.documentElement.dataset.patched=String(Date.now())}catch(x){document.documentElement.dataset.patched='err '+x.message}});
+if(o.nopctReset)NOPCT={m:{}};(o.nopct||[]).forEach(k=>{NOPCT.m[k]=1});if(o.nopct)save('today/nopct',NOPCT,true);if(o.titles)rebuild();document.documentElement.dataset.patched=String(Date.now())}catch(x){document.documentElement.dataset.patched='err '+x.message}});
 window.addEventListener('sys-kv',e=>{load(e.detail).then(d=>{document.documentElement.dataset.kv=JSON.stringify(d)}).catch(x=>{document.documentElement.dataset.kv='err '+x.message})});
 window.addEventListener('sys-dump',()=>{const r={};for(const kind of ['weekday','weekend']){r[kind]={blocks:M.plans[kind].map(b=>({row:b.row,title:b.title,items:b.items.map(i=>({key:i.key,time:i.time,item:i.item,type:i.type,dose:i.dose,route:i.route,sched:i.sched,notes:i.notes,caution:i.caution}))})),extra:M.extra[kind]}}
 document.documentElement.dataset.dump=JSON.stringify({r,t:TITLES,e:EDITS.p})});
 let NOPCT={m:{}};
 load('today/nopct').then(d=>{if(d)NOPCT={m:{},...d};if(typeof M!=='undefined'&&M.plans)updateCounts()}).catch(()=>{});
 watch('today/nopct',d=>{NOPCT=d?{m:{},...d}:{m:{}};if(typeof M!=='undefined'&&M.plans&&$('pct'))updateCounts()});
-function setNoPct(key,off){if(off)NOPCT.m[key]=1;else delete NOPCT.m[key];save('today/nopct',NOPCT,true);if($('pct'))updateCounts()}
-function countedItems(){return visibleItems().filter(i=>!NOPCT.m[i.key])}
+function setNoPct(i,off){const key=typeof i==='string'?i:pctId(i);if(off)NOPCT.m[key]=1;else delete NOPCT.m[key];save('today/nopct',NOPCT,true);if($('pct'))updateCounts()}
+function pctId(i){return (i.tk||'').toLowerCase().replace(/\s+/g,' ').trim()}
+function noPct(i){return !!NOPCT.m[pctId(i)]}
+function countedItems(){return visibleItems().filter(i=>!noPct(i))}
 function nowM(){let m=mins(new Date());if(m<300)m+=1440;return m}
 function itemRow(i){
   const ds=[i.dose&&i.dose!=='—'?i.dose:null,i.route&&i.route!=='—'?i.route:null].filter(Boolean).join(' · ');
