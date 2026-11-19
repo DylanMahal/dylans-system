@@ -208,8 +208,11 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden||!R||!CAL||
 function renderTodayCal(){const el=$('todayCal');if(!el)return;if(!CAL){calEnsure().then(c=>{if(c)renderTodayCal()});return}
   const now=new Date(),m=now.getHours()*60+now.getMinutes();const evs=calEvents(now).sort((a,b)=>(b.ad-a.ad)||a.s-b.s);
   if(!evs.length){el.innerHTML='';return}
+  const nowEv=evs.filter(ev=>!ev.ad&&ev.s<=m&&ev.e>m).sort((a,b)=>(b.s-a.s)||((a.e-a.s)-(b.e-b.s)))[0];
   el.innerHTML=`<div class="blk ttblk tcblk"><div class="bh static"><span class="tm">calendar</span><span class="ti">today</span><span class="ct">${evs.length} event${evs.length>1?'s':''}</span><button type="button" class="ttgo" id="tcGo">open calendar ›</button></div>
-    <div class="items">${evs.map(ev=>{const past=!ev.ad&&ev.e<=m,on=!ev.ad&&ev.s<=m&&ev.e>m;
+    <div class="items">${evs.map(ev=>{const past=!ev.ad&&ev.e<=m,on=ev===nowEv;
       return `<button type="button" class="tcrow${past?' past':''}${on?' now':''}" data-tce="${esc(calKey(ev))}"><i style="background:${calCol(ev)}"></i><span class="num">${ev.ad?'all day':calFmt(ev.s,ev.e)}</span><b>${esc(ev.t)}</b></button>`}).join('')}</div></div>`;
   el.onclick=e=>{const b=e.target.closest('#tcGo,[data-tce]');if(!b)return;if(b.id==='tcGo'){calAt=null;go('week');return}
     const ev=calEvents(new Date()).find(x=>calKey(x)===b.dataset.tce);if(ev)calDetail(ev)}}
+
+setInterval(()=>{if(typeof cur!=='undefined'&&cur==='today'&&!document.hidden)renderTodayCal()},60e3);document.addEventListener('visibilitychange',()=>{if(!document.hidden&&typeof cur!=='undefined'&&cur==='today')renderTodayCal()});

@@ -792,7 +792,7 @@ body.gcal-fs{overflow:hidden}
 .tcblk .items{display:flex;flex-direction:column;padding:4px 0}
 .tcrow{all:unset;cursor:pointer;display:flex;align-items:center;gap:10px;padding:7px 12px;font-size:13px}.tcrow:hover{background:rgba(255,255,255,.04)}
 .tcrow i{width:10px;height:10px;border-radius:3px;flex:none}.tcrow span{color:var(--dim);min-width:92px;flex:none}.tcrow b{font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.tcrow.past{opacity:.45}.tcrow.now b{color:var(--pink)}.tcrow.now span{color:var(--pink)}
+.tcrow.past{opacity:.4}.tcrow.now{background:rgba(255,42,109,.12);box-shadow:inset 3px 0 0 var(--pink)}.tcrow.now b{color:var(--pink);font-weight:700}.tcrow.now span{color:var(--pink)}
 @media (max-width:700px){.gc-row{flex-wrap:wrap}.gc-row input[type=date]{flex:1 1 100%}.gc-row #ceUd{flex:1 1 100%}.gc-views button{padding:7px 8px;font-size:12px}.gc-mt span{display:none}.gc-mt{font-size:10.5px;padding:1px 2px}.gc-mc .gc-chip{font-size:10px;padding:1px 3px}.gc-month{height:min(66vh,560px)}.gc-chip{font-size:10.5px;padding:1px 3px}.gc-adl{font-size:9px;padding-left:2px}}
 /* ===== brick ===== */
 .bkcard{transition:border-color .3s}.bkcard.on{border-color:var(--pink);box-shadow:0 0 24px rgba(255,42,109,.12) inset}
