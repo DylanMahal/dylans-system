@@ -21,7 +21,9 @@ function inkLayer(o){
     bar.querySelectorAll('[data-ik^="c:"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ik==='c:'+INKS.col));
     const po=bar.querySelector('[data-ik="po"]');po.setAttribute('aria-pressed',INKS.po);bar.querySelector('input[type=range]').value=INKS.w;
     const bg=bar.querySelector('select');if(bg)bg.value=inkBgOf(o.get());
-    cv.style.touchAction=INKS.po?'pan-y':'none';host.classList.toggle('inking',INKS.tool!=='type')};
+    const ink=INKS.tool!=='type';cv.style.touchAction='none';host.classList.toggle('inking',ink);
+    host.querySelectorAll('textarea,[contenteditable]').forEach(x=>{x.inert=ink});
+    if(ink){const a=document.activeElement;if(a&&a!==document.body&&a.blur)a.blur();try{getSelection().removeAllRanges()}catch(_){}}};
   L.size=()=>{const w=host.clientWidth;if(!w)return;L.scale=w/IW;const k=o.get();host.style.minHeight=Math.round(((k&&k.h)||IH)*L.scale)+'px';const h=host.clientHeight;
     let r=devicePixelRatio||1;while(w*r*h*r>1.6e7&&r>1)r-=.5;cv.width=Math.round(w*r);cv.height=Math.round(h*r);L.H=h/L.scale;L.lw=w;L.lh=h;
     cx.setTransform(r*L.scale,0,0,r*L.scale,0,0);L.redraw()};
@@ -38,22 +40,26 @@ function inkLayer(o){
       cx.moveTo(mx0,my0);cx.quadraticCurveTo(p[i-3],p[i-2],mx1,my1);cx.stroke()}
     if(p.length===3){cx.fillStyle=s.c;cx.beginPath();cx.arc(p[0],p[1],s.w/2,0,7);cx.fill()}cx.restore()}
   const pt=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)/L.scale*10)/10,Math.round((e.clientY-r.top)/L.scale*10)/10,Math.round((e.pointerType==='mouse'?.5:(e.pressure||.5))*100)/100]};
-  const draws=e=>INKS.tool!=='type'&&!(INKS.po&&e.pointerType==='touch');
+  const scroller=()=>{let n=cv.parentElement;while(n&&n!==document.body){const cs=getComputedStyle(n);if(/(auto|scroll)/.test(cs.overflowY)&&n.scrollHeight>n.clientHeight+2)return n;n=n.parentElement}return document.scrollingElement||document.documentElement};
+  cv.addEventListener('contextmenu',e=>e.preventDefault());
   const erase=p=>{const k=o.get();if(!k)return;const keep=[];let hit=false;
     k.strokes.forEach(s=>{let h=false;for(let i=0;i<s.pts.length;i+=3){if(Math.hypot(s.pts[i]-p[0],s.pts[i+1]-p[1])<14+s.w){h=true;break}}if(h){s.i=s.i||rid();L.stack.undo.push({del:s});hit=true}else keep.push(s)});
     if(hit){k.strokes=keep;L.stack.redo=[];L.redraw()}};
   cv.addEventListener('pointerdown',e=>{
     if(e.pointerType==='pen'&&!INKS.po){INKS.po=true;inkSet();L.refresh()}
-    if(!draws(e))return;
-    e.preventDefault();try{cv.setPointerCapture(e.pointerId)}catch(_){}
+    e.preventDefault();
+    if(e.pointerType==='pen')L.penAt=Date.now();
+    if(e.pointerType==='touch'&&INKS.po){ /* pencil-only: fingers scroll by hand, never draw; ignored while the pen is working (palm) */
+      if(L.drawing||Date.now()-(L.penAt||0)<700)return;try{cv.setPointerCapture(e.pointerId)}catch(_){}L.scroll={y:e.clientY,el:scroller()};return}
+    try{cv.setPointerCapture(e.pointerId)}catch(_){}
     const t=INKS.tool;
     if(t==='eraser'){L.drawing={erase:true};erase(pt(e));return}
     L.drawing={i:rid(),c:INKS.col,w:t==='hl'?INKS.w*1.5:INKS.w,t:t==='hl'?'hl':'pen',pts:pt(e)}});
-  cv.addEventListener('pointermove',e=>{const d=L.drawing;if(!d)return;e.preventDefault();
+  cv.addEventListener('pointermove',e=>{if(L.scroll){e.preventDefault();const dy=e.clientY-L.scroll.y;L.scroll.y=e.clientY;L.scroll.el.scrollTop-=dy;return}const d=L.drawing;if(!d)return;e.preventDefault();if(e.pointerType==='pen')L.penAt=Date.now();
     let evs=e.getCoalescedEvents?e.getCoalescedEvents():[];if(!evs.length)evs=[e];
     for(const ev of evs){const p=pt(ev);if(d.erase){erase(p);continue}const n=d.pts.length;if(Math.hypot(p[0]-d.pts[n-3],p[1]-d.pts[n-2])<1.2)continue;d.pts.push(...p);stroke({...d,pts:d.pts.slice(-9)})}
     if(!d.erase){const y=d.pts[d.pts.length-2];if(y>L.H-120){const k=o.make();k.h=(Math.ceil(L.H/IH)+1)*IH;L.size()}}});
-  const end=()=>{const d=L.drawing;if(!d)return;L.drawing=null;if(!d.erase){const k=o.make();k.strokes.push(d);L.stack.undo.push({add:d});L.stack.redo=[]}L.redraw();touch()};
+  const end=()=>{L.scroll=null;const d=L.drawing;if(!d)return;L.drawing=null;if(!d.erase){const k=o.make();k.strokes.push(d);L.stack.undo.push({add:d});L.stack.redo=[]}L.redraw();touch()};
   cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);
   bar.oninput=e=>{if(e.target.type==='range'){INKS.w=+e.target.value;inkSet()}};
   bar.onchange=e=>{if(e.target.tagName==='SELECT'){const k=o.make();k.bg=e.target.value;L.redraw();touch()}};
