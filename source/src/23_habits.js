@@ -22,6 +22,7 @@ function hLinked(){if(!M.plans)return [];const hide=new Set(HAB.hide||[]);const 
   /* combined habits: several Today items counted as one streak (config lives in habits/list .combo) */
   (HAB.combo||[]).forEach(c=>{const mem=(c.names||[]).map(n=>map.get('tl:'+String(n).trim().toLowerCase())).filter(Boolean);if(!mem.length)return;mem.forEach(x=>map.delete(x.id));const f=mem[0];map.set('cb:'+c.id,{id:'cb:'+c.id,n:c.n||f.n,ic:c.ic||f.ic,col:c.col||f.col,grp:f.grp,type:'daily',names:mem.map(x=>x.n),once:!!c.once,every:!!c.every,combo:c.id,created:hFirstDay()})});
   return [...map.values()].filter(h=>!hide.has(h.id))}
+const hName=h=>(HAB.ren&&HAB.ren[h.id])||hDisp(h.n);
 const hDisp=n=>String(n).replace(/\s*[\(\[][^\)\]]*[\)\]]/g,'').replace(/\s{2,}/g,' ').trim()||String(n);
 function hFirstDay(){const k=Object.keys(DNAMES).sort()[0];return k||DAYK}
 function hTodayTicked(name){return visibleItems().filter(i=>i.item.trim()===name&&DAY.ticks[i.tk])}
@@ -56,7 +57,7 @@ function renderHabits(){if(!habLoaded){loadHabits();return}const el=$('habBody')
   hBind()}
 function hTile(h){const c=hCnt(h,DAYK),t=hTarget(h),due=hDue(h,DAYK),ok=hDone(h,DAYK);const st=hStreak(h);const p=h.type==='neg'?(ok?1:0):Math.min(1,c/t);const R=42,C=2*Math.PI*R;
   return `<button type="button" class="htile${ok?' ok':''}${due?'':' off'}${h.type==='neg'?' neg':''}" data-h="${h.id}" style="--hc:${h.col||HCOLS[0]}"><span class="hring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="${R}" class="hb"/><circle cx="50" cy="50" r="${R}" class="hf" style="stroke-dasharray:${C};stroke-dashoffset:${C*(1-p)}"/><circle cx="50" cy="50" r="${R}" class="hh" style="stroke-dasharray:${C};stroke-dashoffset:${C}"/></svg><b>${esc(h.ic||'⭐')}</b>${t>1&&h.type!=='neg'?`<em class="num">${c}/${t}</em>`:''}</span>
-    <span class="hn">${esc(hDisp(h.n))}</span><span class="hs num">${st.n?`🔥 ${st.n} ${st.unit}${st.n>1?'s':''}`:h.type==='week'?`${hWeekCount(h,DAYK)}/${h.per||3} this week`:due?'start today':'rest day'}</span></button>`}
+    <span class="hn">${esc(hName(h))}</span><span class="hs num">${st.n?`🔥 ${st.n} ${st.unit}${st.n>1?'s':''}`:h.type==='week'?`${hWeekCount(h,DAYK)}/${h.per||3} this week`:due?'start today':'rest day'}</span></button>`}
 let hHold=null,hFired=0;
 function hBind(){const el=$('habBody');
   el.onclick=e=>{if(e.target.closest('#hNew'))return hEdit(null);const g=e.target.closest('[data-hg]');if(g){const n=g.dataset.hg;const o=new Set(HAB.open||[]);o.has(n)?o.delete(n):o.add(n);HAB.open=[...o];hSave();renderHabits();return}const t=e.target.closest('[data-h]');if(!t)return;if(Date.now()-hFired<700)return;hDetail(t.dataset.h)};
@@ -87,6 +88,10 @@ async function hPast(h,d){if(d>DAYK)return;const p='days/d-'+d;const doc=(await 
   if(hDone(h,d)){nm=nm.filter(x=>!h.names.includes(String(x).trim()));const m=HLOG.d[d];if(m&&m[h.id]){delete m[h.id];if(!Object.keys(m).length)delete HLOG.d[d];hSaveLog()}}
   else{const need=hTarget(h,d)-hCnt(h,d);let pool=h.once?[h.names[0]]:h.names.flatMap(n=>Array(hlItems(d,n).length).fill(n));if(!pool.length)pool=[h.names[0]];nm=nm.concat(pool.slice(0,Math.max(1,need)))}
   doc.names=nm;DNAMES[d]=nm;save(p,doc);try{navigator.vibrate&&navigator.vibrate(10)}catch(e){}}
+function hRename(h){openSheet('rename','');$('sheetBody').innerHTML=`<label class="fl">name<input class="inp" id="hrN" value="${esc(hName(h))}"></label><div class="bigbtns" style="margin-top:12px"><button class="btn" type="button" id="hrR">reset</button><span style="flex:1"></span><button class="btn p" type="button" id="hrOk">save</button></div>`;
+  const done=()=>{hSave();hWidget();closeSheet();renderHabits()};
+  $('hrOk').onclick=()=>{const v=($('hrN').value||'').trim();HAB.ren=HAB.ren||{};if(v&&v!==hDisp(h.n))HAB.ren[h.id]=v;else delete HAB.ren[h.id];done()};
+  $('hrR').onclick=()=>{if(HAB.ren)delete HAB.ren[h.id];done()}}
 function hSplit(h){HAB.combo=(HAB.combo||[]).filter(c=>c.id!==h.combo);hSave();closeSheet();renderHabits()}
 function hCombo(h){const L=hLinked().filter(x=>!x.combo);const sel=new Set([h.id]);let nm=hDisp(h.n),once=false,every=false;
   const draw=()=>{$('sheetBody').innerHTML=`<label class="fl">name<input class="inp" id="hcN" value="${esc(nm)}"></label><div class="dim" style="font-size:11px;margin:8px 0 4px">combine with</div><div>${L.map(x=>`<button type="button" class="btn${sel.has(x.id)?' p':''}" data-cm="${x.id}" style="margin:2px">${esc(x.n)}</button>`).join('')}</div>
@@ -99,11 +104,11 @@ function hCombo(h){const L=hLinked().filter(x=>!x.combo);const sel=new Set([h.id
     if(b.id==='hcOk'){read();HAB.combo=(HAB.combo||[]).concat({id:rid(),n:nm||hDisp(h.n),names:L.filter(x=>sel.has(x.id)).map(x=>x.n),once,every});hSave();closeSheet();renderHabits()}}}
 function hDetail(id){const h=hGet(id);if(!h)return;const st=hStreak(h);
   const hist=[...Array(28)].map((_,i)=>{const d=hAdd(DAYK,-27+i);return `<button type="button" class="hday${hDone(h,d)?' ok':''}${hDue(h,d)?'':' off'}" data-hd="${d}" style="--hc:${h.col}"><span>${new Date(d+'T12:00').toLocaleDateString('en-GB',{weekday:'narrow'})}</span><b>${new Date(d+'T12:00').getDate()}</b></button>`}).join('');
-  openSheet(`${h.ic||''} ${hDisp(h.n)}`,`<div class="hstats num"><div><b style="color:${h.col}">${st.n}</b><span>current ${st.unit}s</span></div><div><b>${hBest(h)}</b><span>best</span></div><div><b>${hRate(h,30)}%</b><span>last 30 days</span></div><div><b>${h.link?Object.keys(DNAMES).filter(d=>hDone(h,d)).length:Object.values(HLOG.d).filter(x=>x[h.id]).length}</b><span>${h.type==='neg'?'slips':'total'}</span></div></div>
+  openSheet(`${h.ic||''} ${hName(h)}`,`<div class="hstats num"><div><b style="color:${h.col}">${st.n}</b><span>current ${st.unit}s</span></div><div><b>${hBest(h)}</b><span>best</span></div><div><b>${hRate(h,30)}%</b><span>last 30 days</span></div><div><b>${h.link?Object.keys(DNAMES).filter(d=>hDone(h,d)).length:Object.values(HLOG.d).filter(x=>x[h.id]).length}</b><span>${h.type==='neg'?'slips':'total'}</span></div></div>
     ${hHeat(h)}<div class="dim" style="font-size:11px;margin:12px 0 6px">last 28 days — tap a day to log or fix it</div><div class="hdays">${hist}</div>
     <div class="dim" style="font-size:11px;margin-top:10px">${h.type==='neg'?'avoid it — hold the tile if you slipped':h.type==='week'?`${h.per||3}× a week`:h.type==='days'?'on '+(h.days||[]).map(i=>DOW[i]).join(' '):'every day'}${hTarget(h)>1?` · ${hTarget(h)} ${esc(h.unit||'times')} a day`:''}${h.remind?` · reminder ${h.remind}`:''}</div>
-    <div class="bigbtns" style="margin-top:14px">${h.names?`<button class="btn" type="button" id="hCb">${h.combo?'split':'combine'}</button><button class="btn" type="button" id="hHide">hide</button>`:'<button class="btn" type="button" id="hEd">edit</button>'}<span style="flex:1"></span><button class="btn p" type="button" id="hOk">done</button></div>`);
-  $('hOk').onclick=closeSheet;if($('hCb'))$('hCb').onclick=()=>h.combo?hSplit(h):hCombo(h);if($('hEd'))$('hEd').onclick=()=>hEdit(h);if($('hHide'))$('hHide').onclick=()=>{HAB.hide=(HAB.hide||[]).concat(h.id);hSave();closeSheet();renderHabits()};
+    <div class="bigbtns" style="margin-top:14px">${h.names?`<button class="btn" type="button" id="hRn">rename</button><button class="btn" type="button" id="hCb">${h.combo?'split':'combine'}</button><button class="btn" type="button" id="hHide">hide</button>`:'<button class="btn" type="button" id="hEd">edit</button>'}<span style="flex:1"></span><button class="btn p" type="button" id="hOk">done</button></div>`);
+  $('hOk').onclick=closeSheet;if($('hRn'))$('hRn').onclick=()=>hRename(h);if($('hCb'))$('hCb').onclick=()=>h.combo?hSplit(h):hCombo(h);if($('hEd'))$('hEd').onclick=()=>hEdit(h);if($('hHide'))$('hHide').onclick=()=>{HAB.hide=(HAB.hide||[]).concat(h.id);hSave();closeSheet();renderHabits()};
   $('sheetBody').onclick=e=>{const b=e.target.closest('[data-hd]');if(!b)return;const d=b.dataset.hd;if(h.names){(d===DAYK?Promise.resolve(hTick(h)):hPast(h,d)).then(()=>{hDetail(id);renderHabits()});return}const o=HLOG.d[d]=HLOG.d[d]||{};if(h.type==='neg')o[h.id]=o[h.id]?0:1;else o[h.id]=hDone(h,d)?0:hTarget(h);if(!o[h.id])delete o[h.id];hSaveLog();hDetail(id);renderHabits()}}
 function hEdit(h){const isNew=!h;h=h?clone(h):{id:rid(),n:'',ic:'💪',col:HCOLS[HAB.list.length%HCOLS.length],type:'daily',per:3,days:[1,2,3,4,5],q:1,unit:'',remind:'',created:DAYK};
   const draw=()=>{$('sheetBody').innerHTML=`<label class="fl">habit<input class="inp" id="heN" value="${esc(h.n)}" placeholder="e.g. gym, skincare, no sugar"></label>
@@ -122,4 +127,4 @@ function hEdit(h){const isNew=!h;h=h?clone(h):{id:rid(),n:'',ic:'💪',col:HCOLS
     if(b.id==='heDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}HAB.list=HAB.list.filter(x=>x.id!==h.id);hSave();closeSheet();renderHabits();return}
     if(b.id==='heOk'){read();if(!h.n){$('heN').focus();return}const i=HAB.list.findIndex(x=>x.id===h.id);if(i>=0)HAB.list[i]=h;else HAB.list.push(h);hSave();hWidget();closeSheet();renderHabits();if(typeof pushSync==='function')pushSync()}}}
 /* widget feed: a small summary doc any future widget can read */
-function hWidget(){const L=hAll();save('widget/streaks',{at:new Date().toISOString(),day:DAYK,items:L.map(h=>({n:hDisp(h.n),ic:h.ic,col:h.col,streak:hStreak(h).n,unit:hStreak(h).unit,done:hDone(h,DAYK),due:hDue(h,DAYK),c:hCnt(h,DAYK),t:hTarget(h)}))})}
+function hWidget(){const L=hAll();save('widget/streaks',{at:new Date().toISOString(),day:DAYK,items:L.map(h=>({n:hName(h),ic:h.ic,col:h.col,streak:hStreak(h).n,unit:hStreak(h).unit,done:hDone(h,DAYK),due:hDue(h,DAYK),c:hCnt(h,DAYK),t:hTarget(h)}))})}
