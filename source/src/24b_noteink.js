@@ -1,7 +1,7 @@
 /* ================= NOTES · handwriting over the typed page ================= */
 let NL=null;const NSTK={};
 function nInkBusy(){return !!NL&&(!!NL.drawing||Date.now()-NL.last<3000)}
-function nInkDirty(){const n=NOTES[NCUR];if(!n)return;n.upd=new Date().toISOString();if($('nSaved'))$('nSaved').textContent='…';clearTimeout(nSaveT);nSaveT=setTimeout(nSave,600)}
+function nInkDirty(){const n=NOTES[NCUR];if(!n)return;n.upd=new Date().toISOString();if($('nSaved'))$('nSaved').textContent='…';clearTimeout(nSaveT);nSaveT=setTimeout(nSave,1800)}
 function nInkMount(){
   const ed=document.querySelector('#jPaneN .neditor'),ned=$('nEd');if(!ed||!ned||!NCUR||!NOTES[NCUR])return;
   if(NL){NL.destroy();NL=null}

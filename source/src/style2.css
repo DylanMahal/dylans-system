@@ -1193,3 +1193,4 @@ body.vfullon{overflow:hidden}
 .inkhost:not(.jpage){flex:1;display:flex;flex-direction:column;min-height:50vh}.inkhost:not(.jpage)>.ned{flex:1}
 #nTools{padding:6px 12px;margin-bottom:0}.jtools select{appearance:none;background:none;border:1px solid var(--line2);color:var(--dim);font-size:11px;padding:5px 9px}
 .inkhost>.inkcv{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}.inkhost.inking [inert]{-webkit-user-select:none;user-select:none;caret-color:transparent}
+.inkhost.inking,.inkhost.inking *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;caret-color:transparent}.inkdead{pointer-events:none}
