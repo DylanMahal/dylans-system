@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1795111709">
+<link rel="stylesheet" href="app.css?v=1795111809">
 </head>
 <body class="fx">
 <style>
@@ -181,7 +181,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
   /* a tap is the one moment iOS lets sound start, so unmute SYNCHRONOUSLY inside it —
      doing it in a promise callback lands outside the gesture and is ignored. no early
      return either: every tap re-asserts it, so a refused first tap isn't the last word. */
-  function unmute(){if(!VID)return;
+  function unmute(){if(!VID||closing)return;
     V.muted=false;V.volume=1;muted=false;
     var r=V.play();
     if(r&&r.catch)r.catch(function(e){dg('tap:'+e.name);muted=true;V.muted=true;V.play().catch(function(){})})}
@@ -215,7 +215,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
        to where the image has got to, then fade the image away so sound and picture share a clock */
     function vsync(){var done1=false;function reveal(){if(done1)return;done1=true;el.classList.add('vsync');dg('vsync')}
       var off=animT?(performance.now()-animT)/1000:0,d=V.duration||13.2;
-      if(off>.25&&off<d-1.6&&Math.abs(off-V.currentTime)>.2){dg('seek:'+Math.round(off*100)/100);
+      if(!SKIP&&off>.25&&off<d-1.6&&Math.abs(off-V.currentTime)>.2){dg('seek:'+Math.round(off*100)/100);
         V.addEventListener('seeked',reveal,{once:true});setTimeout(reveal,700);try{V.currentTime=off}catch(x){reveal()}}
       else reveal()}
     function bail(){if(vStarted||closing||!VID)return;dg('vidbail');try{V.pause()}catch(x){}
@@ -266,13 +266,17 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
   setTimeout(function(){el.addEventListener('pointerdown',function(){if(done&&!VID)close(true)})},300);
   /* hold anywhere to skip: a thin ring fills under your thumb, then it jumps straight to the TV-off (with its sound) */
   var hold=null;
-  function holdStart(x,y){if(closing||hold)return;var r=document.createElement('div');r.className='bfx-hold';r.style.left=x+'px';r.style.top=y+'px';
+  function holdStart(x,y){if(closing||hold)return;dg('hold');var r=document.createElement('div');r.className='bfx-hold';r.style.left=x+'px';r.style.top=y+'px';
     r.innerHTML='<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" class="hb"/><circle cx="32" cy="32" r="28" class="hf"/></svg><span class="hlab">SKIP</span>';
     el.appendChild(r);
     requestAnimationFrame(function(){requestAnimationFrame(function(){r.classList.add('on')})});
     hold={r:r,t:setTimeout(function(){r.classList.add('fire');setTimeout(function(){r.remove()},400);hold=null;skipToEnd()},700)}}
   function holdEnd(){if(!hold)return;clearTimeout(hold.t);var r=hold.r;r.classList.remove('on');r.classList.add('cancel');setTimeout(function(){r.remove()},250);hold=null}
-  function skipToEnd(){try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}if(VID){var d=V.duration||13.6;try{V.currentTime=Math.max(0,d-1.3);if(V.paused){var pr=V.play();if(pr&&pr.catch)pr.catch(function(){V.muted=true;muted=true;V.play().catch(function(){})})}}catch(e){tvOff()}}else close(true)}
+  var SKIP=false;
+  function skipToEnd(){try{navigator.vibrate&&navigator.vibrate(15)}catch(e){}SKIP=true;dg('skip p='+(VID&&V.paused)+' t='+(VID?Math.round(V.currentTime*10)/10:-1));
+    /* not rolling yet (no tap, autoplay refused, or still loading): the picture is the image, so seeking the video shows nothing — go straight to TV-off */
+    if(VID&&(V.paused||V.currentTime<0.05)){tvOff();return}
+    if(VID){var d=V.duration||13.6;try{V.currentTime=Math.max(0,d-1.3);if(V.paused){var pr=V.play();if(pr&&pr.catch)pr.catch(function(){V.muted=true;muted=true;V.play().catch(function(){})})}}catch(e){tvOff()}}else close(true)}
   el.addEventListener('touchstart',function(e){var t=e.touches[0];if(e.touches.length===1)holdStart(t.clientX,t.clientY);else holdEnd()},{passive:true,capture:true});
   el.addEventListener('mousedown',function(e){holdStart(e.clientX,e.clientY)},true);
   ['touchend','mouseup','mouseleave'].forEach(function(t){el.addEventListener(t,holdEnd,true)});
@@ -522,9 +526,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1795111709"</script>
-<script src="config.js?v=1795111709"></script>
+<script>window.APP_V="1795111809"</script>
+<script src="config.js?v=1795111809"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1795111709"></script>
+<script src="app.js?v=1795111809"></script>
 </body>
 </html>
