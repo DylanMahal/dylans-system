@@ -106,20 +106,10 @@
           <h3 class="jdate" id="jDate"></h3>
           <div class="jmood" id="jMood" role="group" aria-label="Mood"></div>
           <div class="jtagrow" id="jTags"></div>
-          <div class="row" style="justify-content:space-between;margin:12px 0 8px"><div class="seg" id="jModeSeg" role="group" aria-label="Mode"><button type="button" data-jm="type">type</button><button type="button" data-jm="ink">write</button></div><div class="chips" id="jPrompts" style="margin:0"></div></div>
-          <div id="jTypePane"><textarea class="jtext" id="jText" placeholder="What happened today? How did it feel?" spellcheck="true"></textarea><div class="dim" style="font-size:11px;text-align:right" id="jWords"></div></div>
-          <div id="jInkPane" hidden>
-            <div class="jtools" id="jTools">
-              <button type="button" data-tool="pen">pen</button><button type="button" data-tool="hl">highlight</button><button type="button" data-tool="eraser">erase</button>
-              <span class="sep"></span>
-              <button type="button" class="col" data-col="#e6e6e6" style="--c:#e6e6e6" aria-label="White"></button><button type="button" class="col" data-col="#ff2a6d" style="--c:#ff2a6d" aria-label="Pink"></button><button type="button" class="col" data-col="#05d9e8" style="--c:#05d9e8" aria-label="Cyan"></button><button type="button" class="col" data-col="#ffb000" style="--c:#ffb000" aria-label="Amber"></button>
-              <input type="range" id="jWidth" min="1" max="12" value="4" aria-label="Pen width">
-              <span class="sep"></span>
-              <button type="button" id="jUndo">undo</button><button type="button" id="jRedo">redo</button><button type="button" id="jPage">+ page</button><button type="button" id="jClear">clear</button>
-              <button type="button" id="jPencil" aria-pressed="false" title="Ignore fingers so your palm can rest on the screen">pencil only</button>
-            </div>
-            <div class="jcanvaswrap" id="jCanvasWrap"><canvas id="jCanvas"></canvas></div>
-          </div>
+          <div class="row" style="justify-content:space-between;margin:12px 0 8px"><div class="chips" id="jPrompts" style="margin:0"></div></div>
+          <div class="jtools" id="jTools"></div>
+          <div class="inkhost jpage" id="jPage"><textarea class="jtext" id="jText" placeholder="What happened today? How did it feel?" spellcheck="true"></textarea><canvas class="inkcv" id="jCanvas"></canvas></div>
+          <div class="dim" style="font-size:11px;text-align:right" id="jWords"></div>
         </div>
       </div>
     </div>

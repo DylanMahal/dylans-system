@@ -1185,4 +1185,10 @@ body.vfullon{overflow:hidden}
 
 /* notes: handwriting */
 .nitem{position:relative}.nitem.hasth{padding-right:56px}.nitem .nth{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:42px;height:42px;object-fit:contain;background:#0a0a0a;border:1px solid var(--line2)}
-.nmode{padding:4px 12px}#nInkPane{padding:0 12px 24px}#nTools select{appearance:none;background:none;border:1px solid var(--line2);color:var(--dim);font-size:11px;padding:5px 9px}
+.inkhost{position:relative}.inkhost.jpage{min-height:260px}.inkhost.inking{cursor:crosshair}.inkhost>.inkcv{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.inkhost:not(.jpage){flex:1;display:flex;flex-direction:column;min-height:50vh}.inkhost:not(.jpage)>.ned{flex:1}
+#nTools{padding:6px 12px;margin-bottom:0}.jtools select{appearance:none;background:none;border:1px solid var(--line2);color:var(--dim);font-size:11px;padding:5px 9px}
+
+.inkhost{position:relative}.inkhost.jpage{min-height:260px}.inkhost.inking{cursor:crosshair}.inkhost>.inkcv{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.inkhost:not(.jpage){flex:1;display:flex;flex-direction:column;min-height:50vh}.inkhost:not(.jpage)>.ned{flex:1}
+#nTools{padding:6px 12px;margin-bottom:0}.jtools select{appearance:none;background:none;border:1px solid var(--line2);color:var(--dim);font-size:11px;padding:5px 9px}
