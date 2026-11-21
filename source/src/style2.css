@@ -1250,3 +1250,90 @@ html.inkfull-on,html.inkfull-on body{overflow:hidden}
 .neditor .ned h2{background:none!important;-webkit-text-fill-color:currentColor!important;color:#fff;text-shadow:none!important;-webkit-background-clip:border-box;animation:none}
 
 #bootfx,#bootfx *{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}#bootfx img,#bootfx video{pointer-events:none;-webkit-user-drag:none}
+
+/* ===== ui kit — one control language app-wide (matches the ink toolbar) ===== */
+:root{--c-bg:rgba(255,255,255,.055);--c-bgh:rgba(255,255,255,.09);--c-on:rgba(255,42,109,.16);--tray:rgba(255,255,255,.04);--r-c:10px;--r-t:13px;--r-card:14px;--ease:cubic-bezier(.2,.8,.2,1)}
+/* base control: filled, rounded, borderless, even height */
+.btn,.iconbtn,.chip,.jtools button,.restsel button,.mskip button,.hdow button,.hicons button,.mctl button,button.rb,.stype,.scheck,.srpe,.curb,.tgs .tgb,.athemes button,.smkp button,.smmood button,.msgs button,.ed,.pendbtn,.ttgo,.aeback,.aadd,.csarr{-webkit-appearance:none;appearance:none;border:1px solid transparent;border-radius:var(--r-c);background:var(--c-bg);-webkit-tap-highlight-color:transparent;transition:background .16s var(--ease),color .16s var(--ease),border-color .16s var(--ease),transform .12s var(--ease),box-shadow .16s var(--ease)}
+.btn:hover:not(.on):not(.ok):not([aria-pressed="true"]),.iconbtn:hover:not(.on):not(.ok):not([aria-pressed="true"]),.chip:hover:not(.on):not(.ok):not([aria-pressed="true"]),.jtools button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.restsel button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.mskip button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.hdow button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.hicons button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.mctl button:hover:not(.on):not(.ok):not([aria-pressed="true"]),button.rb:hover:not(.on):not(.ok):not([aria-pressed="true"]),.stype:hover:not(.on):not(.ok):not([aria-pressed="true"]),.scheck:hover:not(.on):not(.ok):not([aria-pressed="true"]),.curb:hover:not(.on):not(.ok):not([aria-pressed="true"]),.tgs .tgb:hover:not(.on):not(.ok):not([aria-pressed="true"]),.athemes button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.smkp button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.smmood button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.msgs button:hover:not(.on):not(.ok):not([aria-pressed="true"]),.ed:hover:not(.on):not(.ok):not([aria-pressed="true"]),.csarr:hover:not(.on):not(.ok):not([aria-pressed="true"]){background:var(--c-bgh);color:var(--fg)}
+.btn:active,.iconbtn:active,.chip:active,.seg button:active,.jmood button:active,.tabs button:active,.jtools button:active,.hdow button:active,.mskip button:active,.smkp button:active,.smmood button:active,.msgs button:active,button.rb:active,.scheck:active,.stype:active,.htile:active,.hday:active,.toolcards button:active,.rpeb:active{transform:scale(.96)}
+.scheck,.stype,.srpe,.mctl button,button.rb,.curb,.tgs .tgb{border-radius:9px}
+.ed{border-radius:7px}
+/* primary actions */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:0 16px;font:600 12.5px var(--mono);letter-spacing:0;color:var(--fg)}
+.btn:hover{background:var(--c-bgh);color:var(--fg)}
+.btn.p{background:var(--pink);color:#000;border-color:transparent}
+.btn.p:hover{background:#ff4f86;color:#000}
+.btn.d{background:rgba(255,59,59,.14);color:#ff6b6b;border-color:transparent}
+.btn.d:hover{background:rgba(255,59,59,.24);color:#ff8585}
+.btn.sm{min-height:30px;padding:0 12px;font-size:12px;border-radius:9px}
+.fquick .btn{min-height:46px;font-size:14px;border-radius:12px}
+.pendbtn{background:var(--c-on);color:var(--pink)}
+/* icon / small buttons */
+.iconbtn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:32px;min-width:32px;padding:0 11px;font-size:12px;color:#cfcfcf;line-height:1}
+.iconbtn:hover{border-color:transparent}
+.iconbtn[aria-pressed="true"]{background:var(--c-on);color:var(--pink);border-color:transparent}
+.nmeta .iconbtn{border-radius:15px;border-color:transparent;background:var(--c-bg)}
+/* chips: pills, even height */
+.chips{gap:8px}
+.chip{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:32px;padding:0 14px;border-radius:999px;font-size:12px;color:#bdbdbd;white-space:nowrap}
+.chip:hover{border-color:transparent}
+.chip[aria-pressed="true"],.chip.on{background:var(--c-on);color:var(--pink);border-color:transparent}
+.sleepnight .chip.on{border-color:transparent;color:var(--pink)}
+#jPrompts .chip.pr{background:var(--c-on);color:var(--pink);border-color:transparent}
+.chip i{border-radius:50%}
+/* segmented controls: a tray holding equal segments */
+.seg{display:inline-flex;gap:2px;padding:3px;border:0;border-radius:var(--r-t);background:var(--tray)}
+.seg button{flex:1 1 0;min-height:30px;padding:0 14px;border-radius:10px;font-size:12px;color:var(--dim);transition:background .18s var(--ease),color .18s var(--ease),transform .12s var(--ease);-webkit-tap-highlight-color:transparent}
+.seg button[aria-pressed="true"]{background:rgba(255,255,255,.12);color:var(--fg);box-shadow:0 1px 6px rgba(0,0,0,.4)}
+.seg button:hover:not([aria-pressed="true"]){color:var(--fg);background:rgba(255,255,255,.04)}
+.seg.mini button{min-height:24px;padding:0 10px;font-size:10.5px;border-radius:8px}
+#jTabs button{min-height:34px}
+/* 1-10 rating: one tray, ten equal cells */
+.jmood{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:2px;padding:3px;width:100%;max-width:560px;background:var(--tray);border-radius:var(--r-t)}
+.jmood button{justify-content:center;gap:6px;height:36px;padding:0;border:0;border-radius:10px;background:none;font:500 12px var(--mono);color:var(--dim);-webkit-tap-highlight-color:transparent;transition:background .16s var(--ease),color .16s var(--ease),transform .12s var(--ease)}
+.jmood button:hover{background:rgba(255,255,255,.06);color:var(--fg)}
+.jmood button[aria-pressed="true"]{background:rgba(255,255,255,.13);color:var(--fg);border:0;box-shadow:0 1px 6px rgba(0,0,0,.4)}
+.mood{border-radius:50%}
+.jmood button .mood{width:10px;height:10px}
+.jmood button[aria-pressed="true"] .mood{box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+@media (max-width:520px){.jmood button{flex-direction:column;gap:4px;height:46px;font-size:11px}}
+/* tags */
+.jtagrow{gap:8px;margin-top:12px}
+.jtag{height:28px;padding:0 6px 0 12px;border:0;border-radius:999px;background:rgba(5,217,232,.1);gap:6px}
+.jtag button{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;padding:0}
+.jtag button:hover{background:rgba(255,255,255,.1);color:var(--fg)}
+.jtagin{height:28px;width:96px;padding:0 12px;border:0;border-radius:999px;background:var(--c-bg);color:var(--fg)}
+.jtagin:focus{background:var(--c-bgh);box-shadow:0 0 0 1.5px rgba(255,42,109,.5)}
+/* top nav: tray of tabs, active is a lit pill */
+.tabs{padding:3px;gap:2px;border-radius:var(--r-t);background:var(--tray)}
+.tabs button{border:0;border-radius:10px;background:none;color:#cfcfcf;transition:background .16s var(--ease),color .16s var(--ease),box-shadow .2s var(--ease);-webkit-tap-highlight-color:transparent}
+.tabs button:hover{background:rgba(255,255,255,.07);color:#fff;border-color:transparent}
+.tabs button[aria-current="page"]{background:var(--pink);color:#000;box-shadow:0 2px 14px rgba(255,42,109,.4)}
+/* grouped option rows become trays too */
+.hdow,.mskip,.restsel{border-radius:var(--r-t)}
+.hdow button.on{background:var(--pink);color:#000;border-color:transparent}
+.restsel button[aria-pressed="true"],.mctl button[aria-pressed="true"]{background:rgba(5,217,232,.14);border-color:transparent}
+.athemes button.on,.athemes button:hover{background:color-mix(in srgb,var(--ac) 14%,transparent);border-color:transparent}
+.curb.usd{background:rgba(5,217,232,.14);border-color:transparent}
+.scheck[aria-pressed="true"]{border-color:transparent}
+/* inputs */
+.inp,select.inp,textarea.inp{border:1px solid transparent;border-radius:var(--r-c);background:var(--c-bg);padding:8px 12px;transition:border-color .16s var(--ease),background .16s var(--ease),box-shadow .16s var(--ease)}
+.inp:hover{background:var(--c-bgh)}
+.inp:focus{border-color:rgba(255,42,109,.6);box-shadow:0 0 0 3px rgba(255,42,109,.14);background:var(--c-bg)}
+/* cards and surfaces */
+.panel{border-radius:var(--r-card)}
+.panel > .ph{border-radius:var(--r-card) var(--r-card) 0 0}
+.jlist{border-radius:var(--r-card);padding:4px;gap:2px;border-color:var(--line)}
+.jitem{border:0;border-radius:10px}
+.jitem::before{top:10px;bottom:10px;border-radius:2px}
+.jitem:hover{background:rgba(255,255,255,.035)}
+.jcanvaswrap{border-radius:var(--r-card)}
+.toolcards button,.ccard,.htile,.hday,.acard,.rpeb,.bigstart{border-radius:var(--r-card)}
+.hday{border-radius:10px}
+.toolcards button,.htile,.rpeb{transition:background .16s var(--ease),border-color .16s var(--ease),transform .12s var(--ease)}
+.addrow,.addset,.addex,.lsabtn,.swadd{border-radius:var(--r-c)}
+.editpill{border-radius:999px}
+.jtools{border-radius:var(--r-t)}
+.panel::before{width:16px;height:16px;border-top-left-radius:var(--r-card)}
+.panel::after{width:16px;height:16px;border-bottom-right-radius:var(--r-card)}
