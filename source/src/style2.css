@@ -1737,3 +1737,6 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 .sl-qb>div{grid-template-columns:128px 1fr 28px}.sl-qb span small{display:block;font-size:10px;opacity:.6;margin-top:1px}
 
 @media (min-width:901px){body{padding-bottom:16px}}
+/* closed bottom sheet sits just off-screen: don't let its glow bleed up into the page */
+.sheet:not(.on){box-shadow:none}
+@media (min-width:901px){body{padding-bottom:16px!important}.restdock{bottom:calc(16px + env(safe-area-inset-bottom))}}
