@@ -1736,15 +1736,15 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 .sl-qb{display:grid;gap:7px;margin-top:14px}.sl-qb>div{display:grid;grid-template-columns:84px 1fr 28px;align-items:center;gap:10px;font-size:12px}.sl-qb span{opacity:.7}.sl-qb i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.sl-qb i b{display:block;height:100%;border-radius:3px}.sl-qb em{font-style:normal;text-align:right;opacity:.8}
 .sl-qb>div{grid-template-columns:128px 1fr 28px}.sl-qb span small{display:block;font-size:10px;opacity:.6;margin-top:1px}
 
-/* bottom quote bar: one quote at a time, crossfading */
-.ticker{height:40px;border-top:1px solid rgba(255,255,255,.07);background:rgba(8,8,10,.82);backdrop-filter:saturate(1.6) blur(20px);-webkit-backdrop-filter:saturate(1.6) blur(20px);justify-content:center}
-.ticker .tkbar{position:absolute;left:0;top:-1px;height:1px;width:100%;background:linear-gradient(90deg,rgba(255,42,109,.15),#ff2a6d);box-shadow:0 0 8px rgba(255,42,109,.55);transform:scaleX(0);transform-origin:left}
-.ticker .tkq{position:relative;width:min(92%,1040px);height:100%}
-.ticker .tki{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:14px;opacity:0;transform:translateY(6px);filter:blur(3px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.8,.2,1),filter .6s ease;white-space:nowrap;overflow:hidden}
-.ticker .tki.in{opacity:1;transform:none;filter:none}
-.ticker .tki.out{opacity:0;transform:translateY(-6px);filter:blur(3px)}
-.ticker .tki span{font:400 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;letter-spacing:-.005em;color:rgba(255,255,255,.88);overflow:hidden;text-overflow:ellipsis;min-width:0}
-.ticker .tki b{flex:none;font:500 10.5px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.38);padding-left:14px;border-left:1px solid rgba(255,255,255,.14)}
-.ticker .tki.sm span{font-size:11.5px}
-.nofx .ticker .tki{transition:opacity .4s ease;transform:none;filter:none}
-@media (prefers-reduced-motion:reduce){.ticker .tki{transition:opacity .3s;transform:none;filter:none}.ticker .tkbar{display:none}}
+/* bottom terminal line: quotes typed out at a shell prompt */
+.ticker{height:42px;box-shadow:none;border-top:1px solid rgba(255,255,255,.07);background:#060607;justify-content:flex-start;padding:0 22px}
+.ticker.ticker::after{display:block!important;content:""!important;position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px),radial-gradient(120% 140% at 50% 120%,rgba(255,42,109,.07),transparent 60%)}
+.ticker .tkt{display:flex;align-items:center;gap:12px;min-width:0;width:100%;font:500 13.5px/1 var(--mono);white-space:nowrap}
+.ticker .tkp{flex:none;color:#ff2a6d;text-shadow:0 0 10px rgba(255,42,109,.55)}
+.ticker .tkp em{font-style:normal;color:#05d9e8;text-shadow:0 0 10px rgba(5,217,232,.45)}
+.ticker .tkx{display:flex;align-items:center;min-width:0;overflow:hidden}
+.ticker .tkx span{color:#ececec;text-shadow:0 0 8px rgba(255,255,255,.22);overflow:hidden;text-overflow:ellipsis}
+.ticker .tkx b{flex:none;font-weight:500;color:#6d6d74;white-space:pre}
+.ticker .tkc{flex:none;width:8px;height:15px;margin-left:2px;background:#ff2a6d;box-shadow:0 0 10px rgba(255,42,109,.8);animation:tkblink 1.05s steps(1) infinite}
+.ticker .tkx.typing .tkc{animation:none}
+@keyframes tkblink{50%{opacity:0}}
