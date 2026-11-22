@@ -792,7 +792,7 @@ function cvYear(d, f) {
 function cvYearL(d, f) {
   const { c, W, H } = canvas(f), P = 16, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], on = new Color('#5fd38d');
   const cell = 7.5, gap = 2.1, step = cell + gap, weeks = Math.floor((W - 2 * P - 12 + gap) / step), gx = W - P - (weeks * step - gap), start = addD(monOf(d.k), -(weeks - 1) * 7);
-  T(c, 'Habits', P, P - 2, 17, 'b'); T(c, `Last ${weeks} weeks`, W - P, P + 1, 11, 'm', K.t2, 'r');
+  T(c, 'Habits', P, P - 2, 17, 'b');
   const ax = P + 28; let lastM = -1;
   for (let w = 0; w < weeks; w++) { const key = addD(start, w * 7), m = new Date(key + 'T12:00').getMonth(); if (m !== lastM) { if (lastM !== -1 || new Date(key + 'T12:00').getDate() <= 7) if (w < weeks - 2) T(c, MON[m], gx + w * step, ax, 9, 'm', K.t3); lastM = m } }
   const top0 = ax + 17, bh = (H - P - top0 + 8) / 3;
@@ -801,7 +801,6 @@ function cvYearL(d, f) {
     let n30 = 0; for (let i = 0; i < 30; i++) if (set[addD(d.k, -i)]) n30++;
     let run = 0, i = set[d.k] ? 0 : 1; while (set[addD(d.k, -i)]) { run++; i++ }
     T(c, name, P, y0, 13, 'b');
-    T(c, `${n30} of 30 days${run ? `  ·  ${run}-day run` : ''}`, W - P, y0 + 2, 10.5, 'm', K.t2, 'r');
     ['M', '', 'W', '', 'F', '', ''].forEach((l, j) => l && T(c, l, gx - 5, gy + j * step - 1.8, 7.5, 'm', K.t3, 'r'));
     for (let w = 0; w < weeks; w++) for (let dd = 0; dd < 7; dd++) {
       const key = addD(start, w * 7 + dd); if (key > d.k) continue; const x = gx + w * step, y = gy + dd * step;
