@@ -207,17 +207,22 @@ function mLists(k){const L=MEDIA[k].lists||[];
     if(b.dataset.ldel){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}MEDIA[k].lists=L.filter(x=>x.id!==b.dataset.ldel);saveMedia(k);mLists(k);return}
     if(b.dataset.mkey)mEntry(k,b.dataset.mkey)}}
 /* ---- wrapped: your top 5, best episodes, year highlights ---- */
-function mWrapped(k,all,logs,yr,genres,months){const max=MK[k].stars,U=k==='movies'?null:EPU(k);
+/* an entry counts towards a year only if one of its dates falls in it (or it's being watched right now) */
+const mInYr=(it,Y)=>[it.start,it.fin,...(it.log||[]).map(l=>l.d)].some(d=>(d||'').startsWith(Y))||it.st==='cur';
+const mFinYr=(it,Y)=>(it.fin||'').startsWith(Y)?it.fin:((it.log||[]).map(l=>l.d).find(d=>(d||'').startsWith(Y))||null);
+function mWrapped(k,ALL,logs,yr,_g,_m){const max=MK[k].stars,U=k==='movies'?null:EPU(k),Y=String(yr);
+  const all=ALL.filter(it=>mInYr(it,Y)),fins=ALL.map(it=>({it,d:mFinYr(it,Y)})).filter(o=>o.d);
+  const genres={};all.forEach(x=>(x.genres||[]).forEach(g=>genres[g]=(genres[g]||0)+1));const months=[...Array(12)].map((_,i)=>fins.filter(o=>o.d.slice(5,7)===pad(i+1)).length);
   const top=all.filter(x=>x.rating!=null&&x.rating!=='').sort((a,b)=>(+b.rating-+a.rating)||((b.fav?1:0)-(a.fav?1:0))||((b.upd||'')>(a.upd||'')?1:-1)).slice(0,5);
-  const eps=U?all.flatMap(it=>Object.entries(it.eps||{}).filter(([n,e])=>e.r).map(([n,e])=>({it,n:+n,e}))).sort((a,b)=>b.e.r-a.e.r||((b.e.d||'')>(a.e.d||'')?1:-1)).slice(0,5):[];
-  const yrLogs=logs.filter(o=>o.l.d.startsWith(String(yr)));const g=Object.entries(genres).sort((a,b)=>b[1]-a[1])[0];
-  const bm=months.indexOf(Math.max(...months));const re=all.map(it=>({it,c:(it.log||[]).length})).sort((a,b)=>b.c-a.c)[0];
-  const epsYr=U?all.reduce((a,it)=>a+Object.values(it.eps||{}).filter(e=>(e.d||'').startsWith(String(yr))).length,0):0;
+  const eps=U?ALL.flatMap(it=>Object.entries(it.eps||{}).filter(([n,e])=>e.r&&(e.d||'').startsWith(Y)).map(([n,e])=>({it,n:+n,e}))).sort((a,b)=>b.e.r-a.e.r||((b.e.d||'')>(a.e.d||'')?1:-1)).slice(0,5):[];
+  const yrLogs=fins;const g=Object.entries(genres).sort((a,b)=>b[1]-a[1])[0];
+  const bm=months.indexOf(Math.max(...months));const re=all.map(it=>({it,c:(it.log||[]).filter(l=>(l.d||'').startsWith(Y)).length})).sort((a,b)=>b.c-a.c)[0];
+  const epsYr=U?ALL.reduce((a,it)=>a+Object.values(it.eps||{}).filter(e=>(e.d||'').startsWith(String(yr))).length,0):0;
   if(!top.length&&!eps.length&&!yrLogs.length)return `<div class="wrapped empty"><b>${yr} wrapped</b><span class="dim">Rate a few ${MK[k].label} and your wrapped builds itself here.</span></div>`;
   return `<div class="wrapped"><div class="wrhead"><span class="wrk">${yr}</span><b>${MK[k].label} wrapped</b></div>
   <div class="wrgrid">
     ${top.length?`<div class="wrcard wrtop"><span class="wrl">your top ${top.length}</span>${top.map((it,i)=>`<button type="button" class="wrrow" data-mkey="${esc(it.key)}"><i class="num">${i+1}</i>${poster(it,'msp')}<span><b>${esc(it.title)}</b><span class="dim">${esc(String(it.year||''))}</span></span>${stars(it.rating,max)}</button>`).join('')}</div>`:''}
-    ${eps.length?`<div class="wrcard wreps"><span class="wrl">highest rated ${U}s ever</span>${eps.map((o,i)=>`<button type="button" class="wrrow" data-mkey="${esc(o.it.key)}"><i class="num">${i+1}</i>${poster(o.it,'msp')}<span><b>${esc(o.it.title)}</b><span class="dim">${U==='episode'?'EP':'CH'} ${o.n}${o.e.note?' · '+esc(o.e.note.slice(0,40)):''}</span></span><span class="epr num">${o.e.r}/10</span></button>`).join('')}</div>`:''}
+    ${eps.length?`<div class="wrcard wreps"><span class="wrl">top ${U}s of ${yr}</span>${eps.map((o,i)=>`<button type="button" class="wrrow" data-mkey="${esc(o.it.key)}"><i class="num">${i+1}</i>${poster(o.it,'msp')}<span><b>${esc(o.it.title)}</b><span class="dim">${U==='episode'?'EP':'CH'} ${o.n}${o.e.note?' · '+esc(o.e.note.slice(0,40)):''}</span></span><span class="epr num">${o.e.r}/10</span></button>`).join('')}</div>`:''}
     <div class="wrcard wrnums">
       <div><span class="wrl">finished in ${yr}</span><b class="num">${yrLogs.length}</b></div>
       ${U?`<div><span class="wrl">${U}s rated in ${yr}</span><b class="num">${epsYr}</b></div>`:''}
@@ -227,7 +232,7 @@ function mWrapped(k,all,logs,yr,genres,months){const max=MK[k].stars,U=k==='movi
     </div></div></div>`}
 /* ---- stats ---- */
 function mStats(k){const all=mItems(k);const done=all.filter(x=>x.st==='done');const max=MK[k].stars;const yr=new Date().getFullYear();
-  const logs=all.flatMap(it=>(it.log||[]).map(l=>({it,l})));const thisYear=logs.filter(o=>o.l.d.startsWith(String(yr)));
+  const logs=all.flatMap(it=>(it.log||[]).map(l=>({it,l})));const thisYear=all.filter(it=>mFinYr(it,String(yr)));
   const rated=all.filter(x=>x.rating!=null&&x.rating!=='');const avg=rated.length?rated.reduce((a,x)=>a+ +x.rating,0)/rated.length:null;
   const buckets=max===10?[...Array(10)].map((_,i)=>i+1):[...Array(10)].map((_,i)=>(i+1)/2);const dist=buckets.map(b=>rated.filter(x=>(max===10?Math.floor(+x.rating):Math.floor(+x.rating*2)/2)===b).length);const dmx=Math.max(1,...dist);
   const genres={};done.concat(all.filter(x=>x.st==='cur')).forEach(x=>(x.genres||[]).forEach(g=>genres[g]=(genres[g]||0)+1));const gl=Object.entries(genres).sort((a,b)=>b[1]-a[1]).slice(0,10);const gmx=Math.max(1,...gl.map(x=>x[1]));
