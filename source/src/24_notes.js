@@ -103,29 +103,27 @@ const TIC={cal:'<rect x="4" y="5.5" width="16" height="14" rx="2.5"/><path d="M4
 const TPR=['','tkp1','tkp2','tkp3','tkp4'];
 const tCap=s=>s?s[0].toUpperCase()+s.slice(1):s;
 /* jira-style model on top of the existing task list: status (st), type (ty), points (sp), key number (no) */
-const JSC={todo:'js-todo',prog:'js-prog',review:'js-review',done:'js-done'};
-const JST=[['todo','To Do'],['prog','In Progress'],['review','In Review'],['done','Done']];
-const JTY={task:['Task','jt-task','<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" stroke="none"/><path d="M7.5 12.3l3 3 6-6.3" stroke="#fff" stroke-width="2.4"/>'],bug:['Bug','jt-bug','<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="4" fill="#fff" stroke="none"/>'],story:['Story','jt-story','<rect x="3" y="3" width="18" height="18" rx="4" fill="currentColor" stroke="none"/><path d="M8.5 7h7v10.5L12 15l-3.5 2.5z" fill="#fff" stroke="none"/>']};
+const JSC={todo:'js-todo',prog:'js-prog',wait:'js-wait',done:'js-done'};
+const JST=[['todo','To Do'],['prog','In Progress'],['wait','Waiting'],['done','Done']];
 const JPR={1:['Highest','jp-1','<path d="M6 12.5l6-5.5 6 5.5M6 18l6-5.5 6 5.5" stroke-width="2.4"/>'],2:['High','jp-2','<path d="M6 15l6-6 6 6" stroke-width="2.4"/>'],3:['Medium','jp-3','<path d="M5.5 9.5h13M5.5 14.5h13" stroke-width="2.4"/>'],4:['Low','jp-4','<path d="M6 9l6 6 6-6" stroke-width="2.4"/>']};
-const tSt=tk=>tk.done?'done':(tk.st&&tk.st!=='done'?tk.st:'todo');
-const jTy=tk=>JTY[tk.ty]||JTY.task;
+const tSt=tk=>tk.done?'done':tk.st==='review'?'wait':(tk.st&&tk.st!=='done'?tk.st:'todo');
 const jIc=(a,cls)=>`<span class="ji ${a[1]}${cls?' '+cls:''}" title="${a[0]}">${TSV(a[2])}</span>`;
-const jKeyOf=P=>P?(P.key||(String(P.n).replace(/[^a-z0-9]/gi,'').slice(0,4).toUpperCase()||'PRJ')):'TSK';
-const jKey=tk=>jKeyOf(TASKS.projects.find(x=>x.id===tk.proj))+'-'+(tk.no||'?');
+const jKey=tk=>tk.no?String(6740+tk.no):'—';
 function tKeys(){let ch=false;TASKS.seq=TASKS.seq||0;[...TASKS.list].sort((a,b)=>(a.created||'')<(b.created||'')?-1:1).forEach(t=>{if(!t.no){t.no=++TASKS.seq;ch=true}});TASKS.list.forEach(t=>{if(t.no>TASKS.seq)TASKS.seq=t.no});if(ch)setTimeout(tSave,0)}
 function tSetSt(tk,st){if(st==='done'){if(!tk.done){tToggle(tk.id);if(!tk.done)tk.st='todo'}}else{tk.done=null;tk.st=st}}
 let JB={v:'board',p:'all',q:'',f:'',...(LS.get('tjira')||{})};const jSaveV=()=>LS.set('tjira',{v:JB.v,p:JB.p,f:JB.f});
 function jDue(tk){if(!tk.d)return '';const late=tk.d<DAYK&&!tk.done,now=tk.d===DAYK;return `<span class="jdue${late?' late':now?' now':''}">${TSV(TIC.cal)}${esc(tCap(tWhen({d:tk.d})).replace(/ \d.*$/,''))}${tk.tm?' '+esc(tk.tm):''}</span>`}
-function jFoot(tk){const subs=tk.sub||[];return `${jIc(jTy(tk))}<span class="jkey">${esc(jKey(tk))}</span><span class="jsp"></span>${jDue(tk)}${tk.rep?`<span class="jm" title="Repeats">${TSV(TIC.rep)}</span>`:''}${subs.length?`<span class="jm">${TSV(TIC.sub)}${subs.filter(s=>s.x).length}/${subs.length}</span>`:''}${tk.sp?`<span class="jpts">${tk.sp}</span>`:''}${jIc(JPR[tk.p||3]||JPR[3])}`}
+const jWait=tk=>tSt(tk)==='wait'&&tk.wo?`<span class="jwo">${TSV('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>')}${esc(tk.wo)}</span>`:'';
+function jFoot(tk){const subs=tk.sub||[];return `<span class="jkey">${esc(jKey(tk))}</span><span class="jsp"></span>${jDue(tk)}${tk.rep?`<span class="jm" title="Repeats">${TSV(TIC.rep)}</span>`:''}${subs.length?`<span class="jm">${TSV(TIC.sub)}${subs.filter(s=>s.x).length}/${subs.length}</span>`:''}${jIc(JPR[tk.p||3]||JPR[3])}`}
 function jCard(tk){const P=JB.p==='all'&&TASKS.projects.find(x=>x.id===tk.proj);
-  return `<div class="jc trow${tk.done?' done':''}" data-tk="${tk.id}" data-te="${tk.id}" draggable="true"><div class="jc-t">${esc(tk.t)}</div>${P?`<div class="jc-l"><span class="jlab" style="--c:${P.col}">${esc(P.n)}</span></div>`:''}<div class="jc-f">${jFoot(tk)}</div></div>`}
-function jRow(tk){const st=tSt(tk);return `<div class="jr trow${tk.done?' done':''}" data-tk="${tk.id}" data-te="${tk.id}">${jIc(jTy(tk))}<span class="jkey">${esc(jKey(tk))}</span><span class="jr-t">${esc(tk.t)}</span>${jDue(tk)}${tk.sp?`<span class="jpts">${tk.sp}</span>`:''}${jIc(JPR[tk.p||3]||JPR[3])}<button type="button" class="jst ${JSC[st]}" data-cyc="${tk.id}">${(JST.find(s=>s[0]===st)||JST[0])[1]}</button></div>`}
+  return `<div class="jc trow${tk.done?' done':''}" data-tk="${tk.id}" data-te="${tk.id}" draggable="true"><div class="jc-t">${esc(tk.t)}</div>${jWait(tk)?`<div class="jc-l">${jWait(tk)}</div>`:''}${P?`<div class="jc-l"><span class="jlab" style="--c:${P.col}">${esc(P.n)}</span></div>`:''}<div class="jc-f">${jFoot(tk)}</div></div>`}
+function jRow(tk){const st=tSt(tk);return `<div class="jr trow${tk.done?' done':''}" data-tk="${tk.id}" data-te="${tk.id}"><span class="jkey">${esc(jKey(tk))}</span><span class="jr-t">${esc(tk.t)}</span>${jWait(tk)}${jDue(tk)}${jIc(JPR[tk.p||3]||JPR[3])}<button type="button" class="jst ${JSC[st]}" data-cyc="${tk.id}">${(JST.find(s=>s[0]===st)||JST[0])[1]}</button></div>`}
 function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.list;
   if(JB.p!=='all'&&JB.p!=='inbox'&&!TASKS.projects.some(P=>P.id===JB.p))JB.p='all';
   const q=JB.q.toLowerCase();
   const inP=t=>JB.p==='all'||(JB.p==='inbox'?!t.proj:t.proj===JB.p);
-  const inF=t=>!JB.f||(JB.f==='due'?t.d&&t.d<=DAYK:JB.f==='hi'?(t.p||3)<=2:JB.f==='bug'?t.ty==='bug':true);
-  const inQ=t=>!q||(t.t+' '+(t.note||'')+' '+jKey(t)).toLowerCase().includes(q);
+  const inF=t=>!JB.f||(JB.f==='due'?t.d&&t.d<=DAYK:JB.f==='hi'?(t.p||3)<=2:JB.f==='wait'?tSt(t)==='wait':true);
+  const inQ=t=>!q||(t.t+' '+(t.note||'')+' '+(t.wo||'')+' '+jKey(t)).toLowerCase().includes(q);
   const vis=L.filter(t=>inP(t)&&inF(t)&&inQ(t));
   const sortT=a=>a.sort((x,y)=>((x.p||3)-(y.p||3))||((x.d||'9')<(y.d||'9')?-1:(x.d||'9')>(y.d||'9')?1:(x.no||0)-(y.no||0)));
   const by=st=>{const r=vis.filter(t=>tSt(t)===st);return st==='done'?r.sort((a,b)=>b.done>a.done?1:-1).slice(0,15):sortT(r)};
@@ -133,14 +131,14 @@ function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.
   const openN=vis.filter(t=>!t.done).length;
   let body='';
   if(JB.v==='board')body=`<div class="jboard">${JST.map(([k,l])=>{const r=by(k);return `<section class="jcol" data-col="${k}"><header class="jcol-h"><span>${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length}</span></header><div class="jcol-b">${r.map(jCard).join('')}${k==='todo'?`<button type="button" class="jcreate" id="jColAdd">${TSV(TIC.plus)}Create</button>`:''}</div></section>`}).join('')}</div>`;
-  else body=JST.map(([k,l])=>{const r=by(k);return `<div class="jlg"><div class="jlg-h"><span class="jst ${JSC[k]}">${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length} issue${vis.filter(t=>tSt(t)===k).length===1?'':'s'}</span></div>${r.length?`<div class="jlist">${r.map(jRow).join('')}</div>`:'<div class="jlg-e">No issues</div>'}</div>`}).join('');
+  else body=JST.map(([k,l])=>{const r=by(k);return `<div class="jlg"><div class="jlg-h"><span class="jst ${JSC[k]}">${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length} task${vis.filter(t=>tSt(t)===k).length===1?'':'s'}</span></div>${r.length?`<div class="jlist">${r.map(jRow).join('')}</div>`:'<div class="jlg-e">Nothing here</div>'}</div>`}).join('');
   const chip=(k,l,dot)=>`<button type="button" class="jchip${JB.p===k?' on':''}" data-jp="${esc(k)}">${dot?`<i class="tkdot" style="background:${dot}"></i>`:''}${esc(l)}</button>`;
   const fchip=(k,l)=>`<button type="button" class="jfch${JB.f===k?' on':''}" data-jf="${k}">${l}</button>`;
   el.innerHTML=`<div class="jw panel">
-    <div class="jtop"><div><div class="jcrumb">Projects <span>/</span> ${esc(name)}</div><h3 class="jtitle">${esc(name)} ${JB.v==='board'?'board':'backlog'}</h3><div class="jsub">${openN} open issue${openN===1?'':'s'}</div></div>
+    <div class="jtop"><div><div class="jcrumb">Projects <span>/</span> ${esc(name)}</div><h3 class="jtitle">${esc(name)} ${JB.v==='board'?'board':'list'}</h3><div class="jsub">${openN} open task${openN===1?'':'s'}</div></div>
       <div class="jvt" role="tablist"><button type="button" data-jv="board" aria-pressed="${JB.v==='board'}">${TSV(TIC.board)}<span>Board</span></button><button type="button" data-jv="list" aria-pressed="${JB.v==='list'}">${TSV(TIC.list)}<span>List</span></button></div></div>
     <div class="jprojs">${chip('all','All work')}${chip('inbox','Inbox')}${TASKS.projects.map(P=>chip(P.id,P.n,P.col)).join('')}<button type="button" class="jchip jnewp" id="tNewP">${TSV(TIC.plus)}Project</button></div>
-    <div class="jbar"><label class="jsearch">${TSV(TIC.search)}<input id="jQ" type="search" placeholder="Search issues" value="${esc(JB.q)}" autocomplete="off"></label>${fchip('due','Due now')}${fchip('hi','High priority')}${fchip('bug','Bugs')}</div>
+    <div class="jbar"><label class="jsearch">${TSV(TIC.search)}<input id="jQ" type="search" placeholder="Search tasks" value="${esc(JB.q)}" autocomplete="off"></label>${fchip('due','Due now')}${fchip('hi','High priority')}${fchip('wait','Waiting')}</div>
     <form class="jadd" id="tAddF"><span class="tkplus">${TSV(TIC.plus)}</span><input id="tAdd" placeholder="What needs to be done?" autocomplete="off" enterkeyhint="done"><button class="tkgo" type="submit">Create</button></form><div class="tprev tkprev" id="tPrev"></div>
     <div class="jbody">${body}</div></div>`;
   tBind()}
@@ -158,7 +156,7 @@ let jDrag=null;
 function tBind(){const el=$('jPaneT');
   if(!el.dataset.hold){el.dataset.hold=1;tHold(el,'[data-te]',c=>tEdit(c.dataset.te))}
   $('tAddF').onsubmit=e=>{e.preventDefault();const v=$('tAdd').value.trim();if(!v)return;const r=tParse(v);if(!r.t)return;if(!r.proj&&JB.p!=='all'&&JB.p!=='inbox')r.proj=JB.p;
-    TASKS.list.push({id:rid()+rid(),...r,st:'todo',ty:'task',no:(TASKS.seq=(TASKS.seq||0)+1),note:'',sub:[],done:null,created:new Date().toISOString()});tSave();renderTasks();$('tAdd').focus()};
+    TASKS.list.push({id:rid()+rid(),...r,st:'todo',no:(TASKS.seq=(TASKS.seq||0)+1),note:'',sub:[],done:null,created:new Date().toISOString()});tSave();renderTasks();$('tAdd').focus()};
   $('tAdd').oninput=e=>{const v=e.target.value.trim();if(!v){$('tPrev').textContent='';return}const r=tParse(v);const P=TASKS.projects.find(x=>x.id===r.proj);$('tPrev').textContent=[r.d?tCap(tWhen(r)):'',r.rep?'Repeats '+r.rep:'',(JPR[r.p]||JPR[3])[0]+' priority',P?P.n:''].filter(Boolean).join('  ·  ')};
   $('jQ').oninput=e=>{JB.q=e.target.value;const p=e.target.selectionStart;renderTasks();const i=$('jQ');i.focus();try{i.setSelectionRange(p,p)}catch(x){}};
   el.onclick=e=>{const b=e.target.closest('button,[data-te]');if(!b)return;const d=b.dataset;
@@ -174,21 +172,20 @@ function tBind(){const el=$('jPaneT');
   el.ondragend=e=>{jDrag=null;el.querySelectorAll('.drag,.dropok').forEach(x=>x.classList.remove('drag','dropok'))};
   el.ondragover=e=>{const col=e.target.closest('.jcol');if(!col||!jDrag)return;e.preventDefault();el.querySelectorAll('.dropok').forEach(x=>x!==col&&x.classList.remove('dropok'));col.classList.add('dropok')};
   el.ondrop=e=>{const col=e.target.closest('.jcol');if(!col||!jDrag)return;e.preventDefault();const tk=TASKS.list.find(x=>x.id===jDrag);if(tk&&tSt(tk)!==col.dataset.col){tSetSt(tk,col.dataset.col);tSave()}jDrag=null;renderTasks()}}
-function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const draft=clone(tk);draft.sub=draft.sub||[];draft.st=tSt(tk);draft.ty=draft.ty||'task';draft.p=draft.p||3;
+function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const draft=clone(tk);draft.sub=draft.sub||[];draft.st=tSt(tk);draft.p=draft.p||3;
   const REPS=[['','Never'],['daily','Every day'],['weekdays','Weekdays'],['weekly','Every week'],['monthly','Every month'],['yearly','Every year'],...['mon','tue','wed','thu','fri','sat','sun'].map(d=>['every '+d,'Every '+new Date(2024,0,{mon:1,tue:2,wed:3,thu:4,fri:5,sat:6,sun:7}[d]).toLocaleDateString('en-GB',{weekday:'long'})])];
   const PRI=[1,2,3,4];
   const row=(ic,l,val,ctrl,clr)=>`<label class="tes-row"><span class="tes-ic">${TSV(ic)}</span><span class="tes-l">${l}</span><span class="tes-v${val?'':' none'}">${val||'None'}</span>${clr&&val?`<button type="button" class="tes-clr" data-clr="${clr}" aria-label="Clear">${TSV('<path d="M7 7l10 10M17 7L7 17"/>')}</button>`:TSV('<path d="M9 6l6 6-6 6"/>').replace('<svg','<svg class="tes-chev"')}${ctrl}</label>`;
   const P=TASKS.projects.find(x=>x.id===draft.proj);
   const draw=()=>{const P=TASKS.projects.find(x=>x.id===draft.proj);$('sheetBody').innerHTML=`<div class="tes">
-    <div class="tes-meta"><div class="tes-ty" id="teTy">${Object.entries(JTY).map(([k,a])=>`<button type="button" data-tty="${k}" aria-pressed="${draft.ty===k}">${jIc(a)}<span>${a[0]}</span></button>`).join('')}</div></div>
     <div class="tes-st">${JST.map(([k,l])=>`<button type="button" class="${JSC[k]}" data-tst="${k}" aria-pressed="${draft.st===k}">${l}</button>`).join('')}</div>
     <textarea class="tes-t" id="teT" rows="1" placeholder="Task name">${esc(draft.t)}</textarea>
     <textarea class="tes-n" id="teN" rows="2" placeholder="Add notes">${esc(draft.note||'')}</textarea>
+    ${draft.st==='wait'?`<label class="tes-wo">${TSV('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>')}<span>Waiting on</span><input id="teWo" value="${esc(draft.wo||'')}" placeholder="Who or what" autocomplete="off"></label>`:''}
     <div class="tes-card">
       ${row(TIC.cal,'Date',draft.d?tCap(tWhen({d:draft.d})):'',`<input type="date" class="tes-in" id="teD" value="${draft.d||''}">`,'d')}
       ${row('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>','Time',draft.tm||'',`<input type="time" class="tes-in" id="teTm" value="${draft.tm||''}">`,'tm')}
       ${row(TIC.rep,'Repeat',draft.rep?(REPS.find(r=>r[0]===draft.rep)||[0,tCap(draft.rep)])[1]:'',`<select class="tes-in" id="teR">${REPS.map(([v,l])=>`<option value="${v}" ${(draft.rep||'')===v?'selected':''}>${l}</option>`).join('')}</select>`)}
-      ${row('<circle cx="12" cy="12" r="8.5"/><path d="M8.5 12h7"/>','Story points',draft.sp?String(draft.sp):'',`<select class="tes-in" id="teSp">${['',1,2,3,5,8,13].map(v=>`<option value="${v}" ${(draft.sp||'')==v?'selected':''}>${v||'None'}</option>`).join('')}</select>`)}
       ${row(TIC.inbox,'Project',P?`<i class="tkdot" style="background:${P.col}"></i>${esc(P.n)}`:'Inbox',`<select class="tes-in" id="teP"><option value="">Inbox</option>${TASKS.projects.map(P=>`<option value="${P.id}" ${draft.proj===P.id?'selected':''}>${esc(P.n)}</option>`).join('')}</select>`)}
     </div>
     <div class="tes-lab">Priority</div>
@@ -200,10 +197,10 @@ function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const dr
     const t=$('teT');const fit=()=>{t.style.height='auto';t.style.height=t.scrollHeight+'px'};fit();t.oninput=fit;
     $('sheetBody').querySelectorAll('input.tes-in').forEach(x=>x.addEventListener('click',()=>{try{x.showPicker&&x.showPicker()}catch(e){}}))};
   openSheet(jKey(tk),'');draw();const sb=$('sheetBody');sb.onchange=e=>{if(e.target.classList.contains('tes-in')){read();draw()}};
-  const read=()=>{draft.t=$('teT').value.trim()||draft.t;draft.note=$('teN').value;draft.d=$('teD').value||null;draft.tm=$('teTm').value||null;draft.rep=$('teR').value||null;draft.proj=$('teP').value||null;draft.sp=+$('teSp').value||null;sb.querySelectorAll('[data-tsi]').forEach(x=>draft.sub[+x.dataset.tsi].t=x.value)};
+  const read=()=>{draft.t=$('teT').value.trim()||draft.t;draft.note=$('teN').value;draft.d=$('teD').value||null;draft.tm=$('teTm').value||null;draft.rep=$('teR').value||null;draft.proj=$('teP').value||null;if($('teWo'))draft.wo=$('teWo').value.trim()||null;sb.querySelectorAll('[data-tsi]').forEach(x=>draft.sub[+x.dataset.tsi].t=x.value)};
   sb.onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
     if(d.clr){e.preventDefault();read();draft[d.clr]=null;draw();return}
-    if(d.tp){read();draft.p=+d.tp;draw();return}if(d.tty){read();draft.ty=d.tty;draw();return}if(d.tst){read();draft.st=d.tst;draw();return}if(d.ts){read();const s=draft.sub[+d.ts];s.x=!s.x;draw();return}if(d.tsd){read();draft.sub.splice(+d.tsd,1);draw();return}
+    if(d.tp){read();draft.p=+d.tp;draw();return}if(d.tst){read();draft.st=d.tst;draw();return}if(d.ts){read();const s=draft.sub[+d.ts];s.x=!s.x;draw();return}if(d.tsd){read();draft.sub.splice(+d.tsd,1);draw();return}
     if(b.id==='teSub'){read();draft.sub.push({t:'',x:false});draw();const ins=sb.querySelectorAll('[data-tsi]');ins[ins.length-1].focus();return}
     if(b.id==='teDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Tap again to delete';b.classList.add('arm');return}TASKS.list=TASKS.list.filter(x=>x.id!==id);tSave();closeSheet();renderTasks();return}
     if(b.id==='teOk'){read();draft.sub=draft.sub.filter(s=>s.t.trim());const st=draft.st;delete draft.st;draft.done=tk.done;Object.assign(tk,draft);tSetSt(tk,st);tSave();closeSheet();renderTasks()}}}
