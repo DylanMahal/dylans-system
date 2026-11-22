@@ -208,40 +208,50 @@ function mLists(k){const L=MEDIA[k].lists||[];
     if(b.dataset.mkey)mEntry(k,b.dataset.mkey)}}
 /* ---- wrapped: your top 5, best episodes, year highlights ---- */
 /* an entry counts towards a year only if one of its dates falls in it (or it's being watched right now) */
-const mInYr=(it,Y)=>[it.start,it.fin,...(it.log||[]).map(l=>l.d)].some(d=>(d||'').startsWith(Y))||it.st==='cur';
+const mInYr=(it,Y)=>[it.start,it.fin,...(it.log||[]).map(l=>l.d)].some(d=>(d||'').startsWith(Y))||(it.st==='cur'&&Y===String(new Date().getFullYear()));
 const mFinYr=(it,Y)=>(it.fin||'').startsWith(Y)?it.fin:((it.log||[]).map(l=>l.d).find(d=>(d||'').startsWith(Y))||null);
-function mWrapped(k,ALL,logs,yr,_g,_m){const max=MK[k].stars,U=k==='movies'?null:EPU(k),Y=String(yr);
+const mFinD=it=>it.fin||((it.log||[]).map(l=>l.d).filter(Boolean).sort().pop())||null;
+const mHas=v=>v!=null&&v!=='';
+const mHrs=(k,xs,f=x=>+x.prog||0)=>k==='anime'?xs.reduce((a,x)=>a+f(x)*(x.dur||24),0)/60:null;
+const MSC={cur:'#6ab8ff',done:'#5fe39a',plan:'#8e8e93',hold:'#ffb562',drop:'#ff6b81'};
+const mTitle=s=>s[0].toUpperCase()+s.slice(1);
+
+function mWrapped(k,ALL,yr){const max=MK[k].stars,K=MK[k],U=k==='movies'?null:EPU(k),Y=String(yr);
   const all=ALL.filter(it=>mInYr(it,Y)),fins=ALL.map(it=>({it,d:mFinYr(it,Y)})).filter(o=>o.d);
-  const genres={};all.forEach(x=>(x.genres||[]).forEach(g=>genres[g]=(genres[g]||0)+1));const months=[...Array(12)].map((_,i)=>fins.filter(o=>o.d.slice(5,7)===pad(i+1)).length);
-  const top=all.filter(x=>x.rating!=null&&x.rating!=='').sort((a,b)=>(+b.rating-+a.rating)||((b.fav?1:0)-(a.fav?1:0))||((b.upd||'')>(a.upd||'')?1:-1)).slice(0,5);
-  const eps=U?ALL.flatMap(it=>Object.entries(it.eps||{}).filter(([n,e])=>e.r&&(e.d||'').startsWith(Y)).map(([n,e])=>({it,n:+n,e}))).sort((a,b)=>b.e.r-a.e.r||((b.e.d||'')>(a.e.d||'')?1:-1)).slice(0,5):[];
-  const yrLogs=fins;const g=Object.entries(genres).sort((a,b)=>b[1]-a[1])[0];
-  const bm=months.indexOf(Math.max(...months));const re=all.map(it=>({it,c:(it.log||[]).filter(l=>(l.d||'').startsWith(Y)).length})).sort((a,b)=>b.c-a.c)[0];
-  const epsYr=U?ALL.reduce((a,it)=>a+Object.values(it.eps||{}).filter(e=>(e.d||'').startsWith(String(yr))).length,0):0;
-  if(!top.length&&!eps.length&&!yrLogs.length)return `<div class="wrapped empty"><b>${yr} wrapped</b><span class="dim">Rate a few ${MK[k].label} and your wrapped builds itself here.</span></div>`;
-  return `<div class="wrapped"><div class="wrhead"><span class="wrk">${yr}</span><b>${MK[k].label} wrapped</b></div>
-  <div class="wrgrid">
-    ${top.length?`<div class="wrcard wrtop"><span class="wrl">your top ${top.length}</span>${top.map((it,i)=>`<button type="button" class="wrrow" data-mkey="${esc(it.key)}"><i class="num">${i+1}</i>${poster(it,'msp')}<span><b>${esc(it.title)}</b><span class="dim">${esc(String(it.year||''))}</span></span>${stars(it.rating,max)}</button>`).join('')}</div>`:''}
-    ${eps.length?`<div class="wrcard wreps"><span class="wrl">top ${U}s of ${yr}</span>${eps.map((o,i)=>`<button type="button" class="wrrow" data-mkey="${esc(o.it.key)}"><i class="num">${i+1}</i>${poster(o.it,'msp')}<span><b>${esc(o.it.title)}</b><span class="dim">${U==='episode'?'EP':'CH'} ${o.n}${o.e.note?' · '+esc(o.e.note.slice(0,40)):''}</span></span><span class="epr num">${o.e.r}/10</span></button>`).join('')}</div>`:''}
-    <div class="wrcard wrnums">
-      <div><span class="wrl">finished in ${yr}</span><b class="num">${yrLogs.length}</b></div>
-      ${U?`<div><span class="wrl">${U}s rated in ${yr}</span><b class="num">${epsYr}</b></div>`:''}
-      ${g?`<div><span class="wrl">#1 genre</span><b class="wrs">${esc(g[0])}</b></div>`:''}
-      ${yrLogs.length?`<div><span class="wrl">Busiest month</span><b class="wrs">${new Date(yr,bm,1).toLocaleDateString('en-GB',{month:'long'})}</b></div>`:''}
-      ${re&&re.c>1?`<div><span class="wrl">most re${MK[k].verb==='watch'?'watched':'read'}</span><b class="wrs">${esc(re.it.title)} ×${re.c}</b></div>`:''}
-    </div></div></div>`}
-/* ---- stats ---- */
-function mStats(k){const all=mItems(k);const done=all.filter(x=>x.st==='done');const max=MK[k].stars;const yr=new Date().getFullYear();
-  const logs=all.flatMap(it=>(it.log||[]).map(l=>({it,l})));const thisYear=all.filter(it=>mFinYr(it,String(yr)));
-  const rated=all.filter(x=>x.rating!=null&&x.rating!=='');const avg=rated.length?rated.reduce((a,x)=>a+ +x.rating,0)/rated.length:null;
-  const buckets=max===10?[...Array(10)].map((_,i)=>i+1):[...Array(10)].map((_,i)=>(i+1)/2);const dist=buckets.map(b=>rated.filter(x=>(max===10?Math.floor(+x.rating):Math.floor(+x.rating*2)/2)===b).length);const dmx=Math.max(1,...dist);
-  const genres={};done.concat(all.filter(x=>x.st==='cur')).forEach(x=>(x.genres||[]).forEach(g=>genres[g]=(genres[g]||0)+1));const gl=Object.entries(genres).sort((a,b)=>b[1]-a[1]).slice(0,10);const gmx=Math.max(1,...gl.map(x=>x[1]));
-  const months=[...Array(12)].map((_,i)=>logs.filter(o=>o.l.d.startsWith(`${yr}-${pad(i+1)}`)).length);const mmx=Math.max(1,...months);
-  const units=all.reduce((a,x)=>a+(+x.prog||0),0);const hours=k==='anime'?Math.round(all.reduce((a,x)=>a+(+x.prog||0)*(x.dur||24),0)/60):null;
-  const W=mWrapped(k,all,logs,yr,genres,months);
-  $('mBody').innerHTML=W+`<div class="statcards"><div><span class="dim">Completed</span><b class="num">${done.length}</b></div><div><span class="dim">in ${yr}</span><b class="num">${thisYear.length}</b></div><div><span class="dim">Avg rating</span><b class="num">${avg==null?'—':kgs(Math.round(avg*10)/10)}<small>${max===10?' /10':' ★'}</small></b></div>${MK[k].unit?`<div><span class="dim">${MK[k].units}</span><b class="num">${units.toLocaleString('en-GB')}</b></div>`:''}${hours!=null?`<div><span class="dim">Hours watched</span><b class="num">${hours}</b></div>`:''}<div><span class="dim">plan to ${MK[k].verb}</span><b class="num">${all.filter(x=>x.st==='plan').length}</b></div></div>
-  <div class="statsplit"><div class="panel"><div class="ph"><span class="tag">${yr} by month</span></div><div class="pb"><div class="wkbars" style="grid-template-columns:repeat(12,1fr)">${months.map((v,i)=>`<div class="d"><span class="p num">${v||''}</span><div class="b" style="height:${v/mmx*100}%"></div><span class="l">${'jfmamjjasond'[i]}</span></div>`).join('')}</div></div></div>
-  <div class="panel"><div class="ph"><span class="tag">Ratings</span><span class="dim">${rated.length} rated</span></div><div class="pb"><div class="wkbars" style="grid-template-columns:repeat(10,1fr)">${dist.map((v,i)=>`<div class="d"><span class="p num">${v||''}</span><div class="b" style="height:${v/dmx*100}%;background:var(--cyan)"></div><span class="l">${max===10?buckets[i]:(buckets[i]%1?'½':buckets[i])}</span></div>`).join('')}</div></div></div></div>
-  <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">Top genres</span></div><div class="pb"><div class="mbars">${gl.map(([g,v])=>`<div><span>${esc(g)}</span><i style="--w:${v/gmx*100}%"></i><b class="num">${v}</b></div>`).join('')||'<span class="dim">Add a few titles to see your taste.</span>'}</div></div></div>`;
-  $('mBody').onclick=e=>{const b=e.target.closest('[data-mkey]');if(b)mEntry(k,b.dataset.mkey)}}
+  const genres={};all.forEach(x=>(x.genres||[]).forEach(g=>genres[g]=(genres[g]||0)+1));const g=Object.entries(genres).sort((a,b)=>b[1]-a[1])[0];
+  const months=[...Array(12)].map((_,i)=>fins.filter(o=>o.d.slice(5,7)===pad(i+1)).length),mmx=Math.max(1,...months),bm=months.indexOf(Math.max(...months));
+  const top=all.filter(x=>mHas(x.rating)).sort((a,b)=>(+b.rating-+a.rating)||((b.fav?1:0)-(a.fav?1:0))).slice(0,5);
+  const ep=U?ALL.flatMap(it=>Object.entries(it.eps||{}).filter(([n,e])=>mHas(e.r)&&(e.d||'').startsWith(Y)).map(([n,e])=>({it,n:+n,e}))).sort((a,b)=>b.e.r-a.e.r)[0]:null;
+  const units=fins.reduce((a,o)=>a+(+o.it.total||+o.it.prog||0),0),hrs=mHrs(k,fins.map(o=>o.it),x=>+x.total||+x.prog||0);
+  const rated=top.length?all.filter(x=>mHas(x.rating)):[],avg=rated.length?rated.reduce((a,x)=>a+ +x.rating,0)/rated.length:null;
+  if(!all.length)return `<div class="wr2 empty"><span class="wr2-y">${yr}</span><b>Nothing logged for ${yr} yet</b><span>Add a Started or Finished date, or log a ${K.verb}, and it lands here.</span></div>`;
+  return `<div class="wr2"><div class="wr2-hd"><span class="wr2-y">${yr}</span><b>${esc(mTitle(K.label))} Wrapped</b></div>
+   <div class="wr2-big"><div><b class="num">${fins.length}</b><span>finished</span></div>${K.unit?`<div><b class="num">${units.toLocaleString('en-GB')}</b><span>${K.units}</span></div>`:''}${hrs!=null?`<div><b class="num">${Math.round(hrs)}</b><span>hours</span></div>`:`<div><b class="num">${all.length}</b><span>titles</span></div>`}</div>
+   ${top.length?`<div class="wr2-l">Your top ${top.length}</div><div class="wr2-top">${top.map((it,i)=>`<button type="button" data-mkey="${esc(it.key)}">${poster(it,'wr2-p')}<i class="num">${i+1}</i><span class="wr2-s num">${max===10?kgs(it.rating):stars(it.rating,max)}</span><b>${esc(it.title)}</b></button>`).join('')}</div>`:''}
+   <div class="wr2-facts">${g?`<div><span>Top genre</span><b>${esc(g[0])}</b></div>`:''}${fins.length?`<div><span>Busiest month</span><b>${new Date(yr,bm,1).toLocaleDateString('en-GB',{month:'long'})}</b></div>`:''}${avg!=null?`<div><span>Average score</span><b class="num">${kgs(Math.round(avg*10)/10)}${max===10?'':' ★'}</b></div>`:''}${ep?`<div><span>Best ${U}</span><b>${esc(ep.it.title)} · ${U==='episode'?'EP':'CH'} ${ep.n}</b></div>`:''}</div>
+   ${fins.length?`<div class="wr2-l">Finished by month</div><div class="ms-cols m12">${months.map((v,i)=>`<div class="${i===bm&&v?'hi':''}"><span class="num">${v||''}</span><i style="height:${v?Math.max(6,v/mmx*100):3}%"></i><em>${'JFMAMJJASOND'[i]}</em></div>`).join('')}</div>`:''}</div>`}
+
+function mStats(k){const all=mItems(k),K=MK[k],max=K.stars,now=new Date().getFullYear();
+  const years=[];for(let y=now;y>=2026;y--)years.push(y);if(!years.length)years.push(now);if(!years.includes(mStats.yr))mStats.yr=years[0];
+  const done=all.filter(x=>x.st==='done'),rated=all.filter(x=>mHas(x.rating)),avg=rated.length?rated.reduce((a,x)=>a+ +x.rating,0)/rated.length:null;
+  const units=all.reduce((a,x)=>a+(+x.prog||0),0),hrs=mHrs(k,all);
+  const buckets=max===10?[...Array(10)].map((_,i)=>i+1):[...Array(10)].map((_,i)=>(i+1)/2);
+  const dist=buckets.map(b=>rated.filter(x=>(max===10?Math.floor(+x.rating):Math.floor(+x.rating*2)/2)===b).length),dmx=Math.max(1,...dist),dmode=dist.indexOf(Math.max(...dist));
+  const st=MSTAT(k).map(([s,l])=>({s,l,n:all.filter(x=>(x.st||'plan')===s).length})).filter(o=>o.n);
+  const genres={};done.concat(all.filter(x=>x.st==='cur')).forEach(x=>(x.genres||[]).forEach(g=>genres[g]=(genres[g]||0)+1));const gl=Object.entries(genres).sort((a,b)=>b[1]-a[1]).slice(0,8),gmx=Math.max(1,...gl.map(x=>x[1])),gtot=gl.reduce((a,x)=>a+x[1],0)||1;
+  const top=rated.slice().sort((a,b)=>(+b.rating-+a.rating)||((b.fav?1:0)-(a.fav?1:0))).slice(0,10);
+  const byYr={};done.forEach(x=>{const d=mFinD(x);if(d)byYr[d.slice(0,4)]=(byYr[d.slice(0,4)]||0)+1});const yk=Object.keys(byYr).sort().slice(-8),ymx=Math.max(1,...yk.map(y=>byYr[y]));
+  const tile=(l,v,sub)=>`<div class="ms-tile"><span>${l}</span><b class="num">${v}</b>${sub?`<small>${sub}</small>`:''}</div>`;
+  $('mBody').innerHTML=`<div class="ms">
+  <div class="ms-hd"><b>Wrapped</b>${years.length>1?`<div class="ms-yrs">${years.map(y=>`<button type="button" data-wy="${y}" aria-pressed="${y===mStats.yr}">${y}</button>`).join('')}</div>`:''}</div>
+  ${mWrapped(k,all,mStats.yr)}
+  <div class="ms-hd"><b>All time</b></div>
+  <div class="ms-tiles">${tile('Completed',done.length)}${tile('Mean score',avg==null?'–':kgs(Math.round(avg*100)/100),avg==null?'':max===10?'out of 10':'out of 5')}${K.unit?tile(mTitle(K.units),units.toLocaleString('en-GB')):''}${hrs!=null?tile('Days watched',(hrs/24).toFixed(1),Math.round(hrs)+' hours'):tile('In library',all.length)}</div>
+  ${st.length?`<div class="ms-card"><div class="ms-ch"><b>Status</b><span>${all.length} total</span></div><div class="ms-stack">${st.map(o=>`<i style="flex:${o.n};background:${MSC[o.s]}"></i>`).join('')}</div><div class="ms-leg">${st.map(o=>`<span><i style="background:${MSC[o.s]}"></i>${esc(mTitle(o.l))}<b class="num">${o.n}</b></span>`).join('')}</div></div>`:''}
+  <div class="ms-card"><div class="ms-ch"><b>Score distribution</b><span>${rated.length} rated</span></div>${rated.length?`<div class="ms-cols">${dist.map((v,i)=>`<div class="${i===dmode&&v?'hi':''}"><span class="num">${v||''}</span><i style="height:${v?Math.max(6,v/dmx*100):3}%"></i><em>${max===10?buckets[i]:(buckets[i]%1?'½':buckets[i])}</em></div>`).join('')}</div>`:`<div class="ms-none">Rate a few titles to see your curve.</div>`}</div>
+  ${yk.length?`<div class="ms-card"><div class="ms-ch"><b>Finished per year</b><span>${done.length} completed</span></div><div class="ms-cols">${yk.map(y=>`<div class="${+y===now?'hi':''}"><span class="num">${byYr[y]}</span><i style="height:${Math.max(6,byYr[y]/ymx*100)}%"></i><em>${y}</em></div>`).join('')}</div></div>`:''}
+  <div class="ms-card"><div class="ms-ch"><b>Top genres</b></div>${gl.length?`<div class="ms-hbars">${gl.map(([g,v])=>`<div><span>${esc(g)}</span><div><i style="width:${v/gmx*100}%"></i></div><b class="num">${Math.round(v/gtot*100)}%</b></div>`).join('')}</div>`:`<div class="ms-none">Add a few titles to see your taste.</div>`}</div>
+  ${top.length?`<div class="ms-card ms-list"><div class="ms-ch"><b>Highest rated</b></div>${top.map((it,i)=>`<button type="button" data-mkey="${esc(it.key)}"><i class="num">${i+1}</i>${poster(it,'msp')}<span><b>${esc(it.title)}</b><small>${[it.year,it.series?'whole series':it.kind].filter(Boolean).map(esc).join(' · ')}</small></span><em class="num">${max===10?kgs(it.rating):stars(it.rating,max)}</em></button>`).join('')}</div>`:''}
+  </div>`;
+  $('mBody').onclick=e=>{const y=e.target.closest('[data-wy]');if(y){mStats.yr=+y.dataset.wy;mStats(k);return}const b=e.target.closest('[data-mkey]');if(b)mEntry(k,b.dataset.mkey)}}
 initMediaNav();
