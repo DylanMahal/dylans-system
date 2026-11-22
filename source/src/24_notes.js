@@ -104,16 +104,16 @@ const TPR=['','tkp1','tkp2','tkp3','tkp4'];
 const tCap=s=>s?s[0].toUpperCase()+s.slice(1):s;
 /* jira-style model on top of the existing task list: status (st), type (ty), points (sp), key number (no) */
 const JSC={todo:'js-todo',prog:'js-prog',wait:'js-wait',done:'js-done'};
-const JST=[['todo','To Do'],['prog','In Progress'],['wait','Waiting'],['done','Done']];
+const JST=[['todo','To Do'],['prog','In Progress'],['done','Done']];
 const JPR={1:['Highest','jp-1','<path d="M6 12.5l6-5.5 6 5.5M6 18l6-5.5 6 5.5" stroke-width="2.4"/>'],2:['High','jp-2','<path d="M6 15l6-6 6 6" stroke-width="2.4"/>'],3:['Medium','jp-3','<path d="M5.5 9.5h13M5.5 14.5h13" stroke-width="2.4"/>'],4:['Low','jp-4','<path d="M6 9l6 6 6-6" stroke-width="2.4"/>']};
-const tSt=tk=>tk.done?'done':tk.st==='review'?'wait':(tk.st&&tk.st!=='done'?tk.st:'todo');
+const tSt=tk=>tk.done?'done':(tk.st==='prog'?'prog':'todo');
 const jIc=(a,cls)=>`<span class="ji ${a[1]}${cls?' '+cls:''}" title="${a[0]}">${TSV(a[2])}</span>`;
 const jKey=tk=>tk.no?String(6740+tk.no):'—';
 function tKeys(){let ch=false;TASKS.seq=TASKS.seq||0;[...TASKS.list].sort((a,b)=>(a.created||'')<(b.created||'')?-1:1).forEach(t=>{if(!t.no){t.no=++TASKS.seq;ch=true}});TASKS.list.forEach(t=>{if(t.no>TASKS.seq)TASKS.seq=t.no});if(ch)setTimeout(tSave,0)}
 function tSetSt(tk,st){if(st==='done'){if(!tk.done){tToggle(tk.id);if(!tk.done)tk.st='todo'}}else{tk.done=null;tk.st=st}}
 let JB={v:'board',p:'all',q:'',f:'',...(LS.get('tjira')||{})};const jSaveV=()=>LS.set('tjira',{v:JB.v,p:JB.p,f:JB.f});
 function jDue(tk){if(!tk.d)return '';const late=tk.d<DAYK&&!tk.done,now=tk.d===DAYK;return `<span class="jdue${late?' late':now?' now':''}">${TSV(TIC.cal)}${esc(tCap(tWhen({d:tk.d})).replace(/ \d.*$/,''))}${tk.tm?' '+esc(tk.tm):''}</span>`}
-const jWait=tk=>tSt(tk)==='wait'&&tk.wo?`<span class="jwo">${TSV('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>')}${esc(tk.wo)}</span>`:'';
+const jWait=tk=>false&&tk.wo?`<span class="jwo">${TSV('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>')}${esc(tk.wo)}</span>`:'';
 function jFoot(tk){const subs=tk.sub||[];return `<span class="jkey">${esc(jKey(tk))}</span><span class="jsp"></span>${jDue(tk)}${tk.rep?`<span class="jm" title="Repeats">${TSV(TIC.rep)}</span>`:''}${subs.length?`<span class="jm">${TSV(TIC.sub)}${subs.filter(s=>s.x).length}/${subs.length}</span>`:''}${jIc(JPR[tk.p||3]||JPR[3])}`}
 function jCard(tk){const P=JB.p==='all'&&TASKS.projects.find(x=>x.id===tk.proj);
   return `<div class="jc trow${tk.done?' done':''}" data-tk="${tk.id}" data-te="${tk.id}" draggable="true"><div class="jc-t">${esc(tk.t)}</div>${jWait(tk)?`<div class="jc-l">${jWait(tk)}</div>`:''}${P?`<div class="jc-l"><span class="jlab" style="--c:${P.col}">${esc(P.n)}</span></div>`:''}<div class="jc-f">${jFoot(tk)}</div></div>`}
@@ -122,7 +122,7 @@ function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.
   if(JB.p!=='all'&&JB.p!=='inbox'&&!TASKS.projects.some(P=>P.id===JB.p))JB.p='all';
   const q=JB.q.toLowerCase();
   const inP=t=>JB.p==='all'||(JB.p==='inbox'?!t.proj:t.proj===JB.p);
-  const inF=t=>!JB.f||(JB.f==='due'?t.d&&t.d<=DAYK:JB.f==='hi'?(t.p||3)<=2:JB.f==='wait'?tSt(t)==='wait':true);
+  const inF=t=>!JB.f||(JB.f==='due'?t.d&&t.d<=DAYK:JB.f==='hi'?(t.p||3)<=2:true);
   const inQ=t=>!q||(t.t+' '+(t.note||'')+' '+(t.wo||'')+' '+jKey(t)).toLowerCase().includes(q);
   const vis=L.filter(t=>inP(t)&&inF(t)&&inQ(t));
   const sortT=a=>a.sort((x,y)=>((x.p||3)-(y.p||3))||((x.d||'9')<(y.d||'9')?-1:(x.d||'9')>(y.d||'9')?1:(x.no||0)-(y.no||0)));
@@ -138,7 +138,7 @@ function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.
     <div class="jtop"><div><div class="jcrumb">Projects <span>/</span> ${esc(name)}</div><h3 class="jtitle">${esc(name)} ${JB.v==='board'?'board':'list'}</h3><div class="jsub">${openN} open task${openN===1?'':'s'}</div></div>
       <div class="jvt" role="tablist"><button type="button" data-jv="board" aria-pressed="${JB.v==='board'}">${TSV(TIC.board)}<span>Board</span></button><button type="button" data-jv="list" aria-pressed="${JB.v==='list'}">${TSV(TIC.list)}<span>List</span></button></div></div>
     <div class="jprojs">${chip('all','All work')}${chip('inbox','Inbox')}${TASKS.projects.map(P=>chip(P.id,P.n,P.col)).join('')}<button type="button" class="jchip jnewp" id="tNewP">${TSV(TIC.plus)}Project</button></div>
-    <div class="jbar"><label class="jsearch">${TSV(TIC.search)}<input id="jQ" type="search" placeholder="Search tasks" value="${esc(JB.q)}" autocomplete="off"></label>${fchip('due','Due now')}${fchip('hi','High priority')}${fchip('wait','Waiting')}</div>
+    <div class="jbar"><label class="jsearch">${TSV(TIC.search)}<input id="jQ" type="search" placeholder="Search tasks" value="${esc(JB.q)}" autocomplete="off"></label>${fchip('due','Due now')}${fchip('hi','High priority')}</div>
     <form class="jadd" id="tAddF"><span class="tkplus">${TSV(TIC.plus)}</span><input id="tAdd" placeholder="What needs to be done?" autocomplete="off" enterkeyhint="done"><button class="tkgo" type="submit">Create</button></form><div class="tprev tkprev" id="tPrev"></div>
     <div class="jbody">${body}</div></div>`;
   tBind()}
@@ -181,7 +181,7 @@ function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const dr
     <div class="tes-st">${JST.map(([k,l])=>`<button type="button" class="${JSC[k]}" data-tst="${k}" aria-pressed="${draft.st===k}">${l}</button>`).join('')}</div>
     <textarea class="tes-t" id="teT" rows="1" placeholder="Task name">${esc(draft.t)}</textarea>
     <textarea class="tes-n" id="teN" rows="2" placeholder="Add notes">${esc(draft.note||'')}</textarea>
-    ${draft.st==='wait'?`<label class="tes-wo">${TSV('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>')}<span>Waiting on</span><input id="teWo" value="${esc(draft.wo||'')}" placeholder="Who or what" autocomplete="off"></label>`:''}
+
     <div class="tes-card">
       ${row(TIC.cal,'Date',draft.d?tCap(tWhen({d:draft.d})):'',`<input type="date" class="tes-in" id="teD" value="${draft.d||''}">`,'d')}
       ${row('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>','Time',draft.tm||'',`<input type="time" class="tes-in" id="teTm" value="${draft.tm||''}">`,'tm')}

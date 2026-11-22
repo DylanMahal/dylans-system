@@ -1837,7 +1837,7 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 .jadd{display:flex;align-items:center;gap:8px;margin-top:14px;height:46px;padding:0 6px 0 14px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035)}
 .jadd:focus-within{border-color:rgba(255,42,109,.55)}.jadd input{flex:1;min-width:0;border:0;outline:0;background:none;color:#fff;font:16px var(--sf)}.jadd input::placeholder{color:#777}
 .jbody{margin-top:8px}
-.jboard{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:4px}.jboard::-webkit-scrollbar{display:none}
+.jboard{display:grid;grid-template-columns:repeat(3,minmax(220px,1fr));gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:4px}.jboard::-webkit-scrollbar{display:none}
 .jcol{scroll-snap-align:start;background:rgba(255,255,255,.035);border-radius:14px;padding:8px;min-height:200px;display:flex;flex-direction:column;transition:background .15s,box-shadow .15s}
 .jcol.dropok{background:rgba(255,42,109,.08);box-shadow:inset 0 0 0 1.5px rgba(255,42,109,.45)}
 .jcol-h{display:flex;align-items:center;gap:8px;padding:6px 6px 10px;font:700 11.5px var(--sf);letter-spacing:.06em;text-transform:uppercase;color:#9fadbc}.jcol-h .num{color:#6b7785;font-weight:600}
@@ -1865,7 +1865,7 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 .jr-t{flex:1;min-width:0;font-size:14.5px;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.jr.done .jr-t{color:#8a8a8a;text-decoration:line-through}
 @media (max-width:900px){
   .jw{padding:18px 14px 22px}.jtitle{font-size:23px}.jvt button span{display:none}.jvt button{padding:0 10px}
-  .jboard{grid-template-columns:repeat(4,82%);margin:0 -14px;padding:0 14px 4px;scroll-padding:0 14px}
+  .jboard{grid-template-columns:repeat(3,82%);margin:0 -14px;padding:0 14px 4px;scroll-padding:0 14px}
   .jr .jdue,.jr .jpts{display:none}.jr .jkey{font-size:11.5px}
 }
 /* editor additions */
@@ -1875,7 +1875,7 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 .tes-ty button{appearance:none;border:1px solid rgba(255,255,255,.1);background:none;height:30px;padding:0 10px;border-radius:8px;color:#9a9a9a;font:600 12.5px var(--sf);cursor:pointer}
 .tes-ty button[aria-pressed="true"]{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}
 .tes-ty .ji svg{width:14px;height:14px}.tes-seg .ji svg{width:14px;height:14px}
-.tes-st{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:16px}
+.tes-st{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:16px}
 .tes-st button{appearance:none;border:0;height:34px;border-radius:8px;font:700 11px var(--sf);letter-spacing:.03em;text-transform:uppercase;cursor:pointer;opacity:.45;transition:opacity .15s,box-shadow .15s}
 .tes-st button[aria-pressed="true"]{opacity:1;box-shadow:inset 0 0 0 1.5px currentColor}
 @media (max-width:520px){.tes-seg button span{font-size:12px}.tes-st button{font-size:10px;letter-spacing:0}}
