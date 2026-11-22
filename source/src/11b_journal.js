@@ -24,8 +24,8 @@ function renderJList(){
   const q=norm($('jQ').value);
   const days=new Set(JLIST.map(e=>e.date));
   const items=JLIST.filter(e=>!q||norm(e.text).includes(q)||(e.tags||[]).some(t=>norm(t).includes(q)));
-  $('jList').innerHTML=(days.has(DAYK)||q?'':`<button type="button" class="jitem${JDATE===DAYK?' on':''}" data-jd="${DAYK}"><span class="jd">${esc(nice(DAYK).toLowerCase())}</span></button>`)+
-    items.map(e=>`<button type="button" class="jitem${e.date===JDATE?' on':''}" data-jd="${e.date}"><span class="jd">${esc(nice(e.date).toLowerCase())}${e.mood?`${moodI(e.mood)}`:''}${e.ink&&e.ink.strokes&&e.ink.strokes.length?'<span class="dim"> ✎</span>':''}</span></button>`).join('')||'<div class="dim" style="font-size:12px;padding:8px">Nothing found.</div>';
+  $('jList').innerHTML=(days.has(DAYK)||q?'':`<button type="button" class="jitem${JDATE===DAYK?' on':''}" data-jd="${DAYK}"><span class="jd">${esc(nice(DAYK))}</span></button>`)+
+    items.map(e=>`<button type="button" class="jitem${e.date===JDATE?' on':''}" data-jd="${e.date}"><span class="jd">${esc(nice(e.date))}${e.mood?`${moodI(e.mood)}`:''}${e.ink&&e.ink.strokes&&e.ink.strokes.length?'<span class="dim"> ✎</span>':''}</span></button>`).join('')||'<div class="dim" style="font-size:12px;padding:8px">Nothing found.</div>';
   const streak=(()=>{let n=0;const d=new Date(logical());for(;;){if(days.has(ymd(d))){n++;d.setDate(d.getDate()-1)}else if(ymd(d)===DAYK){d.setDate(d.getDate()-1)}else break}return n})();
   $('jStreak').textContent=`${JLIST.length} entries · ${streak} day streak`;
 }
@@ -33,7 +33,7 @@ $('jQ').oninput=renderJList;
 $('jList').onclick=e=>{const b=e.target.closest('[data-jd]');if(b){flushJ();openEntry(b.dataset.jd);if(innerWidth<900)$('jEditor').scrollIntoView({behavior:FX?'smooth':'auto'})}};
 function flushJ(){if(jSaveT){clearTimeout(jSaveT);jSaveT=null;JE.updatedAt=new Date().toISOString();save(jpath(JE.date),JE,true);jDirty=false}}
 function renderJEditor(keepScroll){
-  $('jDate').textContent=new Date(JDATE+'T12:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}).toLowerCase();
+  $('jDate').textContent=new Date(JDATE+'T12:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
   $('jMood').innerHTML=MOODS.map(([v,l])=>`<button type="button" data-mood="${v}" aria-pressed="${String(JE.mood)===v}" title="${l}">${moodI(v)}<span>${l}</span></button>`).join('');
   $('jTags').innerHTML=(JE.tags||[]).map((t,i)=>`<span class="jtag">#${esc(t)}<button type="button" data-rmtag="${i}" aria-label="Remove tag">✕</button></span>`).join('')+`<input class="jtagin" id="jTagIn" placeholder="+ tag" aria-label="Add tag">`;
   $('jText').value=JE.text||'';autoGrow();
@@ -50,7 +50,7 @@ $('jTags').onkeydown=e=>{if(e.target.id!=='jTagIn')return;if(e.key==='Enter'||e.
 function autoGrow(){const t=$('jText');t.style.height='auto';t.style.height=Math.max(260,t.scrollHeight)+'px'}
 $('jText').oninput=()=>{JE.text=$('jText').value;autoGrow();$('jWords').textContent=((JE.text||'').trim().match(/\S+/g)||[]).length+' words';saveJ()};
 $('jPrompts').innerHTML=jpBtn('recap','Day recap','pr')+PROMPTS.map(([k,l])=>jpBtn(k,l)).join('');
-$('jDel').onclick=function(){if(!this.dataset.arm){this.dataset.arm=1;this.classList.add('arm');this.insertAdjacentHTML('beforeend','<span>delete?</span>');clearTimeout(this._t);this._t=setTimeout(()=>{delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove()},3000);return}
+$('jDel').onclick=function(){if(!this.dataset.arm){this.dataset.arm=1;this.classList.add('arm');this.insertAdjacentHTML('beforeend','<span>Delete?</span>');clearTimeout(this._t);this._t=setTimeout(()=>{delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove()},3000);return}
   clearTimeout(this._t);clearTimeout(jSaveT);delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove();
   const d=JDATE;removeDoc(jpath(d));JLIST=JLIST.filter(e=>e.date!==d);JE={date:d,text:'',mood:null,tags:[],ink:{h:PAGE_H,strokes:[]}};if(typeof JL!=='undefined')JL.reset();renderJList();renderJEditor();$('jSaved').textContent='deleted'};
 $('jPrompts').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b)return;if(b.dataset.pr==='recap'){jInsertRecap(b);return}const p=PROMPTS.find(x=>x[0]===b.dataset.pr)[2];JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+p;renderJEditor();const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ()};

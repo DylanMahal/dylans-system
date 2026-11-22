@@ -8,7 +8,7 @@ function renderMoney(){
   $('incEd').onclick=editIncome;
   const cats=Object.entries(M.cats).map(([cat,m])=>({cat,m})).sort((a,b)=>b.m-a.m);const mx=cats[0].m||1;
   $('cats').innerHTML=cats.map(c=>{const n=Math.max(1,Math.round(c.m/mx*44));return `<div class="cat${billCat===c.cat?' sel':''}" data-c="${esc(c.cat)}" role="button" tabindex="0"><span class="nm">${esc(c.cat==='Investment & Savings'?'savings':c.cat.toLowerCase())}</span><span class="bars"><i style="width:${(c.m/mx*100).toFixed(1)}%;background:${CATC[c.cat]}"></i></span><span class="co num">${gbp(c.m,2)}</span><span class="hr num">${M.rate?(c.m/M.rate).toFixed(1):0}h</span></div>`}).join('');
-  if(billCat==='Stack'){$('billsTitle').textContent='stack';$('billsTot').textContent=gbp(M.stackBudget,2)+'/mo';$('bills').innerHTML='<div class="dim">Itemised on the stack view. <button class="iconbtn" type="button" id="goStack">open /stack</button></div>';$('goStack').onclick=()=>go('stack');$('addBill').style.visibility='hidden'}
+  if(billCat==='Stack'){$('billsTitle').textContent='stack';$('billsTot').textContent=gbp(M.stackBudget,2)+'/mo';$('bills').innerHTML='<div class="dim">Itemised on the stack view. <button class="iconbtn" type="button" id="goStack">Open /stack</button></div>';$('goStack').onclick=()=>go('stack');$('addBill').style.visibility='hidden'}
   else{$('addBill').style.visibility='';
     const list=M.expenses.filter(e=>e.name!=='x'&&(billCat?e.cat===billCat:e.cat!=='Investment & Savings')).sort((a,b)=>b.m-a.m);
     $('billsTitle').textContent=billCat?billCat.toLowerCase():'every bill';$('billsTot').textContent=gbp(list.filter(e=>e.inb!==false).reduce((s,e)=>s+(e.m||0),0),2)+'/mo';
@@ -33,7 +33,7 @@ async function loadActuals(){const d=await load('money/actuals');ACT={months:{},
 watch('money/actuals',d=>{if(d){ACT={months:{},...d};if(!document.activeElement||!document.activeElement.closest||!document.activeElement.closest('#avBody'))renderActuals()}});
 function avShift(n){const [y,m]=AVM.split('-').map(Number);const d=new Date(y,m-1+n,1);AVM=d.getFullYear()+'-'+pad(d.getMonth()+1);renderActuals()}
 function renderActuals(){const el=$('avBody');if(!el||!M.cats)return;
-  $('avMon').textContent=new Date(AVM+'-01T12:00').toLocaleDateString('en-GB',{month:'short',year:'numeric'}).toLowerCase();
+  $('avMon').textContent=new Date(AVM+'-01T12:00').toLocaleDateString('en-GB',{month:'short',year:'numeric'});
   const cats=Object.entries(M.cats).filter(([c])=>c!=='Investment & Savings').sort((a,b)=>b[1]-a[1]);const mon=ACT.months[AVM]||{};
   const tb=cats.reduce((a,[,b])=>a+b,0),ta=cats.reduce((a,[c])=>a+(+mon[c]||0),0),logged=cats.some(([c])=>mon[c]!=null&&mon[c]!=='');
   const hist=[...Array(6)].map((_,i)=>{const [y,m]=AVM.split('-').map(Number);const d=new Date(y,m-6+i,1);const k=d.getFullYear()+'-'+pad(d.getMonth()+1);const mm=ACT.months[k]||{};return {k,a:cats.reduce((s,[c])=>s+(+mm[c]||0),0)}});const hmx=Math.max(tb,...hist.map(h=>h.a))||1;

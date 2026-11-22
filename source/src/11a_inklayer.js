@@ -30,7 +30,7 @@ function inkLayer(o){
     <span class="ib-sep ib-last"></span>
     <button type="button" data-ik="full" aria-label="Fullscreen" title="Fullscreen">${INK_I.full}</button><button type="button" data-ik="more" aria-label="More" title="More">${INK_I.more}</button>
     <div class="ib-pop">${o.paper?`<div class="ib-row"><span>Paper</span><div class="ib-seg">${INK_BG.map(b=>`<button type="button" data-ik="bg:${b}">${b}</button>`).join('')}</div></div>`:''}
-      <button type="button" class="ib-act" data-ik="po"><span class="ib-l">Pencil only <small>fingers scroll, only the pen draws</small></span><i class="ib-sw"></i></button>
+      <button type="button" class="ib-act" data-ik="po"><span class="ib-l">Pencil only <small>Fingers scroll, only the pen draws</small></span><i class="ib-sw"></i></button>
       <button type="button" class="ib-act" data-ik="page">${INK_I.page}<span class="ib-l">Add a page</span></button>
       <button type="button" class="ib-act ib-bad" data-ik="clear">${INK_I.clear}<span class="ib-l">Clear all writing</span></button></div>`;
   const pop=bar.querySelector('.ib-pop'),colsEl=bar.querySelector('.ib-cols');

@@ -43,7 +43,7 @@ function renderAlter(){const el=$('v-alter');if(!el)return;if(!alterLoaded){load
   if(AEGO){aRenderEgo();return}
   aLeave();el.className=aBase(el);el.removeAttribute('style');
   const seen=el.dataset.intro==='1';el.dataset.intro='1';
-  el.innerHTML=`${FX?'<div class="csintro" id="csIntro"><span>select<br>your alter ego</span></div>':''}<div class="csel">
+  el.innerHTML=`${FX?'<div class="csintro" id="csIntro"><span>Select<br>Your alter ego</span></div>':''}<div class="csel">
     <div class="cstop"><span class="csn" id="csN"></span></div>
     <div class="csstage">
       <button type="button" class="csarr" id="csL" aria-label="previous">◀</button>
@@ -51,7 +51,7 @@ function renderAlter(){const el=$('v-alter');if(!el)return;if(!alterLoaded){load
       <button type="button" class="csarr" id="csR" aria-label="next">▶</button>
     </div>
     <div class="csname" id="csName"></div>
-    <button type="button" class="csgo" id="csGo">select</button>
+    <button type="button" class="csgo" id="csGo">Select</button>
     <div class="csdots" id="csDots"></div>
   </div>`;
   CSI=0;csDraw(0);
@@ -130,7 +130,7 @@ function aEdit(ego){const e=ego||{id:rid(),name:'',tag:'',theme:'ghost',notes:''
     if(ev.target.id==='aeDel')aDeleteEgo(e)};
   setTimeout(()=>$('aeN')&&$('aeN').focus(),60)}
 function aDeleteEgo(e){openSheet('delete '+e.name+'?',`<div class="gc-det"><p>This removes the alter ego, its writing and every pinned image and clip. It can't be undone.</p>
-  <div class="bigbtns"><button class="btn" type="button" id="adY">delete everything</button><button class="btn p" type="button" id="adN">keep it</button></div></div>`);
+  <div class="bigbtns"><button class="btn" type="button" id="adY">Delete everything</button><button class="btn p" type="button" id="adN">Keep it</button></div></div>`);
   $('sheetBody').onclick=async ev=>{if(ev.target.id==='adN')return closeSheet();if(ev.target.id!=='adY')return;
     closeSheet();try{const d=await load('alter/e-'+e.id);const paths=[];(d&&d.items||[]).forEach(it=>{paths.push(aPath(e.id,it.f));if(it.p)paths.push(aPath(e.id,it.p))});
       if(paths.length){await SB.storage.from('vault').remove(paths);mediaForget(paths)}await KV.del('alter/e-'+e.id)}catch(x){}
@@ -226,7 +226,7 @@ function aRenderEgo(){const el=$('v-alter');if(!el||!AE)return;const t=ATHEME[AE
   el.className=aBase(el)+' aego fx-'+t.fx+' sk-'+sk;el.setAttribute('style',`--ac:${t.ac};--abg:${t.bg};--afg:${t.fg};--af:${t.f}`);
   const items=AE.items||[];const nm=esc(AE.name||'');
   const mini=`<span class="aemini"><b>${nm}</b><i>${esc(AE.tag||t.n)}</i></span>`;
-  const head=`<div class="aehead"><div class="aenav"><button type="button" class="aeback" id="aeBack">‹</button>${mini}<span class="aeacts"><button type="button" class="aeback" id="aeAdd" aria-label="add pics or videos">+</button><button type="button" class="aeback" id="aeEdit">edit</button></span></div></div>`;
+  const head=`<div class="aehead"><div class="aenav"><button type="button" class="aeback" id="aeBack">‹</button>${mini}<span class="aeacts"><button type="button" class="aeback" id="aeAdd" aria-label="add pics or videos">+</button><button type="button" class="aeback" id="aeEdit">Edit</button></span></div></div>`;
   el.classList.add('aenter');setTimeout(()=>el.classList.remove('aenter'),620);el.innerHTML=head+
     `<div class="aenotes"><i class="aenb"></i><textarea id="aeNotes" placeholder="${esc(APH[sk]||APH.ghost)}">${esc(AE.notes||'')}</textarea><span class="aesave" id="aeSaved"></span></div>
      <div class="aboardwrap" id="aBoard">${aBoardHTML(sk,items)}</div>`;

@@ -11,7 +11,7 @@ function openEditor(cfg){
     if(f.type==='num'&&/£/.test(f.label||''))inp=`<span class="curw">${inp}<button type="button" class="curb" data-cur="${id}" aria-label="switch £ / $">£</button></span>`;
     return `<label for="${id}">${esc(f.label||f.k)}</label>${inp}`}).join('')+
     (cfg.extra||'')+(cfg.hint?`<div class="hint2">${esc(cfg.hint)}</div>`:'')+
-    `<div class="mf">${cfg.onDelete?'<button class="btn d" type="button" id="mDel">delete</button>':''}${cfg.onRevert?'<button class="btn" type="button" id="mRev">undo my edits</button>':''}<span class="sp"></span><button class="btn" type="button" id="mCan">cancel</button><button class="btn p" type="submit">save</button></div>`;
+    `<div class="mf">${cfg.onDelete?'<button class="btn d" type="button" id="mDel">Delete</button>':''}${cfg.onRevert?'<button class="btn" type="button" id="mRev">Undo my edits</button>':''}<span class="sp"></span><button class="btn" type="button" id="mCan">Cancel</button><button class="btn p" type="submit">Save</button></div>`;
   $('modal').classList.add('on');
   const first=$('mForm').querySelector('input,select,textarea');first&&first.focus();
   if(cfg.onDelete)$('mDel').onclick=()=>{cfg.onDelete();closeModal();glitchAll()};
@@ -36,7 +36,7 @@ function pctSel(on){return `<label for="f_pct">counts toward day %</label><selec
 function editPlanItem(kind,it){const pre=kind==='weekday'?'wd':'we';
   const lead=(typeof NITEMS!=='undefined'&&NITEMS.m[it.key]!=null)?NITEMS.m[it.key]:'';
   openEditor({title:`edit · ${kind==='weekday'?'weekday plan':'weekend plan'}${it.row?' · row '+it.row:''}`,fields:F_PLAN,values:pick(it,F_PLAN),
-    extra:`<label for="f_notify">🔔 notification</label><select id="f_notify"><option value="" ${lead===''?'selected':''}>off</option>${[0,5,10,15,30,60].map(m=>`<option value="${m}" ${lead===m?'selected':''}>${m?m+' min before':'at the time'}</option>`).join('')}</select>${pctSel(!noPct(it))}${it.t==null?'<div class="hint2">this item has no time yet — add one above for the notification to fire</div>':''}`,
+    extra:`<label for="f_notify">🔔 notification</label><select id="f_notify"><option value="" ${lead===''?'selected':''}>Off</option>${[0,5,10,15,30,60].map(m=>`<option value="${m}" ${lead===m?'selected':''}>${m?m+' min before':'at the time'}</option>`).join('')}</select>${pctSel(!noPct(it))}${it.t==null?'<div class="hint2">This item has no time yet — add one above for the notification to fire</div>':''}`,
     readExtra:()=>({n:$('f_notify').value,c:$('f_pct').value}),onExtra:v=>{if(typeof setItemNotify==='function')setItemNotify(it.key,v.n===''?null:+v.n);setNoPct(it,v.c==='0')},
     onSave:(v,ch)=>patch(it.key,it.isNew?v:ch),onDelete:()=>{if(it.isNew)dropPatch(it.key);else patch(it.key,{_del:true})},onRevert:it.edited&&!it.isNew?()=>dropPatch(it.key):null})}
 function addPlanItem(kind,block){const pre=kind==='weekday'?'wd':'we';const nk=`${pre}:n:${rid()}`;let addV=null;const b=M.plans[kind].find(x=>x.row===block);

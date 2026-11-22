@@ -4,7 +4,7 @@
 const ASC_PATH=()=>`${UID}/system/ascend.mp4`;
 let ascEl=null,ascPrimed=false;
 const ascOn=()=>LS.get('ascendOff')!==true;
-const ascStep=best=>best<60?5:10;
+const ascStep=best=>Best<60?5:10;
 /* pull the clip in quietly once a session is live, so it plays the instant it's earned */
 async function ascPrime(){if(ascPrimed||!ascOn()||!SB||!UID)return;ascPrimed=true;
   try{const [u]=await aSign([ASC_PATH()]);if(!u)return;
@@ -49,10 +49,10 @@ let ascHas=null;
 async function ascProbe(){if(ascHas!==null)return ascHas;
   try{const {data}=await SB.storage.from('vault').list(UID+'/system',{search:'ascend.mp4'});ascHas=Array.isArray(data)&&data.some(f=>f.name==='ascend.mp4')}catch(e){ascHas=false}
   return ascHas}
-function ascSettings(){return `<div class="rpgsec">ascend</div>
+function ascSettings(){return `<div class="rpgsec">Ascend</div>
   <div class="ascset" id="ascSet"><div class="ascrow"><span id="ascStat" class="dim">checking…</span>
-    <span class="row"><button type="button" class="btn sm" id="ascPick">choose clip</button><button type="button" class="btn sm" id="ascTest">test</button></span></div>
-  <label class="ascrow"><span class="dim">play it on a new round weight</span><input type="checkbox" id="ascTog" ${ascOn()?'checked':''}></label>
+    <span class="row"><button type="button" class="btn sm" id="ascPick">Choose clip</button><button type="button" class="btn sm" id="ascTest">Test</button></span></div>
+  <label class="ascrow"><span class="dim">Play it on a new round weight</span><input type="checkbox" id="ascTog" ${ascOn()?'checked':''}></label>
   <input type="file" id="ascFile" accept="video/*" hidden></div>`}
 function ascBind(){const st=$('ascStat');if(!st)return;
   ascProbe().then(h=>{if($('ascStat'))$('ascStat').textContent=h?'clip is set':'no clip yet'});

@@ -18,10 +18,10 @@ const nTitle=n=>{const d=document.createElement('div');d.innerHTML=n.html||'';co
 function nAgo(t){const d=new Date(t),n=new Date();return ymd(d)===ymd(n)?d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):((n-d)<6*864e5?d.toLocaleDateString('en-GB',{weekday:'long'}):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'})).toLowerCase()}
 function renderNotes(listOnly){const el=$('jPaneN');if(!el)return;const q=(($('nQ')||{}).value||'').toLowerCase();
   const all=Object.values(NOTES).filter(n=>NF==='all'||n.folder===NF).filter(n=>!q||nText(n.html).toLowerCase().includes(q)).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.upd>a.upd?1:-1));
-  const listHtml=`${all.map(n=>{const t=nTitle(n);const body=nText(n.html).slice(t.length).trim();const th=nThumb(n);return `<button type="button" class="nitem${n.id===NCUR?' on':''}${th?' hasth':''}" data-n="${n.id}">${th}<b>${n.pin?'📌 ':''}${esc(t)}</b><span class="dim"><span class="num">${nAgo(n.upd)}</span> ${esc(body.slice(0,70))||(th?'handwriting':'no additional text')}</span></button>`}).join('')||'<div class="dim" style="padding:14px 4px">no notes</div>'}`;
+  const listHtml=`${all.map(n=>{const t=nTitle(n);const body=nText(n.html).slice(t.length).trim();const th=nThumb(n);return `<button type="button" class="nitem${n.id===NCUR?' on':''}${th?' hasth':''}" data-n="${n.id}">${th}<b>${n.pin?'📌 ':''}${esc(t)}</b><span class="dim"><span class="num">${nAgo(n.upd)}</span> ${esc(body.slice(0,70))||(th?'handwriting':'no additional text')}</span></button>`}).join('')||'<div class="dim" style="padding:14px 4px">No notes</div>'}`;
   if(listOnly&&$('nList')){$('nList').innerHTML=listHtml;return}
-  el.innerHTML=`<div class="ngrid${NCUR?' editing':''}"><div class="nside"><div class="row" style="gap:6px"><input class="inp" id="nQ" type="search" placeholder="search notes" value="${esc(q)}" style="flex:1"><button class="btn p" type="button" id="nNew" title="new note">✎</button></div>
-    <div class="chips" id="nFolders" style="margin:8px 0">${['all',...NFOLD.list].map(f=>`<button type="button" class="chip${NF===f?' on':''}" data-nf="${esc(f)}">${esc(f)}</button>`).join('')}<button type="button" class="chip" id="nAddF">+ folder</button></div>
+  el.innerHTML=`<div class="ngrid${NCUR?' editing':''}"><div class="nside"><div class="row" style="gap:6px"><input class="inp" id="nQ" type="search" placeholder="Search notes" value="${esc(q)}" style="flex:1"><button class="btn p" type="button" id="nNew" title="new note">✎</button></div>
+    <div class="chips" id="nFolders" style="margin:8px 0">${['all',...NFOLD.list].map(f=>`<button type="button" class="chip${NF===f?' on':''}" data-nf="${esc(f)}">${esc(f)}</button>`).join('')}<button type="button" class="chip" id="nAddF">+ Folder</button></div>
     <div class="nlistw" id="nList">${listHtml}</div></div>
     <div class="neditor panel">${NCUR&&NOTES[NCUR]?nEditorHtml(NOTES[NCUR]):'<div class="pb dim nempty">pick a note or start a new one ✎</div>'}</div></div>`;
   nBind();if(NCUR&&NOTES[NCUR])nInkMount();else inkExitFull()}
@@ -228,15 +228,15 @@ async function renderTodayTasks(){const el=$('todayTasks');if(!el)return;
   const row=tk=>{const P=TASKS.projects.find(x=>x.id===tk.proj);const late=tk.d&&tk.d<DAYK&&!tk.done;const sb=tk.sub||[];
     return `<div class="ttrow${tk.done?' done':''}" data-tk="${tk.id}"><button type="button" class="tchk p${tk.p||4}" data-ttc="${tk.id}" aria-label="complete"></button>`
       +`<button type="button" class="ttmain" data-tte="${tk.id}"><b>${esc(tk.t)}</b><span class="tmeta">`
-      +`${late?'<span class="bad">overdue</span>':''}${tk.tm?`<span>${esc(tk.tm)}</span>`:''}`
+      +`${late?'<span class="bad">Overdue</span>':''}${tk.tm?`<span>${esc(tk.tm)}</span>`:''}`
       +`${sb.length?`<span>☑ ${sb.filter(s=>s.x).length}/${sb.length}</span>`:''}`
       +`${P?`<span style="color:${P.col}"># ${esc(P.n)}</span>`:''}</span></button></div>`};
 
-  el.innerHTML=`<div class="blk ttblk"><div class="bh static"><span class="tm">tasks</span><span class="ti">due today</span>
+  el.innerHTML=`<div class="blk ttblk"><div class="bh static"><span class="tm">Tasks</span><span class="ti">Due today</span>
       <span class="ct">${td.length+ov.length} open</span><button type="button" class="ttgo" id="ttGo">open journal ›</button></div>
-    <div class="items">${ov.length?`<div class="tgrp bad">overdue</div>${srt(ov).map(row).join('')}`:''}
-      ${td.length?srt(td).map(row).join(''):(ov.length?'':'<div class="dim tempty">nothing due today — add one in the journal</div>')}
-      ${doneToday.length?`<div class="tgrp">done</div>${doneToday.map(row).join('')}`:''}</div></div>`;
+    <div class="items">${ov.length?`<div class="tgrp bad">Overdue</div>${srt(ov).map(row).join('')}`:''}
+      ${td.length?srt(td).map(row).join(''):(ov.length?'':'<div class="dim tempty">Nothing due today — add one in the journal</div>')}
+      ${doneToday.length?`<div class="tgrp">Done</div>${doneToday.map(row).join('')}`:''}</div></div>`;
   if(!el.dataset.hold){el.dataset.hold=1;tHold(el,'[data-tte]',c=>tEdit(c.dataset.tte))}
   el.onclick=e=>{const b=e.target.closest('[data-ttc],[data-tte],#ttGo');if(!b)return;
     if(b.id==='ttGo'){JTAB='tasks';JB.f='due';jSaveV();go('journal');setJTab('tasks');return}

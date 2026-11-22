@@ -90,7 +90,7 @@ function rlNext(e,score){const std=rlStd(e);if(!std||!std.s||score>=21)return ''
   if(std.k==='wbw')return `${kgs(Math.max(0,Math.ceil(v*bw-bw)))} kg added (1RM) for ${nm}`;
   return `est. 1RM of ${kgs(Math.ceil(v*bw*2)/2)} kg for ${nm}`}
 function rlExBlock(e){const sc=rlEx(e.id);if(sc==null)return '';const r=rlOf(sc);
-  return `<div class="rlblock" style="--rc:${RL[r.t][1]}">${rlBadge(sc,54)}<div><span class="dim">rank</span><b>${r.name}</b>${r.t<7?`<div class="rpgbar"><i style="width:${r.frac*100}%;background:var(--rc);box-shadow:0 0 8px var(--rc)"></i></div>`:''}<small class="dim">${esc(rlNext(e,sc))||'top of the ladder'}</small></div></div>`}
+  return `<div class="rlblock" style="--rc:${RL[r.t][1]}">${rlBadge(sc,54)}<div><span class="dim">Rank</span><b>${r.name}</b>${r.t<7?`<div class="rpgbar"><i style="width:${r.frac*100}%;background:var(--rc);box-shadow:0 0 8px var(--rc)"></i></div>`:''}<small class="dim">${esc(rlNext(e,sc))||'top of the ladder'}</small></div></div>`}
 function rlTopList(n){const seen=new Map();WORKOUTS.forEach(w=>(w.ex||[]).forEach(x=>{const e=exOf(x);if(!seen.has(e.id))seen.set(e.id,e)}));
   return [...seen.values()].map(e=>[e,rlEx(e.id)]).filter(a=>a[1]!=null).sort((a,b)=>b[1]-a[1]).slice(0,n)}
 
@@ -99,15 +99,15 @@ function rlOverall(){const L=rlTopList(5);return L.length?L.reduce((a,x)=>a+x[1]
 function rlWindow(){const ov=rlOverall();if(ov==null)return `<div class="rlwin empty"><span class="dim">Log a lift like bench, squat or deadlift and your rank shows up here.</span></div>`;
   const r=rlOf(ov),last=WORKOUTS[0]?rlSession(WORKOUTS[0]):null,top=rlTopList(3);
   return `<button type="button" class="rlwin" data-rl="open" style="--rc:${RL[r.t][1]}">
-    <span class="rlwtop">${rlBadge(ov,56)}<span class="rlwho"><small>overall rank</small><b>${r.name}</b>${r.t<7?`<div class="rpgbar"><i style="width:${r.frac*100}%"></i></div><small class="dim">${Math.round(r.frac*100)}% to ${rlOf(r.i+1).name}</small>`:''}</span></span>
-    <span class="rlwrow">${last!=null?`<span><small>last session</small>${rlChip(last,18)}</span>`:''}${top.map(([e,sc])=>`<span><small>${esc(e.n.replace(/\s*\(.*\)|\s*-.*$/,''))}</small>${rlChip(sc,18)}</span>`).join('')}</span>
+    <span class="rlwtop">${rlBadge(ov,56)}<span class="rlwho"><small>Overall rank</small><b>${r.name}</b>${r.t<7?`<div class="rpgbar"><i style="width:${r.frac*100}%"></i></div><small class="dim">${Math.round(r.frac*100)}% to ${rlOf(r.i+1).name}</small>`:''}</span></span>
+    <span class="rlwrow">${last!=null?`<span><small>Last session</small>${rlChip(last,18)}</span>`:''}${top.map(([e,sc])=>`<span><small>${esc(e.n.replace(/\s*\(.*\)|\s*-.*$/,''))}</small>${rlChip(sc,18)}</span>`).join('')}</span>
   </button>`}
 function rlOpen(){const ov=rlOverall();const r=rlOf(ov||0);const L=rlTopList(40);const S=WORKOUTS.slice(0,12).map(w=>[w,rlSession(w)]);
   openSheet('ranks',`<div class="rlfull" style="--rc:${RL[r.t][1]}">
-    ${ov!=null?`<div class="rlsum">${rlBadge(ov,72)}<div><span class="dim">overall · avg of your top 5 lifts</span><b>${r.name}</b></div></div>`:''}
-    <div class="rpgsec">lifts</div><div class="rlexl">${L.map(([e,sc])=>`<button type="button" data-rlex="${esc(e.id)}">${rlBadge(sc,24)}<span>${esc(e.n)}</span><b style="color:${RL[rlOf(sc).t][1]}">${rlOf(sc).name}</b></button>`).join('')||'<span class="dim">No ranked lifts yet.</span>'}</div>
-    ${S.length?`<div class="rpgsec">recent sessions</div><div class="rlexl">${S.map(([w,sc])=>`<button type="button" data-rlw="${esc(w.id)}">${rlBadge(sc,24)}<span>${esc(w.name)} <small class="dim">${esc(nice(w.date).toLowerCase())}</small></span><b style="color:${RL[rlOf(sc).t][1]}">${rlOf(sc).name}</b></button>`).join('')}</div>`:''}
-    <div class="rpgsec">ladder</div><div class="rlladder">${RL.map((t,i)=>`<span style="--rc:${t[1]}">${rlBadge(i*3+(i<7?2:0),30)}<small>${t[0]}</small></span>`).join('')}</div>
+    ${ov!=null?`<div class="rlsum">${rlBadge(ov,72)}<div><span class="dim">Overall · avg of your top 5 lifts</span><b>${r.name}</b></div></div>`:''}
+    <div class="rpgsec">Lifts</div><div class="rlexl">${L.map(([e,sc])=>`<button type="button" data-rlex="${esc(e.id)}">${rlBadge(sc,24)}<span>${esc(e.n)}</span><b style="color:${RL[rlOf(sc).t][1]}">${rlOf(sc).name}</b></button>`).join('')||'<span class="dim">No ranked lifts yet.</span>'}</div>
+    ${S.length?`<div class="rpgsec">Recent sessions</div><div class="rlexl">${S.map(([w,sc])=>`<button type="button" data-rlw="${esc(w.id)}">${rlBadge(sc,24)}<span>${esc(w.name)} <small class="dim">${esc(nice(w.date).toLowerCase())}</small></span><b style="color:${RL[rlOf(sc).t][1]}">${rlOf(sc).name}</b></button>`).join('')}</div>`:''}
+    <div class="rpgsec">Ladder</div><div class="rlladder">${RL.map((t,i)=>`<span style="--rc:${t[1]}">${rlBadge(i*3+(i<7?2:0),30)}<small>${t[0]}</small></span>`).join('')}</div>
     ${ascSettings()}
     <div class="dim" style="font-size:11px;margin-top:8px">Lift ranks use your best set's estimated 1RM against your bodyweight (reps for bodyweight moves). Session rank = working sets, records, volume vs your last 10 sessions and set strength.</div>
   </div>`);
@@ -118,6 +118,6 @@ document.addEventListener('click',e=>{if(e.target.closest('[data-rl="open"]'))rl
 function rlAfter(pre,w,next){const post=rlOverall();
   if(post==null||(pre!=null&&Math.floor(post)<=Math.floor(pre))){next&&next();return}
   const a=pre==null?null:rlOf(pre),b=rlOf(post);const ov=document.createElement('div');ov.className='rlov';ov.style.setProperty('--rc',RL[b.t][1]);
-  ov.innerHTML=`<div class="rllines"></div><div class="rlbox"><small>${a?'rank up':'placement complete'}</small>${rlBadge(post,150)}<b>${b.name}</b>${a?`<span class="dim">from ${a.name}</span>`:''}<button type="button" class="btn rlok">continue</button></div>`;
+  ov.innerHTML=`<div class="rllines"></div><div class="rlbox"><small>${a?'rank up':'placement complete'}</small>${rlBadge(post,150)}<b>${b.name}</b>${a?`<span class="dim">from ${a.name}</span>`:''}<button type="button" class="btn rlok">Continue</button></div>`;
   document.body.appendChild(ov);requestAnimationFrame(()=>ov.classList.add('on'));try{navigator.vibrate&&navigator.vibrate([30,60,30,60,150])}catch(e){}
   const done=()=>{ov.classList.remove('on');setTimeout(()=>ov.remove(),300);next&&next()};ov.querySelector('.rlok').onclick=done}

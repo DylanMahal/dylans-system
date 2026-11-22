@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1795352735">
+<link rel="stylesheet" href="app.css?v=1795354152">
 </head>
 <body class="fx">
 <style>
@@ -303,7 +303,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
   <div class="meta">
     <button class="pendbtn" id="pendBtn" type="button" hidden></button>
     <span class="sync" id="sync" title="Where your data is saved"><i></i><span id="syncTxt">local</span></span>
-    <button class="iconbtn" id="notifyBtn" type="button" title="Notifications" aria-label="Notifications">🔔</button><button class="iconbtn" id="fxBtn" type="button" aria-pressed="true" title="Effects on or off (f)">FX</button>
+    <button class="iconbtn" id="notifyBtn" type="button" title="Notifications" aria-label="Notifications"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.27 21a1.94 1.94 0 0 0 3.46 0M3.26 15.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 13.96 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.41 5.96-2.74 7.33"/></svg></button><button class="iconbtn" id="fxBtn" type="button" aria-pressed="true" title="Effects on or off (f)">FX</button>
   </div>
 </header>
 
@@ -311,7 +311,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
   <div class="nodata panel" id="nodata" hidden><div class="pb">No sheet data yet. Once the laptop sync agent runs, your plan, stack and money fill in here automatically.</div></div>
   <!-- TODAY -->
   <section class="view" id="v-today" aria-label="Today">
-    <div class="banner slim"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/today"><span class="slash">/</span>today</h2><span class="sub" id="todaySub"></span></div></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Today">Today</h2><span class="sub" id="todaySub"></span></div></div>
     <div class="hud">
       <div class="panel clockp">
         <div class="ph"><span class="tag">sys.clock</span><span id="planName"></span></div>
@@ -321,9 +321,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
         </div>
       </div>
       <div class="nn">
-        <div class="panel"><div class="ph"><span class="tag">now</span><span id="nowBlk"></span></div>
+        <div class="panel"><div class="ph"><span class="tag">Now</span><span id="nowBlk"></span></div>
           <div class="pb"><span class="big" id="nowItem"></span><span class="small" id="nowSub"></span></div></div>
-        <div class="panel"><div class="ph"><span class="tag">next</span><span id="nextAt"></span></div>
+        <div class="panel"><div class="ph"><span class="tag">Next</span><span id="nextAt"></span></div>
           <div class="pb"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end"><span class="big" id="nextItem"></span><span class="eta num" id="eta"></span></div>
           <div class="meter scan"><span id="etaBar"></span></div></div></div>
       </div>
@@ -338,37 +338,37 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
     <div class="strip" id="strip" role="group" aria-label="Blocks of the day"></div>
     <div class="tools">
       <div class="seg" role="group" aria-label="Show" id="filtSeg">
-        <button type="button" data-f="all" aria-pressed="true">all</button>
-        <button type="button" data-f="cmp" aria-pressed="false" data-lx="items">items</button>
-        <button type="button" data-f="rtn" aria-pressed="false">routine</button>
+        <button type="button" data-f="all" aria-pressed="true">All</button>
+        <button type="button" data-f="cmp" aria-pressed="false" data-lx="items">Items</button>
+        <button type="button" data-f="rtn" aria-pressed="false">Routine</button>
       </div>
-      <button class="iconbtn" type="button" id="hideDone" aria-pressed="false">hide done</button>
+      <button class="iconbtn" type="button" id="hideDone" aria-pressed="false">Hide done</button>
       
       <span class="sp"></span>
       <div class="seg" role="group" aria-label="Plan">
-        <button type="button" id="pWd" aria-pressed="false">weekday</button>
-        <button type="button" id="pWe" aria-pressed="false">weekend</button>
+        <button type="button" id="pWd" aria-pressed="false">Weekday</button>
+        <button type="button" id="pWe" aria-pressed="false">Weekend</button>
       </div>
-      <button class="iconbtn" type="button" id="resetDay" title="Untick everything for this day">reset</button>
+      <button class="iconbtn" type="button" id="resetDay" title="Untick everything for this day">Reset</button>
     </div>
     <div id="blocks"></div>
     <div id="todayExtra"></div>
     <div class="two" id="bodyCheck" style="margin-top:14px">
-      <div class="panel"><div class="ph"><span class="tag">bp check</span></div><div class="pb">
+      <div class="panel"><div class="ph"><span class="tag">BP check</span></div><div class="pb">
         <form class="bpgrid" id="bpForm">
-          <label>sys<input class="inp num" id="bpS" type="number" inputmode="numeric" min="60" max="250" required></label>
-          <label>dia<input class="inp num" id="bpD" type="number" inputmode="numeric" min="30" max="160" required></label>
-          <label>pulse<input class="inp num" id="bpP" type="number" inputmode="numeric" min="30" max="220"></label>
-          <button class="btn p" type="submit" style="height:46px">log</button>
+          <label>Sys<input class="inp num" id="bpS" type="number" inputmode="numeric" min="60" max="250" required></label>
+          <label>Dia<input class="inp num" id="bpD" type="number" inputmode="numeric" min="30" max="160" required></label>
+          <label>Pulse<input class="inp num" id="bpP" type="number" inputmode="numeric" min="30" max="220"></label>
+          <button class="btn p" type="submit" style="height:46px">Log</button>
         </form>
         <div class="stat" id="bpStat" style="margin-top:14px"></div>
         <div id="bpChart"></div>
         <div class="rlist" id="bpList"></div>
       </div></div>
-      <div class="panel"><div class="ph"><span class="tag">bodyweight</span></div><div class="pb">
+      <div class="panel"><div class="ph"><span class="tag">Bodyweight</span></div><div class="pb">
         <form class="bpgrid" id="wtForm" style="grid-template-columns:1fr auto">
           <label>kg<input class="inp num" id="wtIn" type="number" inputmode="decimal" step="0.1" min="30" max="250" required></label>
-          <button class="btn p" type="submit" style="height:46px">log</button>
+          <button class="btn p" type="submit" style="height:46px">Log</button>
         </form>
         <div class="stat" id="wtStat" style="margin-top:14px"></div>
         <div id="wtChart"></div>
@@ -379,20 +379,20 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 
   <!-- GYM -->
   <section class="view" id="v-gym" aria-label="Gym">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/gym"><span class="slash">/</span>gym</h2><span class="sub" id="gymSub"></span></div></div>
-    <div class="seg gseg" role="group" aria-label="Gym" id="gymSeg"><button type="button" data-g="workout">workout</button><button type="button" data-g="routines">routines</button><button type="button" data-g="history">history</button><button type="button" data-g="stats">stats</button><button type="button" data-g="exercises">exercises</button><button type="button" data-g="motivation">motivation</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Gym">Gym</h2><span class="sub" id="gymSub"></span></div></div>
+    <div class="seg gseg" role="group" aria-label="Gym" id="gymSeg"><button type="button" data-g="workout">Workout</button><button type="button" data-g="routines">Routines</button><button type="button" data-g="history">History</button><button type="button" data-g="stats">Stats</button><button type="button" data-g="exercises">Exercises</button><button type="button" data-g="motivation">Motivation</button></div>
     <div id="g-workout"></div><div id="g-routines" hidden></div><div id="g-history" hidden></div><div id="g-stats" hidden></div><div id="g-exercises" hidden></div><div id="g-motivation" hidden></div>
   </section>
 
   <!-- JOURNAL -->
   <section class="view" id="v-journal" aria-label="Journal">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/journal"><span class="slash">/</span>journal</h2><span class="sub" id="jStreak"></span></div></div>
-    <div class="seg" id="jTabs" style="margin:0 0 12px;display:flex"><button type="button" data-jt="journal" style="flex:1">journal</button><button type="button" data-jt="notes" style="flex:1">notes</button><button type="button" data-jt="tasks" style="flex:1">tasks</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Journal">Journal</h2><span class="sub" id="jStreak"></span></div></div>
+    <div class="seg" id="jTabs" style="margin:0 0 12px;display:flex"><button type="button" data-jt="journal" style="flex:1">Journal</button><button type="button" data-jt="notes" style="flex:1">Notes</button><button type="button" data-jt="tasks" style="flex:1">Tasks</button></div>
     <div id="jPaneJ">
     <div class="jgrid">
-      <div class="jside"><input class="inp" id="jQ" type="search" placeholder="search entries + #tags" autocomplete="off"><div class="jlist" id="jList"></div></div>
+      <div class="jside"><input class="inp" id="jQ" type="search" placeholder="Search entries + #tags" autocomplete="off"><div class="jlist" id="jList"></div></div>
       <div class="jeditor panel" id="jEditor">
-        <div class="ph"><span class="navgrp"><button class="iconbtn chev" type="button" id="jPrev" aria-label="Previous day">‹</button><button class="iconbtn" type="button" id="jToday">today</button><button class="iconbtn chev" type="button" id="jNext" aria-label="Next day">›</button></span><span class="row" style="gap:10px;align-items:center"><span id="jSaved" class="dim"></span><button class="iconbtn jdel" type="button" id="jDel" aria-label="Delete entry"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></span></div>
+        <div class="ph"><span class="navgrp"><button class="iconbtn chev" type="button" id="jPrev" aria-label="Previous day">‹</button><button class="iconbtn" type="button" id="jToday">Today</button><button class="iconbtn chev" type="button" id="jNext" aria-label="Next day">›</button></span><span class="row" style="gap:10px;align-items:center"><span id="jSaved" class="dim"></span><button class="iconbtn jdel" type="button" id="jDel" aria-label="Delete entry"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></span></div>
         <div class="pb">
           <h3 class="jdate" id="jDate"></h3>
           <div class="jmood" id="jMood" role="group" aria-label="Mood"></div>
@@ -413,38 +413,38 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 
   <!-- MEDIA -->
   <section class="view" id="v-food" aria-label="Food">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/food"><span class="slash">/</span>food</h2><span class="sub" id="foodSub"></span></div></div>
-    <div class="seg" id="foodSeg" style="margin:0 0 12px"><button type="button" data-fv="log">log</button><button type="button" data-fv="progress">progress</button><button type="button" data-fv="fast">fasting</button><button type="button" data-fv="goals">goals</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Food">Food</h2><span class="sub" id="foodSub"></span></div></div>
+    <div class="seg" id="foodSeg" style="margin:0 0 12px"><button type="button" data-fv="log">Log</button><button type="button" data-fv="progress">Progress</button><button type="button" data-fv="fast">Fasting</button><button type="button" data-fv="goals">Goals</button></div>
     <div id="foodBody"></div>
   </section>
   <section class="view" id="v-sleep" aria-label="Sleep">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/sleep"><span class="slash">/</span>sleep</h2><span class="sub" id="sleepSub"></span></div></div>
-    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="recovery" style="flex:1">recovery</button><button type="button" data-sv="last" style="flex:1">last night</button><button type="button" data-sv="history" style="flex:1">history</button><button type="button" data-sv="stats" style="flex:1">stats</button><button type="button" data-sv="setup" style="flex:1">setup</button></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Sleep">Sleep</h2><span class="sub" id="sleepSub"></span></div></div>
+    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="recovery" style="flex:1">Recovery</button><button type="button" data-sv="last" style="flex:1">Last night</button><button type="button" data-sv="history" style="flex:1">History</button><button type="button" data-sv="stats" style="flex:1">Stats</button><button type="button" data-sv="setup" style="flex:1">Setup</button></div>
     <div id="sleepBody"></div>
   </section>
   <section class="view" id="v-streaks" aria-label="Streaks">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/streaks"><span class="slash">/</span>streaks</h2><span class="sub" id="habSub"></span></div></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Streaks">Streaks</h2><span class="sub" id="habSub"></span></div></div>
     <div id="habBody"></div>
   </section>
   <section class="view" id="v-media" aria-label="Media">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/media"><span class="slash">/</span>media</h2><span class="sub">anime · movies · manga · books</span></div></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Media">Media</h2><span class="sub">Anime · movies · manga · books</span></div></div>
     <div class="toolcards four" id="mediaCards">
-      <button type="button" data-mk="anime"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg></i><b>anime</b><span></span></button>
-      <button type="button" data-mk="movies"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg></i><b>movies</b><span></span></button>
-      <button type="button" data-mk="manga"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5A1.5 1.5 0 0 1 4.5 4H10a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H3z"/><path d="M21 5.5A1.5 1.5 0 0 0 19.5 4H14a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z"/></svg></i><b>manga</b><span></span></button>
-      <button type="button" data-mk="books"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/></svg></i><b>books</b><span></span></button>
+      <button type="button" data-mk="anime"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg></i><b>Anime</b><span></span></button>
+      <button type="button" data-mk="movies"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg></i><b>Movies</b><span></span></button>
+      <button type="button" data-mk="manga"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5A1.5 1.5 0 0 1 4.5 4H10a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H3z"/><path d="M21 5.5A1.5 1.5 0 0 0 19.5 4H14a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h7z"/></svg></i><b>Manga</b><span></span></button>
+      <button type="button" data-mk="books"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/></svg></i><b>Books</b><span></span></button>
     </div>
     <div id="v-media-body"></div>
   </section>
 
   <!-- TOOLS -->
   <section class="view" id="v-tools" aria-label="Tools">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/tools"><span class="slash">/</span>tools</h2><span class="sub" id="toolsSub"></span></div></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Tools">Tools</h2><span class="sub" id="toolsSub"></span></div></div>
     <div class="toolcards four" id="toolSeg">
-      <button type="button" data-t="focus"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></i><b>focus</b><span id="tcFocus">timer · music · sound</span></button>
-      <button type="button" data-t="protocols"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6" rx="3" transform="rotate(-45 12 12)"/><path d="M9.2 9.2l5.6 5.6"/></svg></i><b>protocols</b><span id="tcProto">doses · sites · inventory</span></button>
-      <button type="button" data-t="leetcode"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></i><b>leetcode</b><span id="tcLeet">problems · notes</span></button>
-      <button type="button" data-t="brick"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></i><b>brick</b><span id="tcBrick">lock the phone</span></button>
+      <button type="button" data-t="focus"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></i><b>Focus</b><span id="tcFocus">Timer · music · sound</span></button>
+      <button type="button" data-t="protocols"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="6" rx="3" transform="rotate(-45 12 12)"/><path d="M9.2 9.2l5.6 5.6"/></svg></i><b>Protocols</b><span id="tcProto">Doses · sites · inventory</span></button>
+      <button type="button" data-t="leetcode"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16"/></svg></i><b>LeetCode</b><span id="tcLeet">Problems · notes</span></button>
+      <button type="button" data-t="brick"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></i><b>Brick</b><span id="tcBrick">Lock the phone</span></button>
     </div>
     <div id="t-focus"></div>
     <div id="t-protocols" hidden></div>
@@ -454,24 +454,24 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 
   <!-- WEEK -->
   <section class="view" id="v-week" aria-label="Week">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/week"><span class="slash">/</span>week</h2><span class="sub" id="weekSub">review Sundays 19:00</span></div></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Week">Week</h2><span class="sub" id="weekSub">review Sundays 19:00</span></div></div>
     <div class="gcal" id="gcal"></div>
     <div class="two" style="margin-top:12px">
-      <div class="panel"><div class="ph"><span class="tag">plan adherence · last 7 days</span></div><div class="pb"><div class="days" id="days"></div><div class="dim" id="daysNote" style="font-size:12px;margin-top:10px"></div></div></div>
-      <div class="panel"><div class="ph"><span class="tag">top streaks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
+      <div class="panel"><div class="ph"><span class="tag">Plan adherence · last 7 days</span></div><div class="pb"><div class="days" id="days"></div><div class="dim" id="daysNote" style="font-size:12px;margin-top:10px"></div></div></div>
+      <div class="panel"><div class="ph"><span class="tag">Top streaks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
     </div>
-    <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">weekly targets</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ add target</button></div></div>
+    <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">Weekly targets</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ Add target</button></div></div>
     <div id="wkReview" style="margin-top:12px"></div>
   </section>
 
   <!-- STACK -->
   <section class="view" id="v-stack" aria-label="Stack">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/stack"><span class="slash">/</span>stack</h2><span class="sub" id="stackSub"></span></div></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Stack">Stack</h2><span class="sub" id="stackSub"></span></div></div>
     <div class="kv" id="stackKv"></div>
     <div id="stackWarn"></div>
     <div class="searchrow">
-      <label class="grep"><span class="pink">grep</span><input id="q" type="search" placeholder="name, dose, source, note…" autocomplete="off"></label>
-      <button class="btn p" type="button" id="addCmp" data-lx="additem">+ item</button>
+      <label class="grep"><svg class="gico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Search name, dose, source, note…" autocomplete="off"></label>
+      <button class="btn p" type="button" id="addCmp" data-lx="additem">+ Item</button>
     </div>
     <div class="chips" id="stChips"></div>
     <div class="chips" id="catChips"></div>
@@ -480,19 +480,19 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 
   <!-- MONEY -->
   <section class="view" id="v-money" aria-label="Money">
-    <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/money"><span class="slash">/</span>money</h2><span class="sub">monthly budget</span></div></div>
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Money">Money</h2><span class="sub">Monthly budget</span></div></div>
     <div class="kv" id="moneyKv"></div>
     <div class="money-grid">
       <div class="grid">
-        <div class="panel"><div class="ph"><span class="tag">outgoings by category</span></div><div class="pb" id="cats"></div></div>
-        <div class="panel"><div class="ph"><span class="tag" id="billsTitle">every bill</span><span id="billsTot"></span></div><div class="pb"><div id="bills"></div><button class="addrow" type="button" id="addBill">+ add bill</button></div></div>
+        <div class="panel"><div class="ph"><span class="tag">Outgoings by category</span></div><div class="pb" id="cats"></div></div>
+        <div class="panel"><div class="ph"><span class="tag" id="billsTitle">Every bill</span><span id="billsTot"></span></div><div class="pb"><div id="bills"></div><button class="addrow" type="button" id="addBill">+ Add bill</button></div></div>
       </div>
       <div class="grid" style="align-content:start">
-        <div class="panel"><div class="ph"><span class="tag">savings</span><span id="saveTot"></span></div><div class="pb"><div id="saves"></div><button class="addrow" type="button" id="addSave">+ add saving</button></div></div>
+        <div class="panel"><div class="ph"><span class="tag">Savings</span><span id="saveTot"></span></div><div class="pb"><div id="saves"></div><button class="addrow" type="button" id="addSave">+ Add saving</button></div></div>
         <div class="panel"><div class="ph"><span class="tag">price → hours of work</span><span id="rateLbl"></span></div><div class="pb">
           <div class="calc"><button type="button" class="curb" id="calcCur" aria-label="switch £ / $">£</button><input id="calcIn" type="number" inputmode="decimal" min="0" step="0.01" value="40" aria-label="Price in pounds"><span class="dim">=</span><span class="res num" id="calcOut"></span></div>
           <p class="dim" style="margin:10px 0 0;font-size:12px" id="calcNote"></p></div></div>
-        <div class="panel"><div class="ph"><span class="tag">actual vs budget</span><span class="row" style="gap:6px"><button type="button" class="curb" id="avCur" aria-label="enter amounts in £ or $">£</button><span class="navgrp"><button class="iconbtn chev" type="button" id="avPrev" aria-label="Previous month">‹</button><b id="avMon" style="min-width:86px;text-align:center"></b><button class="iconbtn chev" type="button" id="avNext" aria-label="Next month">›</button></span></span></div><div class="pb" id="avBody"></div></div>
+        <div class="panel"><div class="ph"><span class="tag">Actual vs budget</span><span class="row" style="gap:6px"><button type="button" class="curb" id="avCur" aria-label="enter amounts in £ or $">£</button><span class="navgrp"><button class="iconbtn chev" type="button" id="avPrev" aria-label="Previous month">‹</button><b id="avMon" style="min-width:86px;text-align:center"></b><button class="iconbtn chev" type="button" id="avNext" aria-label="Next month">›</button></span></span></div><div class="pb" id="avBody"></div></div>
       </div>
     </div>
   </section>
@@ -502,19 +502,19 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 
 <nav class="bnav" id="bnav" aria-label="Sections"></nav>
 <div class="sleepnight" id="sleepNight" hidden></div>
-<div class="restdock" id="restDock" aria-live="polite"><span class="tag">rest</span><b class="num" id="restT">2:00</b><div class="meter"><span id="restBar"></span></div><button class="iconbtn" type="button" data-rd="-15">−15</button><button class="iconbtn" type="button" data-rd="15">+15</button><button class="iconbtn" type="button" data-rd="skip">skip</button></div>
+<div class="restdock" id="restDock" aria-live="polite"><span class="tag">Rest</span><b class="num" id="restT">2:00</b><div class="meter"><span id="restBar"></span></div><button class="iconbtn" type="button" data-rd="-15">−15</button><button class="iconbtn" type="button" data-rd="15">+15</button><button class="iconbtn" type="button" data-rd="skip">Skip</button></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="sheetTitle"><div class="sgrab"></div><div class="sh"><span class="tag" id="sheetTitle"></span><button class="iconbtn" type="button" id="sheetX" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M17 7L7 17"/></svg></button></div><div class="sbody" id="sheetBody"></div></div>
 <div class="login" id="login" hidden><div class="loginbg"></div><form class="loginbox" id="loginForm"><div id="loginBox"><div class="tag pink">dylan@stack:~$ login</div><h1 class="glitch" data-text="SYSTEM">SYSTEM</h1>
-<label>email<input class="inp" id="lEmail" type="email" autocomplete="username" required></label><label>password<input class="inp" id="lPass" type="password" autocomplete="current-password" required></label>
-<button class="btn p" type="submit">sign in</button><p class="dim" id="loginMsg" aria-live="polite"></p></div></form></div>
+<label>Email<input class="inp" id="lEmail" type="email" autocomplete="username" required></label><label>Password<input class="inp" id="lPass" type="password" autocomplete="current-password" required></label>
+<button class="btn p" type="submit">Sign in</button><p class="dim" id="loginMsg" aria-live="polite"></p></div></form></div>
 <div class="edgefx" aria-hidden="true"><i class="ec tl"></i><i class="ec tr"></i></div>
 <div class="flash" id="flash" aria-hidden="true"><span id="flashTxt"></span></div>
 <div class="scrim" id="scrim"></div>
 <aside class="drawer" id="drawer" aria-label="Details" aria-hidden="true"></aside>
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mb"><div class="mh"><span class="tag" id="mTitle">edit</span><button class="iconbtn" type="button" id="mX">esc ✕</button></div><form id="mForm"></form></div></div>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle"><div class="mb"><div class="mh"><span class="tag" id="mTitle">Edit</span><button class="iconbtn" type="button" id="mX">esc ✕</button></div><form id="mForm"></form></div></div>
 <div class="pal" id="pal" role="dialog" aria-label="Search">
   <div class="box2">
-    <div class="in"><span class="pink">&gt;</span><input id="palIn" type="text" placeholder="jump to an item, bill or view…" autocomplete="off" aria-label="Search"></div>
+    <div class="in"><span class="pink">&gt;</span><input id="palIn" type="text" placeholder="Jump to an item, bill or view…" autocomplete="off" aria-label="Search"></div>
     <ul id="palList"></ul>
     <div class="hint"><span class="kbd">↑↓</span> move · <span class="kbd">enter</span> open · <span class="kbd">esc</span> close · keys: <span class="kbd">1–8</span> views <span class="kbd">/</span> search <span class="kbd">e</span> edit mode <span class="kbd">n</span> now <span class="kbd">j k</span> move <span class="kbd">x</span> tick <span class="kbd">f</span> fx</div>
   </div>
@@ -523,9 +523,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1795352735"</script>
-<script src="config.js?v=1795352735"></script>
+<script>window.APP_V="1795354152"</script>
+<script src="config.js?v=1795354152"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1795352735"></script>
+<script src="app.js?v=1795354152"></script>
 </body>
 </html>

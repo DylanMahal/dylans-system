@@ -14,7 +14,7 @@ function nInkMount(){
     get:()=>{const n=NOTES[id];return n&&n.ink||null},
     make:()=>{const n=NOTES[id];if(!n.ink)n.ink={h:IH,strokes:[],bg:'blank'};return n.ink},changed:nInkDirty});
   const hp=document.createElement('div');hp.className='ib-pop ib-hlpop';
-  hp.innerHTML=NHL.map(c=>`<button type="button" class="ib-dot" data-nc="hl:${c}" style="--c:${c.replace(/,[.\d]+\)/,')').replace('rgba','rgb')}" aria-label="Highlight colour"></button>`).join('')+'<button type="button" class="ib-none" data-nc="hl:none" title="Remove highlight">none</button>';
+  hp.innerHTML=NHL.map(c=>`<button type="button" class="ib-dot" data-nc="hl:${c}" style="--c:${c.replace(/,[.\d]+\)/,')').replace('rgba','rgb')}" aria-label="Highlight colour"></button>`).join('')+'<button type="button" class="ib-none" data-nc="hl:none" title="Remove highlight">None</button>';
   bar.append(hp);NL.refresh();NL.size()}
 document.addEventListener('pointerdown',e=>{const p=document.querySelector('#nTools .ib-hlpop.open');if(p&&!e.target.closest('.ib-hlpop,[data-nc="hl"]'))p.classList.remove('open')},true);
 /* list thumbnail for handwritten notes (cached per note + last-edit time) */

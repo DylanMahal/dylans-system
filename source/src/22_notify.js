@@ -41,7 +41,7 @@ function openNotify(){const sup=('serviceWorker' in navigator)&&('PushManager' i
   openSheet('notifications',`<div class="row" style="justify-content:space-between;align-items:center"><div><b>${NSET.on&&perm==='granted'?'on for this device':'off'}</b><div class="dim" style="font-size:11px">${sup?'arrive even when the app is closed':'not supported in this browser'}</div></div><button class="btn ${NSET.on&&perm==='granted'?'':'p'}" type="button" id="nTog">${NSET.on&&perm==='granted'?'turn off':'turn on'}</button></div>
   <div class="dim" id="nMsg" style="font-size:12px;margin:8px 0"></div>
   <div class="nlist">${NKINDS.map(([k,l,d])=>`<label class="nrow"><span><b>${l}</b><span class="dim">${d}</span></span><input type="checkbox" data-nk="${k}" ${NSET.k[k]?'checked':''}></label>`).join('')}</div>
-  <div class="bigbtns" style="margin-top:12px"><button class="iconbtn" type="button" id="nTest">send a test</button><span style="flex:1"></span><button class="btn p" type="button" id="nOk">done</button></div>`);
+  <div class="bigbtns" style="margin-top:12px"><button class="iconbtn" type="button" id="nTest">Send a test</button><span style="flex:1"></span><button class="btn p" type="button" id="nOk">Done</button></div>`);
   const sb=$('sheetBody');sb.onchange=e=>{const k=e.target.dataset.nk;if(!k)return;NSET.k[k]=e.target.checked;LS.set('notify',NSET);pushSync()};
   $('nOk').onclick=closeSheet;
   $('nTest').onclick=async()=>{if(!NSET.on){$('nMsg').textContent='turn notifications on first';return}await pushOne('test',Date.now()+8000,'Notifications on','You’re all set. Alerts will appear here.','./');$('nMsg').textContent='sent — it should arrive within ~20 seconds (lock your phone to see it)'};

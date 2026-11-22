@@ -101,7 +101,7 @@ function bindBrick(){
     if(m==='custom'){m=parseInt(prompt('Brick for how many minutes?','60')||'');if(!(m>0))return}
     BRICK.pre=+m;bSave();renderBrick()};
   if($('bkOff'))$('bkOff').onclick=()=>{const l=bLeft();
-    if(BRICK.strict&&l){openSheet('end early?',`<div class="gc-det"><p>${Math.ceil(l/60)} minutes left. Ending now goes in the log as a broken session.</p><div class="bigbtns"><button class="btn" type="button" id="bkYes">end it anyway</button><button class="btn p" type="button" id="bkNo">keep going</button></div></div>`);
+    if(BRICK.strict&&l){openSheet('end early?',`<div class="gc-det"><p>${Math.ceil(l/60)} minutes left. Ending now goes in the log as a broken session.</p><div class="bigbtns"><button class="btn" type="button" id="bkYes">End it anyway</button><button class="btn p" type="button" id="bkNo">Keep going</button></div></div>`);
       $('sheetBody').onclick=e=>{if(e.target.id==='bkYes'){closeSheet();bEnd(false)}if(e.target.id==='bkNo')closeSheet()};return}
     bEnd(false)};
   if($('bkAuto'))$('bkAuto').onchange=e=>{BRICK.auto=e.target.checked;bSave()};

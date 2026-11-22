@@ -98,7 +98,7 @@ async function cacheBootVideo(){try{if(!window.caches||!SB||!UID)return;
 async function bvStatus(){const el=$('bvStat');if(!el)return;try{const c=window.caches?await caches.open('ds-media'):null;const r=c?await c.match('bootvid'):null;
   if(r){const b=await r.blob();el.textContent=`on this device · ${(b.size/1048576).toFixed(1)} MB`}else el.textContent='not on this device yet'}catch(e){el.textContent=''}}
 function openBootVideo(){openSheet('boot video',`<p class="dim" style="margin:0 0 10px;font-size:12px">Plays full screen when the app opens. Stored privately in your account; each device keeps its own copy.</p><div class="dim" id="bvStat" style="margin-bottom:10px"></div>
-  <div class="bigbtns"><label class="btn p" style="cursor:pointer">upload new<input type="file" id="bvFile" accept="video/mp4,video/*" hidden></label><button class="btn" type="button" id="bvRefresh">re-download here</button><button class="btn" type="button" id="bvDel">remove</button></div>`);bvStatus();
+  <div class="bigbtns"><label class="btn p" style="cursor:pointer">Upload new<input type="file" id="bvFile" accept="video/mp4,video/*" hidden></label><button class="btn" type="button" id="bvRefresh">Re-download here</button><button class="btn" type="button" id="bvDel">Remove</button></div>`);bvStatus();
   $('bvFile').onchange=async e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f||!SB||!UID)return;
     if(f.size>50*1048576){$('bvStat').textContent='over 50 MB: trim it first';return}
     $('bvStat').textContent='uploading…';const {error}=await SB.storage.from('vault').upload(UID+'/boot.mp4',f,{upsert:true,contentType:f.type||'video/mp4'});
