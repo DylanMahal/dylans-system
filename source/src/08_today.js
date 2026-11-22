@@ -54,7 +54,7 @@ function applyTicks(){document.querySelectorAll('#v-today .it').forEach(el=>el.s
 function updateCounts(){
   const vis=countedItems();const total=vis.length;const done=vis.filter(i=>DAY.ticks[i.tk]).length;const p=total?Math.round(done/total*100):0;
   $('pct').textContent=p+'%';$('pct').className='pct num '+(p>=80?'ok':'');
-  const W=40,f=Math.round(p/100*W);$('asc').innerHTML=`<span class="f">${'█'.repeat(f)}</span><span class="e">${'░'.repeat(W-f)}</span>`;
+  $('asc').innerHTML=`<span class="pbar${p>=80?' ok':''}"><i style="width:${Math.min(100,p)}%"></i><em></em></span>`;
   $('pctTxt').textContent=`${done}/${total} ticked · target 80%`;
   M.plans[planKind].forEach(b=>{const its=b.items.filter(onToday);const el=$('blk-'+b.bi);if(!el)return;const d=its.filter(i=>DAY.ticks[i.tk]).length;
     el.querySelector('.ct').textContent=`${d}/${its.length}`;el.querySelector('.mini span').style.width=(its.length?d/its.length*100:0)+'%';el.classList.toggle('done',its.length>0&&d===its.length);
