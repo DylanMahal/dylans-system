@@ -9,7 +9,7 @@ function go(v,fromHash,dirHint){if(typeof inkExitFull==="function")inkExitFull()
   const oi=VIEWS.findIndex(x=>x[0]===cur),ni=VIEWS.findIndex(x=>x[0]===v);const dir=dirHint||(oi<0?0:ni>oi?1:-1);cur=v;
   VIEWS.forEach(([x])=>$('v-'+x).classList.toggle('on',x===v));
   document.querySelectorAll('#tabs button,#bnav button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
-  const nb=document.querySelector(`#bnav button[data-v="${v}"]`);if(nb){$('bnind').style.transform=`translateX(${nb.offsetLeft}px)`;$('bnind').style.width=nb.offsetWidth+'px';nb.scrollIntoView({inline:'center',block:'nearest',behavior:FX?'smooth':'auto'})}
+  const nb=document.querySelector(`#bnav button[data-v="${v}"]`);if(nb){$('bnind').style.transform=`translateX(${nb.offsetLeft}px)`;$('bnind').style.width=nb.offsetWidth+'px';bnavFit()}
   if(!fromHash&&location.hash!=='#'+v)history.replaceState(null,'','#'+v);
   const view=$('v-'+v);
   const m=$('main');
@@ -29,6 +29,8 @@ function go(v,fromHash,dirHint){if(typeof inkExitFull==="function")inkExitFull()
   else requestAnimationFrame(()=>{if(goTok===tk)staggerIn(view)});
 }
 $('tabs').onclick=e=>{const b=e.target.closest('button');if(b)go(b.dataset.v)};
+/* the tab bar always spans the screen: every tab gets an equal share; labels drop when there isn't room */
+function bnavFit(){const b=$('bnav');if(!b||!b.offsetWidth)return;b.classList.toggle('compact',b.offsetWidth/VIEWS.length<60)}addEventListener('resize',bnavFit);setTimeout(bnavFit,0);
 $('bnav').onclick=e=>{const b=e.target.closest('button');if(b){go(b.dataset.v);try{navigator.vibrate&&navigator.vibrate(8)}catch(_){}}};
 addEventListener('hashchange',()=>go(location.hash.slice(1),true));
 /* section changes only from the nav buttons (no swipe) */

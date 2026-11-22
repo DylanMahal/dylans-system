@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1795354152">
+<link rel="stylesheet" href="app.css?v=1795355387">
 </head>
 <body class="fx">
 <style>
@@ -419,7 +419,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
   </section>
   <section class="view" id="v-sleep" aria-label="Sleep">
     <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Sleep">Sleep</h2><span class="sub" id="sleepSub"></span></div></div>
-    <div class="seg" id="sleepSeg" style="margin:0 0 12px;display:flex"><button type="button" data-sv="recovery" style="flex:1">Recovery</button><button type="button" data-sv="last" style="flex:1">Last night</button><button type="button" data-sv="history" style="flex:1">History</button><button type="button" data-sv="stats" style="flex:1">Stats</button><button type="button" data-sv="setup" style="flex:1">Setup</button></div>
+    <div class="seg" id="sleepSeg"><button type="button" data-sv="sleep">Sleep</button><button type="button" data-sv="stats">Trends</button><button type="button" data-sv="setup">Setup</button></div>
     <div id="sleepBody"></div>
   </section>
   <section class="view" id="v-streaks" aria-label="Streaks">
@@ -523,9 +523,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1795354152"</script>
-<script src="config.js?v=1795354152"></script>
+<script>window.APP_V="1795355387"</script>
+<script src="config.js?v=1795355387"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1795354152"></script>
+<script src="app.js?v=1795355387"></script>
 </body>
 </html>

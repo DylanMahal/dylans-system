@@ -8,13 +8,13 @@ const SSND=[['rise','rising chime'],['classic','classic beeps'],['siren','siren'
 const STAGS=['gym','caffeine late','alcohol','late meal','screens in bed','stressed','melatonin','magnesium','nap','fasted cardio'];
 const SPHRASE=['I am awake and I am getting up now','Discipline is doing it when you do not feel like it','Get out of bed and win the morning','Everybody wants it until it is time to wake up'];
 const SFN='https://ucnwefjblxqbmmwdbqhw.supabase.co/functions/v1/sleep-in';
-let SHEALTH={};let SSET=null,SNIGHTS={},SV=LS.get('sleepv')||'recovery',sleepLoaded=false,SCFG=null;
+let SHEALTH={};let SSET=null,SNIGHTS={},SV=({recovery:'sleep',last:'sleep',history:'sleep'})[LS.get('sleepv')]||LS.get('sleepv')||'sleep',sleepLoaded=false,SCFG=null;
 const fmtHM=m=>{m=Math.round(m||0);return Math.floor(m/60)+'h '+pad(m%60)+'m'};
 async function loadSleep(){if(sleepLoaded){renderSleep();return}
   const [s,rows,c,hr]=await Promise.all([load('sleep/settings'),listDocs('sleep/w-'),load('sleep/cfg'),listDocs('health/d-')]);hr.forEach(r=>{if(r.data)SHEALTH[r.path.slice(9)]=r.data});
   SSET={wake:'07:30',bed:'23:00',goal:8,miss:'math',diff:2,shakes:30,snd:'rise',code:'',...(s||{})};SCFG=c||{};
   rows.forEach(r=>{if(r.data)SNIGHTS[r.path.slice(8)]=r.data});sleepLoaded=true;renderSleep()}
-watchPrefix('health/d-',(evt,path,data)=>{const k=path.slice(9);if(evt==='DELETE')delete SHEALTH[k];else if(data)SHEALTH[k]=data;if(cur==='sleep'&&SV==='recovery')renderSleep()});
+watchPrefix('health/d-',(evt,path,data)=>{const k=path.slice(9);if(evt==='DELETE')delete SHEALTH[k];else if(data)SHEALTH[k]=data;if(cur==='sleep'&&SV!=='setup')renderSleep()});
 watchPrefix('sleep/w-',(evt,path,data)=>{const k=path.slice(8);if(evt==='DELETE')delete SNIGHTS[k];else if(data)SNIGHTS[k]=data;if(cur==='sleep'&&!$('sheet').classList.contains('on'))renderSleep()});
 const saveSS=()=>save('sleep/settings',SSET);
 /* Sleep score 0–100, modelled on Oura / Fitbit / Apple: amounts (not %) of sleep dominate, so a short night can't score well.
@@ -36,8 +36,8 @@ function sWakes(n){const g=(n.segs||[]).map(([a,b,st])=>[+new Date(a),+new Date(
 function sQ(n){const b=sQB(n);return b?b.score:0}
 function renderSleep(){if(!sleepLoaded){loadSleep();return}
   document.querySelectorAll('#sleepSeg [data-sv]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sv===SV));
-  const last=Object.keys(SNIGHTS).sort().pop();$('sleepSub').textContent=last?`${esc(nice(last).toLowerCase())} · ${fmtHM(SNIGHTS[last].asleep)} · ${sQ(SNIGHTS[last])}%`:'apple watch sleep + wake-up missions';
-  ({recovery:sRecovery,last:sLast,history:sHistory,stats:sStats,setup:sSetup}[SV]||sRecovery)()}
+  const last=Object.keys(SNIGHTS).sort().pop();$('sleepSub').textContent=last?`${esc(nice(last))} · ${fmtHM(SNIGHTS[last].asleep)} · ${sQ(SNIGHTS[last])}%`:'apple watch sleep + wake-up missions';
+  ({sleep:sMain,stats:sTrends,setup:sSetup}[SV]||sMain)()}
 document.addEventListener('click',e=>{const b=e.target.closest('#sleepSeg [data-sv]');if(!b)return;SV=b.dataset.sv;LS.set('sleepv',SV);renderSleep()});
 
 /* ---------- shared UI pieces ---------- */
@@ -226,3 +226,70 @@ function sRecovery(){const el=$('sleepBody');const k=DAYK;const R=sRec(k)||sRec(
   <div class="sl-grid2"><div class="sl-card"><div class="sl-h"><span>HRV</span><b class="num" style="color:#5ac8fa">${hv.filter(x=>x!=null).length?Math.round(hv.filter(x=>x!=null).pop())+' ms':''}</b></div>${sLine(hv,'#5ac8fa')}</div>
     <div class="sl-card"><div class="sl-h"><span>Resting heart rate</span><b class="num" style="color:#ff375f">${rh.filter(x=>x!=null).length?Math.round(rh.filter(x=>x!=null).pop())+' bpm':''}</b></div>${sLine(rh,'#ff375f')}</div></div>`;
   el.onclick=null}
+/* ---------- main sleep page (Sleep Cycle style): quality first, graph, tiles, calendar ---------- */
+let SSEL=null,SCALM=null;
+const SI={moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor" stroke="none"/>',
+  alarm:'<circle cx="12" cy="13" r="7.5"/><path d="M12 9.5V13l2.2 1.6M4.5 5.5l2.5-2M19.5 5.5l-2.5-2"/>',
+  lat:'<path d="M4 12a8 8 0 1 0 8-8"/><path d="M12 8v4l2.5 2"/><path d="M3 4.5h4.5L3 9.5h4.5" stroke-width="1.7"/>',
+  reg:'<path d="M5 18V9M9.5 18V6M14 18v-8M18.5 18V7.5"/>',
+  heart:'<path d="M19.5 12.6 12 20l-7.5-7.4A4.6 4.6 0 0 1 12 6.5a4.6 4.6 0 0 1 7.5 6.1z"/><path d="M3.5 12.5h4l1.5-2.5 2.5 5 1.5-2.5h3"/>',
+  wake:'<path d="M12 3v3M5.6 5.6l2.1 2.1M3 12h3M18 12h3M16.3 7.7l2.1-2.1"/><path d="M7 17a5 5 0 0 1 10 0"/><path d="M3 20h18"/>',
+  cal:'<rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17"/>',
+  chevL:'<path d="m15 18-6-6 6-6"/>',chevR:'<path d="m9 18 6-6-6-6"/>'};
+const sIco=(k,s=20)=>`<svg viewBox="0 0 24 24" width="${s}" height="${s}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${SI[k]}</svg>`;
+const sHM=m=>{m=Math.round(m||0);return `${Math.floor(m/60)}<small>h</small> ${pad(m%60)}<small>m</small>`};
+/* intervals asleep for every synced night — used for regularity */
+function sSleepIv(){const iv=[];Object.values(SNIGHTS).forEach(n=>{const sg=(n.segs||[]).filter(x=>x[2]!=='awake');if(sg.length)sg.forEach(([a,b])=>iv.push([+new Date(a),+new Date(b)]));else if(n.start&&n.end)iv.push([+new Date(n.start),+new Date(n.end)])});return iv.sort((a,b)=>a[0]-b[0])}
+/* Sleep Regularity: how often you're in the same state (asleep / awake) at the same clock time 24 h apart, over the last week */
+function sRegularity(k){const iv=sSleepIv();const at=t=>{for(const [a,b] of iv){if(a>t)return 0;if(t<b)return 1}return 0};let same=0,tot=0;
+  for(let i=0;i<7;i++){const d=sAddD(k,-i),p=sAddD(k,-i-1),n=SNIGHTS[d];if(!n||!n.end||!SNIGHTS[p])continue;const e=+new Date(n.end);for(let t=e-864e5;t<e;t+=3e5){tot++;if(at(t)===at(t-864e5))same++}}
+  return tot?Math.round(same/tot*100):null}
+function sLatency(n){const sg=(n.segs||[]).filter(x=>x[2]!=='awake').map(x=>+new Date(x[0])).sort((a,b)=>a-b);return sg.length&&n.start?Math.max(0,Math.round((sg[0]-new Date(n.start))/6e4)):null}
+/* the night as one smooth line: awake at the top, deep at the bottom */
+function sWave(n,H=200){const segs=(n.segs||[]).map(([s,e,st])=>[+new Date(s),+new Date(e),st]).sort((a,b)=>a[0]-b[0]);if(!segs.length)return '<div class="sl-note">No stage data for this night — your Watch needs to be worn to bed.</div>';
+  const t0=Math.min(+new Date(n.start)||segs[0][0],segs[0][0]),t1=Math.max(+new Date(n.end)||0,segs[segs.length-1][1]),W=1000,L={awake:0,rem:1,core:2,deep:3},pt=16,Y=st=>(pt+(L[st]??2)*(H-2*pt)/3).toFixed(1),X=t=>((t-t0)/(t1-t0||1))*W;
+  const m=[];segs.forEach(s=>{const l=m[m.length-1];if(l&&l[2]===s[2]&&s[0]-l[1]<12e4)l[1]=Math.max(l[1],s[1]);else m.push([...s])});
+  let d=`M0,${Y(m[0][2])} L${X(m[0][0]).toFixed(1)},${Y(m[0][2])}`;
+  m.forEach((s,i)=>{const x0=X(s[0]),x1=X(s[1]),nx=m[i+1];if(!nx){d+=` L${W},${Y(s[2])}`;return}const nw=X(nx[1])-X(nx[0]),r=Math.max(.5,Math.min(42,(x1-x0)*.45,nw*.45)),xb=X(nx[0]);d+=` L${(x1-r).toFixed(1)},${Y(s[2])} C${(x1+r*.1).toFixed(1)},${Y(s[2])} ${(xb-r*.1).toFixed(1)},${Y(nx[2])} ${(xb+r).toFixed(1)},${Y(nx[2])}`});
+  const ticks=[];for(let h=Math.ceil(t0/36e5)*36e5;h<t1;h+=36e5){const p=(h-t0)/(t1-t0);if(p>.07&&p<.93)ticks.push(`<span style="left:${(p*100).toFixed(1)}%">${new Date(h).getHours()}</span>`)}
+  return `<div class="sw"><div class="sw-lab">${['Awake','REM','Core','Deep'].map(s=>`<span>${s}</span>`).join('')}</div><div class="sw-plot"><svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" style="height:${H}px"><defs><linearGradient id="swg" gradientUnits="userSpaceOnUse" x1="0" y1="${pt}" x2="0" y2="${H-pt}"><stop offset="0" stop-color="#ffb07a"/><stop offset=".34" stop-color="#ff7a9c"/><stop offset=".68" stop-color="#8fa8d8"/><stop offset="1" stop-color="#4fb3c8"/></linearGradient></defs>${[0,1,2,3].map(i=>`<line x1="0" x2="${W}" y1="${Y(Object.keys(L)[i])}" y2="${Y(Object.keys(L)[i])}" class="sw-grid"/>`).join('')}<path d="${d}" class="sw-line"/></svg>
+    <div class="sw-ax"><span class="e">${sT(t0)}</span>${ticks.join('')}<span class="e r">${sT(t1)}</span></div></div></div>`}
+const sFace=(v)=>{const c=[-6,-3,0,3.5,6][v-1];return `<svg viewBox="0 0 32 32" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="16" cy="16" r="13"/><circle cx="11.5" cy="13" r="1.2" fill="currentColor" stroke="none"/><circle cx="20.5" cy="13" r="1.2" fill="currentColor" stroke="none"/><path d="M10.5 ${20-c/3} Q16 ${20+c} 21.5 ${20-c/3}"/></svg>`};
+function sCal(selK){const keys=Object.keys(SNIGHTS);const base=SCALM||(selK||DAYK).slice(0,7);const [y,mo]=base.split('-').map(Number);const first=new Date(y,mo-1,1),days=new Date(y,mo,0).getDate(),lead=(first.getDay()+6)%7;
+  const cell=dn=>{const k=`${y}-${pad(mo)}-${pad(dn)}`,n=SNIGHTS[k],q=n?sQ(n):null;const fut=k>DAYK;
+    return `<button type="button" class="sc-d${k===selK?' sel':''}${k===DAYK?' today':''}" ${n?`data-sc="${k}"`:'disabled'}><span>${dn}</span><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" class="t${fut?' fut':''}"/>${n?`<circle cx="18" cy="18" r="15" class="f" pathLength="100" style="stroke-dasharray:${Math.max(3,q)} 100"/>`:''}</svg></button>`};
+  return `<div class="sl-card sc"><div class="sc-h"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><span><button type="button" class="sc-nav" data-cm="-1" aria-label="Previous month">${sIco('chevL',18)}</button><button type="button" class="sc-nav" data-cm="1" aria-label="Next month"${base>=DAYK.slice(0,7)?' disabled':''}>${sIco('chevR',18)}</button></span></div>
+    <div class="sc-g">${['M','T','W','T','F','S','S'].map(d=>`<em>${d}</em>`).join('')}${'<i></i>'.repeat(lead)}${[...Array(days)].map((_,i)=>cell(i+1)).join('')}</div></div>`}
+function sMain(){const el=$('sleepBody');const ks=Object.keys(SNIGHTS).sort();
+  if(!ks.length){el.innerHTML=sEmpty('No nights yet','Wear your Apple Watch to bed and finish the one-time setup — every morning your sleep lands here automatically.','Open setup');sGoSetup(el);return}
+  const k=SSEL&&SNIGHTS[SSEL]?SSEL:ks[ks.length-1],n=SNIGHTS[k],i=ks.indexOf(k),q=sQ(n);
+  const inBed=n.start&&n.end?(new Date(n.end)-new Date(n.start))/6e4:null,lat=sLatency(n),reg=sRegularity(k),R=sRec(k),wk=sWakes(n);
+  const d1=new Date(sAddD(k,-1)+'T12:00'),d2=new Date(k+'T12:00');const lbl=`${d1.toLocaleDateString('en-GB',{weekday:'short'})} ${d1.getDate()}–${d2.getDate()} ${d2.toLocaleDateString('en-GB',{month:'short'})}`;
+  const tile=(ic,l,v,cls)=>`<div class="smt${cls?' '+cls:''}"><span>${l}</span><b class="num">${sIco(ic,22)}${v}</b></div>`;
+  const stages=[['awake','Awake'],['rem','REM'],['core','Core'],['deep','Deep']];
+  el.innerHTML=`<div class="sm"><div class="sm-l">
+    <div class="sh-hero"><div class="sh-top"><button type="button" class="sh-ic" id="shCal" aria-label="Calendar">${sIco('cal',19)}</button><span class="sh-nav"><button type="button" data-sk="-1" aria-label="Previous night"${i<=0?' disabled':''}>${sIco('chevL',18)}</button><b>${lbl}</b><button type="button" data-sk="1" aria-label="Next night"${i>=ks.length-1?' disabled':''}>${sIco('chevR',18)}</button></span><span class="sh-ic sp"></span></div>
+      <button type="button" class="sh-ring" id="shQ"><svg viewBox="0 0 200 200"><defs><linearGradient id="shg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9f6b"/><stop offset="1" stop-color="#ffe0cf"/></linearGradient></defs><circle cx="100" cy="100" r="88" class="t"/><circle cx="100" cy="100" r="76" class="t2"/><circle cx="100" cy="100" r="88" class="f" pathLength="100" style="stroke-dasharray:${q} 100"/></svg><span class="sh-v"><b class="num">${q}<small>%</small></b><em>Quality ${sIco('chevR',16)}</em></span></button>
+      <div class="sh-sum"><div><b class="num">${inBed!=null?sHM(inBed):'—'}</b><span>In bed</span></div><i></i><div><b class="num">${sHM(n.asleep)}</b><span>Time asleep</span></div></div></div>
+    <div class="sm-cal" id="smCal">${sCal(k)}</div>
+  </div><div class="sm-r">
+    <div class="sl-card sw-card">${sWave(n)}</div>
+    <div class="sl-card sm-stg">${stages.map(([s,l])=>`<div><i style="background:${SLC[s]}"></i><span>${l}</span><b class="num">${s==='awake'?Math.round(n.awake||0)+'<small>m</small>':sHM(n[s])}</b></div>`).join('')}</div>
+    <div class="sm-tiles">${tile('moon','Went to bed',n.start?sT(n.start):'—')}${tile('alarm','Woke up',n.end?sT(n.end):'—')}${tile('lat','Asleep after',lat!=null?lat+'<small> min</small>':'—')}${tile('reg','Regularity',reg!=null?reg+'<small>%</small>':'—')}${tile('heart','Recovery',R?R.v+'<small>%</small>':'—','rec" style="--z:'+(R?sZone(R.v)[0]:'#8e8e93'))}${tile('wake','Wake-ups',wk!=null?wk:'—')}</div>
+    ${reg==null?`<div class="sl-note sm-hint">Regularity appears once you have two nights in a row synced.</div>`:''}
+    <div class="sm-sec">Experience</div>
+    <div class="sl-card"><div class="sm-q">How did you feel waking up?</div><div class="sm-mood">${[1,2,3,4,5].map(v=>`<button type="button" data-mood="${v}" aria-pressed="${n.mood===v}" aria-label="Mood ${v} of 5">${sFace(v)}</button>`).join('')}</div>
+      <div class="sm-q" style="margin-top:18px">Sleep notes</div><div class="sm-tags">${STAGS.map(t=>`<button type="button" data-tag="${esc(t)}" aria-pressed="${(n.tags||[]).includes(t)}">${t}</button>`).join('')}</div></div>
+    <div class="sl-card sl-tonight"><span class="sl-ico">${sIco('moon',20)}</span><div><div class="sl-sub">Tonight</div><b>Be asleep by <span class="num">${sBedFor()}</span></b><div class="sl-sub">${SSET.goal} h goal · ${SSET.wake} wake-up${SSET.bedOn?' · reminder 30 min before':''}</div></div></div>
+    <button type="button" class="sm-del" id="smDel">Delete this night</button>
+  </div></div>`;
+  el.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+    if(b.dataset.sk){SSEL=ks[i+ +b.dataset.sk]||k;SCALM=null;sMain();return}
+    if(b.dataset.sc){SSEL=b.dataset.sc;sMain();if(innerWidth<900)$('sleepBody').scrollIntoView({behavior:'smooth',block:'start'});return}
+    if(b.dataset.cm){const [yy,mm]=(SCALM||k.slice(0,7)).split('-').map(Number);const d=new Date(yy,mm-1+ +b.dataset.cm,1);SCALM=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;$('smCal').innerHTML=sCal(k);return}
+    if(b.id==='shCal'){$('smCal').scrollIntoView({behavior:'smooth',block:'center'});return}
+    if(b.id==='shQ'){openSheet('Sleep quality',`<div class="sq-big num">${q}<small>%</small></div><div class="sl-note" style="text-align:center;margin-bottom:14px">Duration counts most, then deep sleep, REM, efficiency, restfulness and timing.</div>${sQBars(n)}`);return}
+    if(b.dataset.mood){n.mood=+b.dataset.mood;save('sleep/w-'+k,n);el.querySelectorAll('[data-mood]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
+    if(b.dataset.tag){const t=b.dataset.tag;n.tags=(n.tags||[]).includes(t)?n.tags.filter(x=>x!==t):(n.tags||[]).concat(t);save('sleep/w-'+k,n);b.setAttribute('aria-pressed',n.tags.includes(t));return}
+    if(b.id==='smDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Tap again to delete';return}delete SNIGHTS[k];removeDoc('sleep/w-'+k);SSEL=null;sMain()}}}
+function sTrends(){const el=$('sleepBody');sRecovery();const a=el.innerHTML;sStats();el.innerHTML=a+'<div class="sm-sec">Sleep</div>'+el.innerHTML;sGoSetup(el)}
