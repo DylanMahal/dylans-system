@@ -17,8 +17,20 @@ async function loadSleep(){if(sleepLoaded){renderSleep();return}
 watchPrefix('health/d-',(evt,path,data)=>{const k=path.slice(9);if(evt==='DELETE')delete SHEALTH[k];else if(data)SHEALTH[k]=data;if(cur==='sleep'&&SV==='recovery')renderSleep()});
 watchPrefix('sleep/w-',(evt,path,data)=>{const k=path.slice(8);if(evt==='DELETE')delete SNIGHTS[k];else if(data)SNIGHTS[k]=data;if(cur==='sleep'&&!$('sheet').classList.contains('on'))renderSleep()});
 const saveSS=()=>save('sleep/settings',SSET);
-function sQ(n){if(!n||!n.asleep)return 0;const g=(SSET&&SSET.goal||8)*60,a=n.asleep;const dp=n.deep/a,rp=n.rem/a;
-  return Math.round(Math.max(0,Math.min(100,45*Math.min(1,a/g)+20*Math.min(1,dp/.15)+20*Math.min(1,rp/.2)+15*Math.max(0,1-(n.awake||0)/45))))}
+/* Sleep score 0–100, modelled on Oura / Fitbit / Apple: amounts (not %) of sleep dominate, so a short night can't score well.
+   duration 40 · deep 15 · REM 15 · efficiency 10 · awake/restfulness 10 · timing 10. */
+const sCl=x=>Math.max(0,Math.min(1,x));
+function sQB(n){if(!n||!n.asleep)return null;const g=(SSET&&SSET.goal||8)*60,a=n.asleep,r=a/g;
+  const dur=r>=1?(r>1.35?Math.max(.85,1-(r-1.35)):1):Math.pow(sCl((r-.4)/.6),1.1);
+  const hasSt=(n.deep||0)+(n.rem||0)+(n.core||0)>0;
+  const deep=sCl((n.deep||0)/(g*.16)),rem=sCl((n.rem||0)/(g*.1875));
+  const bed=n.start&&n.end?(new Date(n.end)-new Date(n.start))/6e4:0;
+  const eff=bed>a?sCl((a/bed-.70)/.20):1;
+  const aw=sCl(1-((n.awake||0)-10)/50);
+  let tim=1;if(n.start){const d=new Date(n.start),b=d.getHours()*60+d.getMinutes(),[h,m]=sBedFor().split(':').map(Number);let off=Math.abs(b-(h*60+m));off=Math.min(off,1440-off);tim=sCl(1-(off-30)/120)}
+  const P=[['Duration',dur,40],['Deep',deep,15],['REM',rem,15],['Efficiency',eff,10],['Restfulness',aw,10],['Timing',tim,10]].filter(x=>hasSt||(x[0]!=='Deep'&&x[0]!=='REM'));
+  const W=P.reduce((t,x)=>t+x[2],0);return {parts:P,score:Math.round(P.reduce((t,x)=>t+x[1]*x[2],0)/W*100)}}
+function sQ(n){const b=sQB(n);return b?b.score:0}
 function renderSleep(){if(!sleepLoaded){loadSleep();return}
   document.querySelectorAll('#sleepSeg [data-sv]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sv===SV));
   const last=Object.keys(SNIGHTS).sort().pop();$('sleepSub').textContent=last?`${esc(nice(last).toLowerCase())} · ${fmtHM(SNIGHTS[last].asleep)} · ${sQ(SNIGHTS[last])}%`:'apple watch sleep + wake-up missions';
@@ -45,7 +57,8 @@ function sNight(k){const n=SNIGHTS[k];const q=sQ(n);const a=n.asleep||1;const pc
     <div class="sl-nh"><div><div class="sl-eyebrow">${esc(nice(k))}</div><div class="sl-dur num">${fmtHM(n.asleep).replace(/(\d+)h (\d+)m/,'$1<small>h</small> $2<small>m</small>')}</div><div class="sl-sub">asleep · ${sT(n.start)} – ${sT(n.end)}</div></div>${sRing(q,sQC(q),64,10,`<b class="num">${q}</b><span>score</span>`)}</div>
     ${sStBar(n)}
     <div class="sl-legend">${['awake','rem','core','deep'].map(s=>`<div><i style="background:${SLC[s]}"></i><span>${SLN[s]}</span><b class="num">${s==='awake'?Math.round(n.awake||0)+'m':fmtHM(n[s])}</b><em class="num">${s==='awake'?'':pc(s)+'%'}</em></div>`).join('')}</div>
-    ${sHyp(n,112)}</div>`}
+    ${sHyp(n,112)}${sQBars(n)}</div>`}
+function sQBars(n){const b=sQB(n);if(!b)return '';return `<div class="sl-qb">${b.parts.map(([l,v])=>{const p=Math.round(v*100);return `<div><span>${l}</span><i><b style="width:${p}%;background:${sQC(p)}"></b></i><em class="num">${p}</em></div>`}).join('')}</div>`}
 function sRow(k){const n=SNIGHTS[k];const q=sQ(n);
   return `<button type="button" class="sl-hrow" data-sn="${k}"><span class="sl-hd"><b>${esc(nice(k))}</b><small class="num">${n.start?sT(n.start)+' – '+sT(n.end):''}</small></span><span class="sl-hbar">${sStBar(n)}</span><span class="sl-hv num">${fmtHM(n.asleep)}</span><span class="sl-pill num" style="--c:${sQC(q)}">${q}</span><svg class="sl-chev" viewBox="0 0 8 14" width="7" height="12"><path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`}
 function sLast(){const el=$('sleepBody');const k=Object.keys(SNIGHTS).sort().pop();
