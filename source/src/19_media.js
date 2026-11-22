@@ -6,7 +6,7 @@ async function loadMedia(){if(mediaLoaded)return;const r=await Promise.all(Objec
 Object.keys(MK).forEach(k=>watch('media/'+k,d=>{if(d){MEDIA[k]={items:{},lists:[],...d};if(cur==='media')renderMedia()}}));
 function saveMedia(k){save('media/'+k,MEDIA[k]);if(cur==='media'&&k===MEDIAK)renderMedia()}
 const mItems=k=>Object.values(MEDIA[k].items);
-function stars(v,max){if(v==null||v==='')return '';if(max===10)return `<span class="mscore">${kgs(v)}</span>`;const f=Math.floor(v),h=v-f>=.5;return `<span class="mstars">${'★'.repeat(f)}${h?'½':''}</span>`}
+function stars(v,max){if(v==null||v==='')return '';if(max===10)return `<span class="mscore">${kgs(v)}</span>`;return `<span class="mstars">★ ${kgs(Math.round(+v*10)/10)}</span>`}
 
 /* ---- search adapters (each source has a timeout; falls through to the next on failure) ---- */
 async function mfetch(u,o={},ms=8000){const c=new AbortController();const t=setTimeout(()=>c.abort(),ms);try{const r=await fetch(u,{...o,signal:c.signal});if(!r.ok)throw new Error(r.status===429?'rate limited':'HTTP '+r.status);return await r.json()}catch(e){throw new Error(e.name==='AbortError'?'timed out':e.message)}finally{clearTimeout(t)}}
@@ -146,11 +146,11 @@ function mAdd(k){const canSer=k==='anime'||k==='manga';let ser=canSer&&LS.get('m
 /* ---- decimal rating control (score + slider in 0.1 steps, or type it) ---- */
 const RWORD=v=>['','Appalling','Horrible','Very bad','Bad','Average','Fine','Good','Very good','Great','Masterpiece'][Math.max(1,Math.min(10,Math.floor(+v)))];
 const fmtR=v=>kgs(Math.round(+v*10)/10);
-function rateCtl(id,v,sm){const has=v!=null&&v!=='';
-  return `<div class="me-rate${sm?' sm':''}${has?'':' unset'}" data-rc="${id}" data-v="${has?+v:''}"><div class="me-rtop"><input class="me-rnum num" value="${has?fmtR(v):''}" placeholder="–" inputmode="decimal" aria-label="Score"><span class="me-rof">/10</span><span class="me-rw">${has?RWORD(v):'Not rated'}</span>${sm?'':`<button type="button" class="me-rclr" data-rate=""${has?'':' hidden'}>Clear</button>`}</div>
-  <input type="range" class="me-slider" min="1" max="10" step="0.1" value="${has?v:5.5}" style="--p:${has?(+v-1)/9*100:0}%" aria-label="Rating"><div class="me-ticks">${[...Array(10)].map((_,i)=>`<span>${i+1}</span>`).join('')}</div></div>`}
-function rateSync(box,v){const has=v!=null&&!isNaN(v);box.classList.toggle('unset',!has);box.dataset.v=has?v:'';const s=box.querySelector('.me-slider'),n=box.querySelector('.me-rnum'),c=box.querySelector('.me-rclr');
-  if(has){s.value=v;if(document.activeElement!==n)n.value=fmtR(v)}else n.value='';s.style.setProperty('--p',(has?(v-1)/9*100:0)+'%');box.querySelector('.me-rw').textContent=has?RWORD(v):'Not rated';if(c)c.hidden=!has}
+function rateCtl(id,v,sm,mx=10){const has=v!=null&&v!=='';const lo=mx===10?1:.5,pc=x=>(x-lo)/(mx-lo)*100;
+  return `<div class="me-rate${sm?' sm':''}${has?'':' unset'}" data-rc="${id}" data-v="${has?+v:''}" data-max="${mx}"><div class="me-rtop"><input class="me-rnum num" value="${has?fmtR(v):''}" placeholder="–" inputmode="decimal" aria-label="Score"><span class="me-rof">/${mx}</span><span class="me-rw">${has?RWORD(v*10/mx):'Not rated'}</span>${sm?'':`<button type="button" class="me-rclr" data-rate=""${has?'':' hidden'}>Clear</button>`}</div>
+  <input type="range" class="me-slider" min="${lo}" max="${mx}" step="0.1" value="${has?v:mx/2}" style="--p:${has?pc(+v):0}%" aria-label="Rating"><div class="me-ticks">${[...Array(mx)].map((_,i)=>`<span>${i+1}</span>`).join('')}</div></div>`}
+function rateSync(box,v){const has=v!=null&&!isNaN(v),mx=+box.dataset.max||10,lo=mx===10?1:.5;box.classList.toggle('unset',!has);box.dataset.v=has?v:'';const s=box.querySelector('.me-slider'),n=box.querySelector('.me-rnum'),c=box.querySelector('.me-rclr');
+  if(has){s.value=v;if(document.activeElement!==n)n.value=fmtR(v)}else n.value='';s.style.setProperty('--p',(has?(v-lo)/(mx-lo)*100:0)+'%');box.querySelector('.me-rw').textContent=has?RWORD(v*10/mx):'Not rated';if(c)c.hidden=!has}
 const rateVal=box=>box&&box.dataset.v!==''?+box.dataset.v:null;
 
 /* ---- entry sheet ---- */
@@ -160,7 +160,6 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
   const SH={cur:K.ing,done:'Completed',plan:'Planned',hold:'On hold',drop:'Dropped'};const lg=it.log||[];
   const prog=+it.prog||0,pct=it.total?Math.min(100,Math.round(prog/it.total*100)):null;
   const src=it.src==='imdb'?'IMDb':it.src==='mal'?'MAL':it.src==='anilist'?'AniList':it.src==='kitsu'?'Kitsu':'Score';
-  const stars5=[1,2,3,4,5].map(n=>{const r=+it.rating||0;const cls=r>=n?'full':r>=n-.5?'half':'';return `<span class="star5 ${cls}"><button type="button" data-rate="${n-.5}" aria-label="${n-.5} stars"></button><button type="button" data-rate="${n}" aria-label="${n} stars"></button></span>`}).join('');
   const sw=(id,on,l,sub)=>`<label class="me-row"><span class="me-l">${l}${sub?`<small>${sub}</small>`:''}</span><input type="checkbox" class="me-sw" id="${id}"${on?' checked':''}></label>`;
   const dateRow=(id,l,v)=>`<label class="me-row"><span class="me-l">${l}</span><span class="me-v${v?'':' none'}">${v?esc(nice(v)):'None'}</span><input type="date" class="me-in" id="${id}" value="${v||''}"></label>`;
   openSheet(it.title,`<div class="me">
@@ -170,7 +169,7 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
     ${it.genres&&it.genres.length?`<div class="me-gen">${it.genres.slice(0,5).map(g=>`<span>${esc(g)}</span>`).join('')}</div>`:''}
     <div class="me-pills">${it.mal?`<span class="me-pill">${src} <b class="num">${it.mal}</b></span>`:''}${it.url?`<a class="me-pill" href="${esc(it.url)}" target="_blank" rel="noopener">Open ↗</a>`:''}</div></div></div></div>
   <div class="me-seg" id="meSt">${MSTAT(k).map(([s])=>`<button type="button" data-st="${s}" aria-pressed="${it.st===s}">${esc(SH[s][0].toUpperCase()+SH[s].slice(1))}</button>`).join('')}</div>
-  <div class="tes-lab">Your rating</div><div class="me-card me-pad">${max===10?rateCtl('meRate',it.rating):`<div class="me-stars"><div class="rates starrow">${stars5}</div>${it.rating!=null&&it.rating!==''?`<span class="me-rw">${kgs(it.rating)} / 5</span><button type="button" class="me-rclr" data-rate="">Clear</button>`:'<span class="me-rw">Not rated</span>'}</div>`}</div>
+  <div class="tes-lab">Your rating</div><div class="me-card me-pad">${rateCtl('meRate',it.rating,false,max)}</div>
   ${K.unit?`<div class="tes-lab">Progress</div><div class="me-card me-pad"><div class="me-prow"><button class="me-step" type="button" data-pg="-1" aria-label="Minus one">−</button><div class="me-pv"><input class="num" id="mePg" value="${prog||''}" placeholder="0" inputmode="numeric" aria-label="Progress"><span>/</span><input class="num" id="meTot" value="${it.total||''}" placeholder="?" inputmode="numeric" aria-label="Total"></div><button class="me-step p" type="button" data-pg="1">+1</button></div>
     <div class="me-bar"><i style="width:${pct||0}%"></i></div><div class="me-psub"><span>${K.units}</span><span class="num">${pct!=null?pct+'%':''}</span></div></div>`:''}
   ${it.series&&it.parts&&it.parts.length?`<div class="tes-lab">Included <span class="num">${it.parts.length}</span></div><div class="me-card">${it.parts.map((p,i)=>`<div class="me-row me-part"><i class="num">${i+1}</i><span class="me-l">${esc(p.t)}<small>${[p.y,p.f].filter(Boolean).map(esc).join(' · ')}</small></span><span class="me-v num">${p.n?p.n+' '+(K.unit||''):''}</span></div>`).join('')}</div>`:''}
@@ -206,7 +205,7 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
   sb.onkeydown=e=>{if(e.key==='Enter'&&(e.target.id==='mePg'||e.target.id==='meTot')){e.preventDefault();e.target.blur()}};
   sb.oninput=e=>{const t=e.target;if(t.id==='mePg'||t.id==='meTot')liveBar();if(t.classList.contains('me-slider')){rateSync(t.closest('.me-rate'),+t.value);return}if(t.classList.contains('me-rnum')||t.type==='checkbox'||t.type==='date'||t.id==='meEpN'||t.id==='meEpNote')return;deb(e)};
   sb.onchange=e=>{const t=e.target;
-    if(t.classList.contains('me-slider')||t.classList.contains('me-rnum')){const box=t.closest('.me-rate');let v=t.classList.contains('me-rnum')?(t.value.trim()===''?null:parseFloat(t.value.replace(',','.'))):+t.value;if(v!=null)v=isNaN(v)?null:Math.min(10,Math.max(1,Math.round(v*10)/10));rateSync(box,v);
+    if(t.classList.contains('me-slider')||t.classList.contains('me-rnum')){const box=t.closest('.me-rate');let v=t.classList.contains('me-rnum')?(t.value.trim()===''?null:parseFloat(t.value.replace(',','.'))):+t.value;if(v!=null){const mx=+box.dataset.max||10;v=isNaN(v)?null:Math.min(mx,Math.max(mx===10?1:.5,Math.round(v*10)/10))}rateSync(box,v);
       if(box.dataset.rc==='meRate'){it.rating=v;if((it.log||[]).length)it.log[it.log.length-1].r=v;persist()}return}
     if(t.id==='meS'||t.id==='meF'){it[t.id==='meS'?'start':'fin']=t.value;persist();mEntry(k,key);return}
     if(t.id==='meLd'){const v=t.closest('.me-row').querySelector('.me-v');v.textContent=t.value?nice(t.value):'None';return}
