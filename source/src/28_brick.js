@@ -2,6 +2,9 @@
    A web app can't block iPhone apps itself (only Apple's Screen Time API can, and that needs a native app).
    What this does instead: it drives an iOS Shortcut, which CAN turn on a Focus that hides and silences your apps —
    and if you own the real Brick, it runs that app's shortcut too. The app tracks the state, time and streaks. */
+/* date of birth arrives once via ?dob=YYYY-MM-DD and is kept in kv (never in this repo) */
+{const q=new URLSearchParams(location.search).get('dob');if(q&&/^\d{4}-\d\d-\d\d$/.test(q)){LS.set('dobq',q);history.replaceState(null,'',location.pathname+location.hash)}}
+const bAge=()=>{if(!BRICK.dob)return +BRICK.age||null;const d=new Date(BRICK.dob+'T12:00'),n=new Date();return (n-d)/(365.2425*864e5)};
 let BST={};/* daily screen time from the morning Shortcut, health/d-<day>.screentime */
 const bSTh=v=>v<=0||isNaN(v)?null:v/3600;   // Jomo sends seconds
 let BRICK={on:false,since:null,until:null,sessions:[],strict:false,auto:false,sOn:'Brick On',sOff:'Brick Off'},brickLoaded=false,brickTick=null;
@@ -9,6 +12,7 @@ const bMin=(a,b)=>Math.max(0,Math.round((b-a)/60000));
 async function loadBrick(){if(brickLoaded){renderBrick();return}
   try{const d=await load('tools/brick');if(d)BRICK={...BRICK,...d}}catch(e){}
   try{(await listDocs('health/d-')).forEach(r=>{const v=r.data&&(r.data.screentime??r.data.screen);if(v!=null)BST[r.path.slice(9)]=+v})}catch(e){}
+  {const q=LS.get('dobq');if(q){BRICK.dob=q;LS.set('dobq','');bSave()}}
   brickLoaded=true;
   if(BRICK.on&&BRICK.until&&Date.now()>BRICK.until)bEnd(true);   // ran out while the app was closed
   renderBrick()}
@@ -35,7 +39,7 @@ function bStreak(){let n=0;for(let i=0;;i++){const d=addDays(DAYK,-i);const m=BR
 function bHMS(s){return (s>=3600?Math.floor(s/3600)+':':'')+pad(Math.floor(s/60)%60)+':'+pad(s%60)}
 const bHM=m=>m>=60?Math.floor(m/60)+'h '+pad(m%60)+'m':m+'m';
 function bLife(){const ks=Object.keys(BST).sort().slice(-7),vals=ks.map(k=>bSTh(BST[k])).filter(x=>x!=null);
-  const st=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:null,age=+BRICK.age||null,goal=BRICK.goalH==null?2:+BRICK.goalH;
+  const st=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:null,age=bAge(),goal=BRICK.goalH==null?2:+BRICK.goalH;
   if(st==null)return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span></div>
     <p class="bk-p">Waiting for your screen time. Add one line to your morning sleep Shortcut and this fills in by itself:</p>
     <ol class="sl-steps"><li>Shortcut <b>Send screen time</b>: Jomo <i>Get Today's Screen Time</i> → Text <code>Screen Time|</code> + that result → Get Contents of URL (your sleep upload link, POST, File = Text).</li><li>Automation → Time of Day <b>23:55</b> daily → Run Immediately → Send screen time.</li></ol></div>`;
@@ -46,7 +50,7 @@ function bLife(){const ks=Object.keys(BST).sort().slice(-7),vals=ks.map(k=>bSTh(
   const sl=left*8/24,free=left-sl-yrs;const W=x=>(x/left*100).toFixed(2)+'%';
   return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span><em>${vals.length}-day average</em></div>
     <div class="bk-big num">${yrs.toFixed(1)}<small> years</small></div>
-    <p class="bk-p">of the rest of your life will be spent looking at your phone, at <b>${st}h a day</b> from ${age} to 80. That's <b>${waking}%</b> of every waking hour.</p>
+    <p class="bk-p">of the rest of your life will be spent looking at your phone, at <b>${st}h a day</b> from ${Math.floor(age)} to 80. That's <b>${waking}%</b> of every waking hour.</p>
     <div class="bk-lifebar"><i style="width:${W(yrs)};background:var(--pink)"></i><i style="width:${W(sl)};background:#5e5ce6"></i><i style="width:${W(Math.max(0,free))};background:rgba(255,255,255,.14)"></i></div>
     <div class="bk-keys"><span><i style="background:var(--pink)"></i>phone ${yrs.toFixed(1)}y</span><span><i style="background:#5e5ce6"></i>sleep ${sl.toFixed(0)}y</span><span><i style="background:rgba(255,255,255,.3)"></i>everything else ${Math.max(0,free).toFixed(1)}y</span></div>
     <div class="bk-goal"><div><span>Cut it to</span><div class="bk-step"><button type="button" data-gh="-0.5" aria-label="Less">−</button><b class="num">${String(goal).replace(/\.0$/,'')}h</b><button type="button" data-gh="0.5" aria-label="More">+</button></div><span>a day</span></div>
