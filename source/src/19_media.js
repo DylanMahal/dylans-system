@@ -38,16 +38,12 @@ let MSEARCH_ERR='';
 const mBig=s=>{s=' '+norm(s||'').replace(/[^a-z0-9]+/g,' ').trim()+' ';const m=new Map();for(let i=0;i<s.length-1;i++){const g=s.slice(i,i+2);m.set(g,(m.get(g)||0)+1)}return m};
 const mSim=(a,b)=>{const A=mBig(a),B=mBig(b);let n=0,ta=0,tb=0;A.forEach(v=>ta+=v);B.forEach(v=>tb+=v);A.forEach((v,g)=>{n+=Math.min(v,B.get(g)||0)});return ta+tb?2*n/(ta+tb):0};
 const mScore=(x,q)=>Math.max(mSim(x.title,q),mSim(x.alt,q),...String(x.title||'').split(/[:\-–]/).map(t=>mSim(t,q)));
-async function msearch(k,q){q=q.trim();if(!q)return [];if(k==='anime'||k==='manga'){const r=await msearch1(k,q);if(r&&r.length&&mScore(r[0],q)>=.6)return r;
-    /* weak or no hit: likely a typo — ask the fuzzy sources, then re-run the best guess through the main source */
-    const words=q.split(/\s+/).filter(w=>w.length>=3).sort((a,b)=>b.length-a.length).slice(0,3);
-    const tries=[MSRC.kitsu(k,q).catch(()=>[]),MSRC.jikan(k,q).catch(()=>[]),...words.map(w=>MSRC.anilist(k,w).catch(()=>[]))];
-    let pool=(r||[]).concat(...await Promise.all(tries));
-    const best=pool.slice().sort((a,b)=>mScore(b,q)-mScore(a,q))[0];
-    if(best&&best.src==='kitsu'){try{pool=pool.concat(await MSRC.anilist(k,best.alt||best.title))}catch(e){}}
-    const seen=new Set(),out=[];pool.map(x=>({x,s:mScore(x,q)})).filter(o=>o.s>=.3).sort((a,b)=>b.s-a.s).forEach(({x})=>{const id=norm(x.title)+'|'+(x.year||'');if(seen.has(x.key)||seen.has(id))return;seen.add(x.key);seen.add(id);out.push(x)});
-    if(out.length)return out.slice(0,20);return r}
-  return msearch1(k,q)}
+async function msearch(k,q){q=q.trim();if(!q)return [];const r=await msearch1(k,q);
+  if(k!=='manga'||(r&&r.length&&mScore(r[0],q)>=.6))return r;
+  /* weak manga hit: probably a typo — ask the fuzzier sources in parallel and rank everything by closeness */
+  const more=await Promise.all([MSRC.kitsu(k,q).catch(()=>[]),MSRC.jikan(k,q).catch(()=>[])]);const seen=new Set();
+  const out=(r||[]).concat(...more).map(x=>({x,s:mScore(x,q)})).filter(o=>o.s>=.3).sort((a,b)=>b.s-a.s).map(o=>o.x).filter(x=>{const id=norm(x.title);if(seen.has(x.key)||seen.has(id))return false;seen.add(x.key);seen.add(id);return true});
+  return out.length?out.slice(0,20):r}
 async function msearch1(k,q){const errs=[];
   let ok=false;for(const s of MCHAIN[k]){try{const r=await MSRC[s](k,q);if(r.length)return r;ok=true}catch(e){errs.push(s+': '+e.message)}}
   MSEARCH_ERR=errs.join(' · ');return ok?[]:null}
@@ -99,20 +95,52 @@ async function mFranchise(k,it){if(k!=='anime'&&k!=='manga')return null;const T=
 function mSeriesify(it,f,keepSingle){if(keepSingle)it.single={title:it.title,alt:it.alt,total:it.total,img:it.img,year:it.year,kind:it.kind};it.series=true;it.kind='series';
   if(f)Object.assign(it,{title:f.title,alt:f.alt,parts:f.parts,total:f.total||it.total,year:f.year||it.year,img:f.img||it.img,genres:f.genres.length?f.genres:it.genres});else it.title=mClean(it.title);if(it.st==='done'&&it.total)it.prog=it.total;return it}
 
+/* ---- offline anime index: instant, typo/case/punctuation-tolerant search (static/anidx.json) ---- */
+const anorm=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/&/g,' and ').replace(/[^a-z0-9]+/g,' ').trim();
+const ASTOP=new Set(['x','the','no','of','a','to','wa','ga','s','and','in','on','tv']);
+let ANIDX=null,ANIDXP=null,AVOC=[];
+function aniLoad(){if(ANIDX)return Promise.resolve(ANIDX);if(!ANIDXP)ANIDXP=fetch('anidx.json').then(r=>{if(!r.ok)throw new Error(r.status);return r.json()}).then(a=>{const V=new Map();AVOC=[];
+    const id=w=>{let i=V.get(w);if(i==null){i=AVOC.length;V.set(w,i);AVOC.push(w)}return i};
+    return ANIDX=a.map(r=>({r,n:[r[2],...r[3]].map(s=>{const t=anorm(s),w=t.split(' ').filter(Boolean);return {s,c:t.replace(/ /g,''),w:w.map(id),k:w.filter(x=>!ASTOP.has(x)).length||1}})}))}).catch(e=>{ANIDXP=null;throw e});return ANIDXP}
+/* optimal-string-alignment distance (a swap of two letters counts as one typo), bails out past m */
+function alev(a,b,m){if(Math.abs(a.length-b.length)>m)return m+1;let p2=null,p=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){const c=[i];let lo=i;for(let j=1;j<=b.length;j++){let v=Math.min(p[j]+1,c[j-1]+1,p[j-1]+(a[i-1]===b[j-1]?0:1));if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1])v=Math.min(v,p2[j-2]+1);c[j]=v;if(v<lo)lo=v}if(lo>m)return m+1;p2=p;p=c}return p[b.length]}
+function atok(q,w){if(w===q)return 1;if(q.length>=2&&w.startsWith(q))return .92;if(q.length<4)return 0;const m=q.length>=7?2:1;if(w.length>q.length&&alev(q,w.slice(0,q.length),m)<=m)return .78;const e=alev(q,w,m);return e<=m?.86-.08*e:0}
+function aniSearch(q,lim=20){q=anorm(q);if(!q||!ANIDX)return [];const qc=q.replace(/ /g,''),qw=q.split(' ').filter(Boolean);
+  const M=aniSearch.m||(aniSearch.m=new Map());const S=qw.map(t=>{let a=M.get(t);if(!a){a=new Float32Array(AVOC.length);for(let i=0;i<AVOC.length;i++)a[i]=atok(t,AVOC[i]);if(M.size>60)M.clear();M.set(t,a)}return a});const out=[];
+  for(const x of ANIDX){let best=0,bs='';for(const n of x.n){let s=0;
+      if(n.c===qc)s=1.5;else if(qc.length>=2&&n.c.startsWith(qc))s=1.2+qc.length/n.c.length*.1;else if(qc.length>=4&&n.c.includes(qc))s=1;
+      else{let tot=0,miss=0;const hit=new Set();for(const a of S){let b=0,bj=-1;n.w.forEach((w,j)=>{const v=hit.has(j)?a[w]*.5:a[w];if(v>b){b=v;bj=j}});if(!b)miss++;else hit.add(bj);tot+=b}
+        if(miss&&(qw.length<3||miss>1))continue;let cov=0;hit.forEach(j=>{if(!ASTOP.has(AVOC[n.w[j]]))cov++});s=tot/qw.length*(miss?.8:1)*(.75+.25*Math.min(1,cov/n.k))}
+      if(s>best){best=s;bs=n.s}}
+    if(best>=.6)out.push({x,s:best+x.r[8]/200+(x.r[4]===0?.03:0)-((x.r[6]||2000)-1990)*.0005,t:bs})}
+  out.sort((a,b)=>b.s-a.s);const K=['tv','movie','ona','ova','special'];
+  return out.slice(0,lim).map(({x,t})=>{const r=x.r;return {key:r[0]?'mal'+r[0]:'al'+r[1],src:r[0]?'mal':'anilist',id:r[0]||r[1],al:r[1]||null,title:t.length<=5&&t!==r[2]?r[2]:t,alt:r[2],img:r[7]?`https://cdn.myanimelist.net/images/anime/${r[7]}l.jpg`:'',year:r[6]||null,total:r[5]||null,kind:K[r[4]],genres:[],score:r[8]||null,dur:24,url:r[0]?`https://myanimelist.net/anime/${r[0]}`:`https://anilist.co/anime/${r[1]}`}})}
+/* fill in English title, genres, studio, synopsis for an anime picked from the offline index */
+async function menrichAni(k,it){if(k!=='anime')return;try{const v=it.src==='mal'?{mal:+it.id}:{id:+it.id};
+  const j=await mfetch('https://graphql.anilist.co',{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({query:'query($id:Int,$mal:Int){Media(id:$id,idMal:$mal,type:ANIME){title{romaji english} coverImage{extraLarge large} genres episodes duration description(asHtml:false) studios(isMain:true){nodes{name}}}}',variables:v})},10000);
+  const m=j.data&&j.data.Media,c=MEDIA[k].items[it.key];if(!m||!c)return;const t0=c.title;
+  Object.assign(c,{title:c.series?c.title:(m.title.english||c.title),alt:c.series?c.alt:(m.title.romaji||c.alt),genres:m.genres||c.genres,syn:stripHtml(m.description)||c.syn,dur:m.duration||c.dur,by:((m.studios&&m.studios.nodes)||[]).map(x=>x.name).join(', ')||c.by,total:c.series?c.total:(m.episodes||c.total)});
+  if(!c.img&&m.coverImage)c.img=m.coverImage.extraLarge||m.coverImage.large;saveMedia(k);return t0}catch(e){}}
 const MSVG=p=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
 function mAdd(k){const canSer=k==='anime'||k==='manga';let ser=canSer&&LS.get('maser')==='1';
   openSheet('add '+MK[k].label,`<div class="ma-search">${MSVG('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="msQ" placeholder="Search ${k==='anime'||k==='manga'?'AniList / MyAnimeList':k==='books'?'Open Library':'films & series'}" autocomplete="off" enterkeyhint="search"></div>
   ${canSer?`<div class="tes-seg ma-mode" id="msMode" style="grid-template-columns:1fr 1fr"><button type="button" data-mode="0" aria-pressed="${!ser}">Single ${k==='anime'?'season':'entry'}</button><button type="button" data-mode="1" aria-pressed="${ser}">Whole series</button></div><div class="ma-hint" id="msHint"${ser?'':' hidden'}>Pick any season — every season is pulled in and logged as one entry with a single rating.</div>`:''}
   <div class="msres" id="msRes"><div class="ma-empty">Type a title to search.</div></div><button class="ma-manual" type="button" id="msManual">${MSVG('<path d="M12 5v14M5 12h14"/>')} Add manually</button>`);
-  let t=null,last=[];const draw=()=>{$('msRes').innerHTML=last.map((x,i)=>`<button type="button" class="msr" data-i="${i}">${poster(x,'msp')}<span><b>${esc(x.title)}</b><span class="dim">${[x.year,x.kind,x.total?x.total+' '+MK[k].units:'',x.by].filter(Boolean).map(esc).join(' · ')}</span></span>${!ser&&MEDIA[k].items[x.key]?'<span class="ma-in">In library</span>':ser?'<span class="ma-in s">Series</span>':MSVG('<path d="M12 5v14M5 12h14"/>').replace('<svg','<svg class="ma-plus"')}</button>`).join('')||'<div class="ma-empty">No results.</div>'};
-  $('msQ').oninput=e=>{clearTimeout(t);const q=e.target.value;t=setTimeout(async()=>{const my=++mAdd.seq;$('msRes').innerHTML='<div class="ma-empty">Searching…</div>';const r=await msearch(k,q);if(my!==mAdd.seq||!$('msRes'))return;if(r===null){$('msRes').innerHTML=`<div class="ma-empty">Couldn’t reach the search sources (${esc(MSEARCH_ERR)}). Try again in a moment, or add manually.</div>`;return}last=r;draw()},350)};
+  let t=null,last=[];const draw=()=>{$('msRes').innerHTML=last.map((x,i)=>`<button type="button" class="msr" data-i="${i}">${poster(x,'msp')}<span><b>${esc(x.title)}</b>${x.alt&&anorm(x.alt)!==anorm(x.title)?`<span class="ma-alt">${esc(x.alt)}</span>`:''}<span class="dim">${[x.year,x.kind,x.total>1?x.total+' '+MK[k].units:'',x.by].filter(Boolean).map(esc).join(' · ')}</span></span>${!ser&&MEDIA[k].items[x.key]?'<span class="ma-in">In library</span>':ser?'<span class="ma-in s">Series</span>':MSVG('<path d="M12 5v14M5 12h14"/>').replace('<svg','<svg class="ma-plus"')}</button>`).join('')||'<div class="ma-empty">No results.</div>'};
+  if(k==='anime')aniLoad().catch(()=>{});
+  $('msQ').oninput=e=>{clearTimeout(t);const q=e.target.value;t=setTimeout(async()=>{const my=++mAdd.seq;if(!q.trim()){$('msRes').innerHTML='<div class="ma-empty">Type a title to search.</div>';return}
+    if(k==='anime'){let ok=true;if(!ANIDX){$('msRes').innerHTML='<div class="ma-empty">Loading anime index…</div>';try{await aniLoad()}catch(x){ok=false}}
+      if(ok){if(my!==mAdd.seq||!$('msRes'))return;last=aniSearch(q);draw();
+        /* brand-new shows may not be in the index yet: top up from AniList without blocking */
+        if(last.length<4&&q.trim().length>=3)MSRC.anilist(k,q.trim()).then(r=>{if(my!==mAdd.seq||!$('msRes'))return;const have=new Set(last.map(x=>x.key));r=r.filter(x=>!have.has(x.key));if(r.length){last=last.concat(r);draw()}}).catch(()=>{});return}}
+    $('msRes').innerHTML='<div class="ma-empty">Searching…</div>';const r=await msearch(k,q);if(my!==mAdd.seq||!$('msRes'))return;if(r===null){$('msRes').innerHTML=`<div class="ma-empty">Couldn’t reach the search sources (${esc(MSEARCH_ERR)}). Try again in a moment, or add manually.</div>`;return}last=r;draw()},k==='anime'?90:350)};
   setTimeout(()=>$('msQ')&&$('msQ').focus(),200);
   if(canSer)$('msMode').onclick=e=>{const b=e.target.closest('[data-mode]');if(!b)return;ser=b.dataset.mode==='1';LS.set('maser',ser?'1':'0');$('msMode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('msHint').hidden=!ser;if(last.length)draw()};
   const mk=(x,key)=>{const it={...x,key,st:k==='movies'?'done':'plan',prog:0,rating:null,added:DAYK,upd:new Date().toISOString(),log:[],tags:[]};delete it.score;it.mal=x.score;return it};
   $('msRes').onclick=async e=>{const b=e.target.closest('[data-i]');if(!b||b.classList.contains('busy'))return;const x=last[+b.dataset.i];
     if(ser){b.classList.add('busy');b.querySelector('.ma-in').textContent='Building…';const f=await mFranchise(k,x);const key='ser'+(f?f.root:x.key);if(MEDIA[k].items[key])return mEntry(k,key);
-      const it=mSeriesify(mk(x,key),f);MEDIA[k].items[key]=it;saveMedia(k);flash(f?'series_added_'+f.parts.length+'_parts':'series_added');return mEntry(k,key,true)}
-    if(MEDIA[k].items[x.key])return mEntry(k,x.key);const it=mk(x,x.key);MEDIA[k].items[it.key]=it;saveMedia(k);flash('added');mEntry(k,it.key,true);menrich(k,it).then(()=>{const a=document.activeElement;if($('sheet').classList.contains('on')&&$('sheetTitle').textContent===it.title&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))mEntry(k,it.key)})};
+      const it=mSeriesify(mk(x,key),f);MEDIA[k].items[key]=it;saveMedia(k);if(k==='anime')menrichAni(k,it);flash(f?'series_added_'+f.parts.length+'_parts':'series_added');return mEntry(k,key,true)}
+    if(MEDIA[k].items[x.key])return mEntry(k,x.key);const it=mk(x,x.key);MEDIA[k].items[it.key]=it;saveMedia(k);flash('added');mEntry(k,it.key,true);(k==='anime'?menrichAni(k,it):menrich(k,it)).then(t0=>{const a=document.activeElement,st=$('sheetTitle').textContent;if($('sheet').classList.contains('on')&&(st===it.title||st===t0)&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))mEntry(k,it.key)})};
   $('msManual').onclick=()=>{const title=($('msQ').value||'').trim()||'untitled';const it={key:'m'+rid(),src:'manual',title,img:'',st:'plan',prog:0,rating:null,added:DAYK,upd:new Date().toISOString(),log:[],tags:[],genres:[]};if(ser)mSeriesify(it,null);MEDIA[k].items[it.key]=it;saveMedia(k);mEntry(k,it.key,true)}}
 
 /* ---- decimal rating control (score + slider in 0.1 steps, or type it) ---- */

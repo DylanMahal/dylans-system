@@ -2515,3 +2515,4 @@ img.wr2-p{padding:0}
 .ms-list button>span{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.ms-list button b{font:600 15px var(--sf);color:#eee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ms-list small{font:12px var(--sf);color:#8e8e93}
 .ms-list em{font:800 16px var(--sf);font-style:normal;color:#ffcf3f}
 @media (max-width:600px){.wr2-big b{font-size:24px}.wr2-top{gap:6px}.wr2-top b{font-size:11px}.ms-cols{gap:4px}}
+.ma-alt{font:13px var(--sf);color:#b0b0b5;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
