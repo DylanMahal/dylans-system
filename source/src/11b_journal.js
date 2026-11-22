@@ -14,7 +14,8 @@ watchPrefix('journal/e-',(evt,path,data)=>{const d=path.slice(10);JLIST=JLIST.fi
   if(cur==='journal'){renderJList();if(d===JDATE&&data&&!jDirty){JE=data;renderJEditor(true)}}});
 let jDirty=false;
 async function openEntry(d){JDATE=d;const e=await load(jpath(d));JE=e||{date:d,text:'',mood:null,tags:[],ink:{h:PAGE_H,strokes:[]}};if(!JE.ink)JE.ink={h:PAGE_H,strokes:[]};if(typeof JL!=='undefined')JL.reset();renderJList();renderJEditor()}
-function saveJ(){jDirty=true;clearTimeout(jSaveT);$('jSaved').textContent='…';jSaveT=setTimeout(()=>{JE.updatedAt=new Date().toISOString();const empty=!JE.text&&!JE.mood&&!(JE.tags||[]).length&&!JE.ink.strokes.length;
+const jEmpty=e=>!String(e.text||'').trim()&&!e.mood&&!(e.tags||[]).length&&!((e.ink&&e.ink.strokes)||[]).some(k=>k&&(k.tool||k.t)!=='eraser'&&(k.pts||k.p||k.points||[1]).length);
+function saveJ(){jDirty=true;clearTimeout(jSaveT);$('jSaved').textContent='…';jSaveT=setTimeout(()=>{JE.updatedAt=new Date().toISOString();const empty=jEmpty(JE);
   if(empty)removeDoc(jpath(JE.date));else save(jpath(JE.date),JE,true);
   JLIST=JLIST.filter(x=>x.date!==JE.date);if(!empty)JLIST.push(clone(JE));JLIST.sort((a,b)=>a.date<b.date?1:-1);renderJList();$('jSaved').textContent='saved';jDirty=false},700)}
 function renderJList(){
@@ -47,6 +48,9 @@ $('jTags').onkeydown=e=>{if(e.target.id!=='jTagIn')return;if(e.key==='Enter'||e.
 function autoGrow(){const t=$('jText');t.style.height='auto';t.style.height=Math.max(260,t.scrollHeight)+'px'}
 $('jText').oninput=()=>{JE.text=$('jText').value;autoGrow();$('jWords').textContent=((JE.text||'').trim().match(/\S+/g)||[]).length+' words';saveJ()};
 $('jPrompts').innerHTML=`<button class="chip pr" type="button" data-pr="recap">day recap</button>`+PROMPTS.map(([k])=>`<button class="chip" type="button" data-pr="${k}">${k==='woop'?'WOOP':k==='wins'?'3 wins':k==='grat'?'grateful for':'tomorrow'}</button>`).join('');
+$('jDel').onclick=function(){if(!this.dataset.arm){this.dataset.arm=1;this.classList.add('arm');this.insertAdjacentHTML('beforeend','<span>delete?</span>');clearTimeout(this._t);this._t=setTimeout(()=>{delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove()},3000);return}
+  clearTimeout(this._t);clearTimeout(jSaveT);delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove();
+  const d=JDATE;removeDoc(jpath(d));JLIST=JLIST.filter(e=>e.date!==d);JE={date:d,text:'',mood:null,tags:[],ink:{h:PAGE_H,strokes:[]}};if(typeof JL!=='undefined')JL.reset();renderJList();renderJEditor();$('jSaved').textContent='deleted'};
 $('jPrompts').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b)return;if(b.dataset.pr==='recap'){jInsertRecap(b);return}const p=PROMPTS.find(x=>x[0]===b.dataset.pr)[1];JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+p;renderJEditor();const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ();if(b.dataset.pr==='woop')autoTick(/^WOOP/)};
 
 /* --- handwriting: drawn straight over the typed page (shared layer in 11a) --- */
@@ -96,6 +100,29 @@ async function jRecap(d){
     const nm={};const HL=(hx&&hx.list)||(Array.isArray(hx)?hx:[]);HL.forEach(h=>{nm[h.id]=h.n||h.name});
     const hit=Object.keys(day).filter(k=>day[k]).map(k=>nm[k]||k);
     if(hit.length){P('habits',hit.length+' hit');S(hit.join(', '))}
+  }catch(e){}
+  try{
+    const dd=d===DAYK&&typeof DAY!=='undefined'?DAY:await load('days/d-'+d);
+    if(dd&&dd.total){P('plan',dd.done+'/'+dd.total+' ticked · '+R(dd.done/dd.total*100)+'%');if(dd.water)S('water · '+dd.water)}
+  }catch(e){}
+  try{
+    const fo=await load('tools/focus');const fs=((fo&&fo.sessions)||[]).filter(x=>x.d===d);
+    if(fs.length){P('focus',hm(fs.reduce((a,x)=>a+(+x.min||0),0))+' deep work · '+fs.length+' block'+(fs.length>1?'s':''));
+      const tk=[...new Set(fs.map(x=>cut(x.task,30)).filter(Boolean))];if(tk.length)S(tk.join(', '))}
+  }catch(e){}
+  try{
+    const bk=d===DAYK&&typeof BRICK!=='undefined'&&brickLoaded?BRICK:await load('tools/brick');const bs=((bk&&bk.sessions)||[]).filter(x=>x.d===d);
+    if(bs.length){const br=bs.filter(x=>x.broke).length;P('brick',hm(bs.reduce((a,x)=>a+(+x.min||0),0))+' phone-free · '+bs.length+' session'+(bs.length>1?'s':'')+(br?' · '+br+' ended early':''))}
+  }catch(e){}
+  try{
+    const h=await load('health/d-'+d)||{};
+    if(h.screentime!=null)P('screen',hm(R(h.screentime/60))+' screen time');
+    const hv=[h.hrv&&'HRV '+R(h.hrv)+' ms',h.rhr&&'RHR '+R(h.rhr),h.kcal&&K(h.kcal)+' active kcal',h.steps&&K(h.steps)+' steps'].filter(Boolean);
+    if(hv.length)P('body',hv.join(' · '));
+    if(typeof sRec==='function'&&typeof sleepLoaded!=='undefined'&&sleepLoaded){const rc=sRec(d);if(rc)S('recovery '+rc.v+'%')}
+  }catch(e){}
+  try{
+    if(!L.some(x=>x.startsWith('weight'))){const wt=await load('body/wt');const w=((wt&&wt.r)||[]).filter(x=>String(x.t).slice(0,10)===d).pop();if(w)P('weight',w.kg+' kg')}
   }catch(e){}
   return L.length?L.join('\n'):'nothing logged in the app for this day yet.'}
 async function jInsertRecap(btn){
