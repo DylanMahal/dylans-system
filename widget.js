@@ -131,7 +131,7 @@ async function wToday() {
   const m = nowMin(), up = d.items.filter(i => toMin(i.t) > m && !i.d), nxt = up[0];
   const mins = nxt ? toMin(nxt.t) - m : null, eta = mins == null ? '' : mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
   if (acc(fam)) return lock({ p: d.pct / 100, v: `${d.pct}%`, l: 'day', lines: [`${d.pct}% · ${d.done}/${d.total}`, ...(nxt ? [`${nxt.t} ${nxt.n}`, `in ${eta}`] : [])], inline: nxt ? `${d.pct}% · ${nxt.t} ${nxt.n}` : `${d.pct}% today` });
-  return done(base('today'), cvToday(d, fam));
+  if (!LOCKBG) return done(base('today'), cvToday(d, fam));
   const w = base('today'), pc = d.pct >= 80 ? GOOD : T1;
   const day = new Date(d.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase();
   if (fam === 'small') {
@@ -179,13 +179,15 @@ function circ(done, od) {
 function wTasks(d) {
   const f = FAM();
   if (acc(f)) return lock({ p: null, v: String(d.open), l: 'tasks', lines: [`${d.open} task${d.open === 1 ? '' : 's'} left`, ...d.items.filter(i => !i.done).slice(0, 2).map(i => i.n)], inline: d.open ? `${d.open} left · ${d.items[0].n}` : 'tasks clear' });
-  return done(base('journal'), cvTasks(d, f));
-  const w = base('journal'), max = { small: 4, medium: 4, large: 8 }[f] || 4, fs = f === 'small' ? 13 : f === 'large' ? 17 : 15;
-  w.setPadding(f === 'large' ? 24 : 16, f === 'small' ? 16 : 22, 14, 18);
+  if (!LOCKBG) return done(base('journal'), cvTasks(d, f));
+  const w = base('journal'), max = { small: 3, medium: 3, large: 8 }[f] || 3, fs = f === 'small' ? 13 : f === 'large' ? 17 : 15;
+  w.setPadding(14, 16, 12, 16);
+  w.backgroundColor = Color.clear();
+  { const h = w.addStack(); h.centerAlignContent(); sf(h, 'TASKS', Font.semiboldSystemFont(11), GREY); h.addSpacer(); const n = d.items.filter(i => !i.done).length; sf(h, n ? `${n} left` : 'Clear', Font.semiboldSystemFont(11), GREY); w.addSpacer(f === 'small' ? 8 : 10) }
   if (!d.items.length) { w.addSpacer(); sf(w, 'All clear', Font.semiboldSystemFont(17)); sf(w, 'nothing due today', Font.systemFont(12), GREY); w.addSpacer(); return w }
   d.items.slice(0, max).forEach((t, i) => {
     if (i) w.addSpacer(f === 'large' ? 22 : f === 'small' ? 9 : 10);
-    const r = w.addStack(); r.centerAlignContent(); pic(r, circ(t.done, t.od), fs + 3, fs + 3); r.addSpacer(f === 'large' ? 14 : 11);
+    const r = w.addStack(); r.centerAlignContent(); { const sy = SFSymbol.named(t.done ? 'checkmark.circle.fill' : 'circle'); sy.applyFont(Font.systemFont(fs + 2)); const im = r.addImage(sy.image); im.imageSize = new Size(fs + 3, fs + 3); im.tintColor = t.done ? GREY : t.od ? RED : WHITE } r.addSpacer(f === 'large' ? 14 : 11);
     sf(r, t.n, Font.mediumSystemFont(fs), t.done ? GREY : WHITE); r.addSpacer();
     if (t.tm && f !== 'small') sf(r, t.tm, Font.systemFont(12), GREY);
   });
@@ -295,7 +297,7 @@ async function dSleep() {
 const sCol = s => new Color(s >= 80 ? '#57f5a8' : s >= 60 ? '#ffb000' : '#ff453a');
 function wSleep(d) {
   const f = FAM();
-  if (!acc(f)) return done(base('sleep'), cvSleep(d, f));
+  if (!acc(f) && !LOCKBG) return done(base('sleep'), cvSleep(d, f));
   if (d.none) { if (acc(f)) return lock({ p: null, v: '–', l: 'sleep', lines: ['No sleep data yet'], inline: 'no sleep data' }); const w = base('sleep'); lbl(w, 'SLEEP', 11, 's', T2); w.addSpacer(); lbl(w, 'No data for last night yet', 14, 's', T2, 2); return w }
   if (acc(f)) return lock({ p: d.score / 100, v: String(d.score), l: 'sleep', lines: [`Sleep ${d.score}% · ${hm(d.asleep)}`, d.start ? `${clock(d.start)} → ${clock(d.end)}` : '', `deep ${hm(d.deep)} · rem ${hm(d.rem)}`], inline: `sleep ${d.score}% · ${hm(d.asleep)}` });
   const w = base('sleep');
@@ -333,7 +335,7 @@ function wHabit(s, q, mode) {
   const h = pickHabit(s, q), f = FAM();
   if (!h) { const w = base('streaks'); sf(w, 'No habits yet', Font.systemFont(13), GREY); return w }
   if (acc(f)) return lock({ p: h.t ? Math.min(1, h.c / h.t) : 0, v: String(h.streak), l: h.ic || unitW(h), lines: [`${h.ic || ''} ${h.n}`, `${h.streak} ${unitW(h)} streak`, h.done ? 'done today' : h.due ? `${h.c}/${h.t} today` : 'rest day'], inline: `${h.ic || ''} ${h.n} · ${h.streak}${h.unit === 'wk' ? 'w' : 'd'}${h.done ? ' ✓' : ''}` });
-  return done(base('streaks'), cvHabit(s, q, mode, f));
+  if (!LOCKBG) return done(base('streaks'), cvHabit(s, q, mode, f));
   const w = base('streaks');
   if (mode === 'streak') {
     w.setPadding(14, 16, 14, 16);
@@ -374,7 +376,7 @@ function habitRow(st, h, W) {
 function wHabits(s) {
   const f = FAM(), L = s.items.filter(h => h.due), nDone = L.filter(h => h.done).length;
   if (acc(f)) return lock({ p: L.length ? nDone / L.length : 0, v: `${nDone}/${L.length}`, l: 'habits', lines: [`Habits ${nDone}/${L.length}`, L.filter(h => !h.done).slice(0, 2).map(h => `${h.ic || ''} ${h.n}`).join('  ')], inline: `habits ${nDone}/${L.length}` });
-  return done(base('streaks'), cvHabits(s, f));
+  if (!LOCKBG) return done(base('streaks'), cvHabits(s, f));
   const w = base('streaks'), left = L.filter(h => !h.done), order = [...left, ...L.filter(h => h.done)];
   if (f === 'small') {
     const h = w.addStack(); lbl(h, 'HABITS', 11, 's', T2); h.addSpacer();
@@ -414,7 +416,7 @@ function wWeek(d) {
   const t2 = d.days[d.days.indexOf(today) + 1];
   const up = [...today.ev.filter(e => !e.ad && e.e > nm).map(e => ({ ...e, day: 'Today' })), ...((t2 && t2.ev.filter(e => !e.ad).map(e => ({ ...e, day: 'Tomorrow' }))) || [])];
   const tm = m => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
-  if (!acc(f)) return done(base('week'), cvWeek(d, f));
+  if (!acc(f) && !LOCKBG) return done(base('week'), cvWeek(d, f));
   if (acc(f)) { const n = up[0]; return lock({ p: null, v: n ? tm(n.s) : '–', l: 'next', lines: n ? [n.t, `${n.day} ${tm(n.s)}–${tm(n.e)}`] : ['Nothing coming up'], inline: n ? `${tm(n.s)} ${n.t}` : 'calendar clear' }) }
   const w = base('week');
   if (f !== 'large' && f !== 'extraLarge') {
