@@ -52,22 +52,22 @@ function renderBrick(){const el=$('t-brick');if(!el)return;if(!brickLoaded){load
   const per=days.map(d=>BRICK.sessions.filter(s=>s.d===d).reduce((a,s)=>a+s.min,0)+(d===DAYK&&BRICK.on&&BRICK.since?bMin(BRICK.since,Date.now()):0));
   const week=per.reduce((a,b)=>a+b,0),mx=Math.max(60,...per),log=BRICK.sessions.filter(s=>s.d===DAYK).slice(0,8);
   const all=BRICK.sessions.reduce((a,s)=>a+s.min,0)+(BRICK.on&&BRICK.since?bMin(BRICK.since,Date.now()):0);
-  const ready=BRICK.sOn&&BRICK.sOff,pre=BRICK.pre==null?25:BRICK.pre;
+  const ready=!!BRICK.sOn,pre=BRICK.pre?BRICK.pre:25;
   const tot=BRICK.on&&BRICK.until?(BRICK.until-BRICK.since)/1000:0,pct=tot?Math.max(0,Math.min(100,(1-l/tot)*100)):0;
   const sw=(id,on,t,s)=>`<label class="bk-frow"><span>${t}<small>${s}</small></span><input type="checkbox" class="sl-sw" id="${id}" ${on?'checked':''}></label>`;
   const hero=BRICK.on?`<div class="bk-card bk-hero on">
       <div class="bk-ringw"><div class="sl-ring" style="width:210px;height:210px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" class="tr" stroke-width="5"/><circle id="bkRing" cx="50" cy="50" r="46" class="fl" stroke="var(--pink)" stroke-width="5" pathLength="100" stroke-dasharray="${(l!=null?pct:100).toFixed(2)} 100"/></svg>
         <div class="in"><svg viewBox="0 0 24 24" width="22" height="22" class="bk-lk"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg><b class="num" id="bkLeft">${l!=null?bHMS(l):bHM(bMin(BRICK.since,Date.now()))}</b><span>${l!=null?'until '+new Date(BRICK.until).toTimeString().slice(0,5):'bricked · open-ended'}</span></div></div></div>
-      <div class="bk-title">Phone bricked</div><p class="bk-p c">Stay with it. Everything you blocked will be there when the time's up.</p>
-      <button class="btn ${BRICK.strict&&l?'d':'p'} bk-wide" type="button" id="bkOff">${BRICK.strict&&l?'Break the brick':'Unbrick'}</button></div>`
+      <div class="bk-title">Phone bricked</div><p class="bk-p c">Stay with it. Everything unlocks by itself at ${l!=null?new Date(BRICK.until).toTimeString().slice(0,5):'the end'}.</p>
+      <div class="bk-sealed"><svg viewBox="0 0 24 24" width="15" height="15"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg>No way out until it ends</div></div>`
     :`<div class="bk-card bk-hero">
       <div class="bk-lock"><svg viewBox="0 0 24 24" width="40" height="40"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.5V8a4 4 0 0 1 7.6-1.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/></svg></div>
       <div class="bk-title">Phone is open</div><p class="bk-p c">${today?bHM(today)+' bricked today':'Nothing bricked yet today'}</p>
       <div class="bk-lab">Duration</div>
-      <div class="seg bk-pre" id="bkPre">${[25,50,90,180].map(m=>`<button type="button" data-m="${m}" aria-pressed="${pre===m}">${m>=60?(m/60+'h').replace('.5h','½h'):m+'m'}</button>`).join('')}<button type="button" data-m="0" aria-pressed="${pre===0}">Open</button><button type="button" data-m="custom" aria-pressed="${![0,25,50,90,180].includes(pre)}">${![0,25,50,90,180].includes(pre)?pre+'m':'Custom'}</button></div>
+      <div class="seg bk-pre" id="bkPre">${[25,50,90,180].map(m=>`<button type="button" data-m="${m}" aria-pressed="${pre===m}">${m>=60?(m/60+'h').replace('.5h','½h'):m+'m'}</button>`).join('')}<button type="button" data-m="custom" aria-pressed="${![25,50,90,180].includes(pre)}">${![25,50,90,180].includes(pre)?pre+'m':'Custom'}</button></div>
       <button class="btn p bk-wide bk-go" type="button" id="bkOn"${ready?'':' disabled'}>Brick my phone</button>
       ${ready?'':'<div class="bk-warn">Set up the shortcuts first, see Setup below.</div>'}
-      <div class="bk-form bk-opts">${sw('bkStrict',BRICK.strict,'Strict mode','Ending early needs confirming and is logged')}${sw('bkAuto',BRICK.auto,'Brick with focus timer','Locks when a focus timer starts')}</div></div>`;
+      <div class="bk-form bk-opts">${sw('bkAuto',BRICK.auto,'Brick with focus timer','Locks when a focus timer starts')}</div></div>`;
   const tile=(lab,v,s)=>`<div class="sl-tile"><span>${lab}</span><b class="num">${v}</b><em>${s}</em></div>`;
   el.innerHTML=`<div class="bk-grid"><div class="bk-col">${hero}
     <div class="sl-tiles bk-tiles">${tile('Today',bHM(today),log.length+' session'+(log.length===1?'':'s'))}${tile('Streak',streak+'<small> day'+(streak===1?'':'s')+'</small>','25 min+ a day')}${tile('This week',bHM(week),'last 7 days')}${tile('Reclaimed',(all/60).toFixed(all<600?1:0)+'<small> h</small>','≈ '+(all/1440).toFixed(1)+' days, all time')}</div></div>
@@ -78,12 +78,12 @@ function renderBrick(){const el=$('t-brick');if(!el)return;if(!brickLoaded){load
     <div class="bk-card"><details class="sl-det bk-setup"${ready?'':' open'}><summary>Setup</summary>
       <ol class="sl-steps">
         <li><b>Jomo</b> (free): Rules → Start blocking → pick the apps to block, turn on <b>Strict Mode</b>, save it as <b>Brick</b>.</li>
-        <li><b>Focus</b> (optional, for silence): Settings → Focus → + → Custom, call it <b>Brick</b>, allow no people or apps.</li>
-        <li>Shortcuts app → <b>Brick On</b> = Set Focus Brick On + Jomo <i>Start Session</i> (Brick). <b>Brick Off</b> = Set Focus Off + Jomo <i>Stop Session</i>.</li>
-        <li>Tap <b>Test lock</b> below. Your blocked apps should grey out and refuse to open.</li></ol>
-      <div class="bk-form" style="margin-top:12px"><label class="bk-frow"><span>Lock shortcut</span><input class="inp" id="bkSOn" value="${esc(BRICK.sOn||'')}" placeholder="Brick On"></label><label class="bk-frow"><span>Unlock shortcut</span><input class="inp" id="bkSOff" value="${esc(BRICK.sOff||'')}" placeholder="Brick Off"></label></div>
-      <div class="sl-btns"><button class="btn" type="button" id="bkTestOn">Test lock</button><button class="btn" type="button" id="bkTestOff">Test unlock</button></div>
-      <div class="sl-note">Names must match your Shortcuts exactly. The blocking itself is done by Jomo through Apple's Screen Time. This app is the switch and the record.</div></details></div>
+        
+        <li>Shortcuts app → new shortcut <b>Brick On</b> → Jomo <i>Start Session</i> → Brick, Timing <i>Until Date</i>, Date = <i>Shortcut Input</i>, Show When Run off.</li>
+        <li>Tap <b>Test lock</b> below. Your blocked apps grey out for about a minute, then unlock by themselves.</li></ol>
+      <div class="bk-form" style="margin-top:12px"><label class="bk-frow"><span>Lock shortcut</span><input class="inp" id="bkSOn" value="${esc(BRICK.sOn||'')}" placeholder="Brick On"></label></div>
+      <div class="sl-btns"><button class="btn" type="button" id="bkTestOn">Test lock</button></div>
+      <div class="sl-note">The name must match your Shortcut exactly. Your app tells Jomo when to unlock, so a brick can't be ended early. The blocking itself is done by Jomo through Apple's Screen Time. This app is the switch and the record.</div></details></div>
   </div></div>`;
   bindBrick();if(typeof toolCardSubs==='function')toolCardSubs();clearInterval(brickTick);if(BRICK.on)brickTick=setInterval(()=>{if(cur==='tools'&&TOOLV==='brick'&&!document.hidden){const x=bLeft();if(x===0){bEnd(true);return}const t=$('bkLeft');if(!t)return;if(x!=null){t.textContent=bHMS(x);const r=$('bkRing'),T=(BRICK.until-BRICK.since)/1000;if(r)r.setAttribute('stroke-dasharray',Math.max(0,Math.min(100,(1-x/T)*100)).toFixed(2)+' 100')}else t.textContent=bHM(bMin(BRICK.since,Date.now()))}},1000)}
 function bindBrick(){
@@ -106,4 +106,4 @@ function bindBrick(){
   document.querySelectorAll('#t-brick [data-gh]').forEach(b=>b.onclick=()=>{BRICK.goalH=Math.max(0,Math.min(+BRICK.st||12,(BRICK.goalH==null?2:+BRICK.goalH)+ +b.dataset.gh));bSave();renderBrick()});}
 /* called by the focus timer */
 function brickAuto(on,mins){if(!BRICK.auto||!BRICK.sOn)return;
-  if(on){if(!BRICK.on)bStart(mins||null)}else if(BRICK.on)bEnd(true)}
+  if(on){if(!BRICK.on&&mins>0)bStart(mins)}else if(BRICK.on)bEnd(true)}
