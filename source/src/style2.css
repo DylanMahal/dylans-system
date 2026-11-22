@@ -1740,3 +1740,4 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 /* closed bottom sheet sits just off-screen: don't let its glow bleed up into the page */
 .sheet:not(.on){box-shadow:none}
 @media (min-width:901px){body{padding-bottom:16px!important}.restdock{bottom:calc(16px + env(safe-area-inset-bottom))}}
+.bover .sub{display:none!important}
