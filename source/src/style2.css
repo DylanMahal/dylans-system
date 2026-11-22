@@ -2343,18 +2343,12 @@ button:not(.pr-row):not(.fz-row)::first-letter,.sh .tag::first-letter{text-trans
 .clockp .dateline{margin-top:clamp(14px,3.5cqw,30px)}
 .clockp .dateline .chipy{height:clamp(30px,5.5cqw,40px);padding:0 clamp(12px,2.4cqw,18px);font-size:clamp(13px,2.3cqw,16px);border-radius:999px}
 
-/* iPhone portrait: four main tabs + More, with room for labels */
-.bnav .bmore{display:none}
+/* iPhone portrait: full-size tabs in a bar you swipe sideways, about five on screen with the next one peeking in */
 @media (max-width:520px) and (orientation:portrait){
-  .bnav button.bx{display:none}
-  .bnav .bmore{display:flex}
-  .bnav button,.bnav.compact button{flex:1 1 0;padding:7px 0 5px}
+  .bnav{overflow-x:auto;overflow-y:hidden;justify-content:flex-start;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scrollbar-width:none}
+  .bnav::-webkit-scrollbar{display:none}
+  .bnav button,.bnav.compact button{flex:0 0 19%;min-width:0;padding:7px 0 5px;scroll-snap-align:start}
   .bnav button span,.bnav.compact button span{display:block;font-size:10.5px}
   .bnav button i,.bnav button i svg,.bnav.compact button i,.bnav.compact button i svg{width:26px;height:26px}
   .bnav.compact button[aria-current="page"]::after{display:none}
 }
-.bmgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:4px 0 8px}
-.bmitem{appearance:none;border:0;background:rgba(255,255,255,.06);border-radius:16px;padding:14px 4px 11px;display:flex;flex-direction:column;align-items:center;gap:7px;color:#d6d6db;font:500 12px var(--sf)}
-.bmitem i{display:block;width:26px;height:26px}.bmitem i svg{width:26px;height:26px}
-.bmitem.on{background:rgba(255,42,109,.16);color:var(--pink)}
-.bmitem:active{transform:scale(.96)}
