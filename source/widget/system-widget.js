@@ -88,21 +88,26 @@ function base(url) { const w = new ListWidget(); w.backgroundColor = SURF; w.url
 function cache(mode, d) { const fm = FileManager.local(), p = fm.joinPath(fm.cacheDirectory(), 'ds-' + mode.replace(/[^a-z0-9]/gi, '_') + '.json'); if (d !== undefined) { fm.writeString(p, JSON.stringify(d)); return d } return fm.fileExists(p) ? JSON.parse(fm.readString(p)) : null }
 /* lock-screen widgets: every mode hands back {p: 0..1, v, l, lines, inline} */
 function lock(o) {
-  const w = new ListWidget(), f = FAM();
+  /* lock-screen widgets ignore background images, so the drawing goes in as content */
+  const w = new ListWidget(), f = FAM(), wh = a => new Color('#ffffff', a);
+  if (f === 'accessoryInline') { sf(w, o.inline || o.lines[0], Font.mediumSystemFont(12), Color.white()); return w }
+  w.setPadding(0, 0, 0, 0);
   if (f === 'accessoryCircular') {
     w.addAccessoryWidgetBackground = true;
-    const c = ctx(60, 60); if (o.p != null) { arc(c, 30, 30, 25, 0, Math.PI * 2, 5, new Color('#ffffff', .25)); arc(c, 30, 30, 25, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0, Math.min(1, o.p)), 5, Color.white()) }
-    text(c, o.v, 0, o.l ? 15 : 20, 60, 20, Font.boldRoundedSystemFont(o.v.length > 3 ? 13 : 16), Color.white(), 'c');
-    if (o.l) text(c, o.l, 6, 33, 48, 12, Font.mediumSystemFont(8), Color.white(), 'c');
-    w.backgroundImage = c.getImage(); return w
+    const S = 76, c = ctx(S, S), v = String(o.v);
+    if (o.p != null) { arc(c, S / 2, S / 2, S / 2 - 6, 0, Math.PI * 2, 6, wh(.28)); if (o.p > .001) arc(c, S / 2, S / 2, S / 2 - 6, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, o.p), 6, wh(1)) }
+    const vs = v.length > 4 ? 13 : v.length > 3 ? 15 : 20;
+    T(c, v, S / 2, S / 2 - vs * .62 - (o.l ? 5 : 0), vs, 'rh', wh(1), 'c', 1);
+    if (o.l) T(c, String(o.l).slice(0, 7).toUpperCase(), S / 2, S / 2 + vs * .38, 8.5, 'b', wh(.75), 'c');
+    const im = w.addImage(c.getImage()); im.resizable = true; im.centerAlignImage(); return w;
   }
-  if (f === 'accessoryInline') { sf(w, o.inline || o.lines[0], Font.mediumSystemFont(12), Color.white()); return w }
-  const c = ctx(170, 72), wh = (a) => new Color('#ffffff', a); let tx = 0;
-  if (o.p != null) { arc(c, 31, 36, 25, 0, Math.PI * 2, 5, wh(.25)); if (o.p > .001) arc(c, 31, 36, 25, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, o.p), 5, wh(1)); T(c, o.v, 31, 28, String(o.v).length > 3 ? 11 : 14, 'rh', wh(1), 'c', 1); tx = 66 }
-  const L = o.lines.filter(Boolean).slice(0, 3), y0 = 36 - (L.length * 16) / 2;
-  L.forEach((l, i) => T(c, fit(l, i ? 12 : 14, 170 - tx - 2, i ? 'm' : 'b'), tx, y0 + i * 16 - (i ? 0 : 1), i ? 12 : 14, i ? 'm' : 'b', wh(i ? .78 : 1)));
-  w.backgroundImage = c.getImage(); return w
+  const c = ctx(170, 72); let tx = 0;
+  if (o.p != null) { arc(c, 33, 36, 27, 0, Math.PI * 2, 5.5, wh(.28)); if (o.p > .001) arc(c, 33, 36, 27, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, o.p), 5.5, wh(1)); T(c, o.v, 33, 36 - (String(o.v).length > 3 ? 7.5 : 9.5), String(o.v).length > 3 ? 12 : 15, 'rh', wh(1), 'c', 1); tx = 70 }
+  const L = o.lines.filter(Boolean).slice(0, 3), y0 = 36 - (L.length * 17) / 2;
+  L.forEach((l, i) => T(c, fit(l, i ? 12.5 : 15, 170 - tx - 2, i ? 'm' : 'b'), tx, y0 + i * 17 - (i ? 0 : 1), i ? 12.5 : 15, i ? 'm' : 'b', wh(i ? .78 : 1)));
+  const im = w.addImage(c.getImage()); im.resizable = true; im.leftAlignImage(); return w;
 }
+
 
 /* =============================== shared look (iOS widget conventions) =============================== */
 const SURF = new Color('#1c1c1e'), T1 = Color.white(), T2 = new Color('#8e8e93'), T3 = new Color('#48484a'), TRK = new Color('#3a3a3c'), GOOD = new Color('#30d158');
@@ -489,7 +494,11 @@ const K = { t1: new Color('#ffffff'), t2: new Color('#ebebf5', .62), t3: new Col
 const FW = { r: Font.systemFont, m: Font.mediumSystemFont, s: Font.semiboldSystemFont, b: Font.boldSystemFont, h: Font.heavySystemFont, rb: Font.boldRoundedSystemFont, rh: Font.heavyRoundedSystemFont, rs: Font.semiboldRoundedSystemFont, mono: Font.mediumMonospacedSystemFont, serif: z => new Font('Baskerville-Italic', z) };
 function dims(f) { const pad = Device.isPad(); if (f === 'small') return [158, 158]; if (f === 'extraLarge') return [758, 357]; if (f === 'large') return pad ? [357, 357] : [338, 354]; return pad ? [357, 158] : [338, 158] }
 function canvas(f) { const [W, H] = dims(f), c = ctx(W, H); return { c, W, H } }
-function done(w, c) { w.setPadding(0, 0, 0, 0); const i = w.addImage(c.getImage()); i.resizable = true; i.centerAlignImage(); return w }
+let LOCKBG = false;   /* set by the Parameter "lock": iPad lock-screen small widgets need a solid card, not a transparent one */
+function done(w, c) {
+  w.setPadding(0, 0, 0, 0); let img = c.getImage();
+  if (LOCKBG) { const z = c.size, o = ctx(z.width, z.height); rr(o, 0, 0, z.width, z.height, 22, new Color('#1c1c1e')); o.drawImageInRect(img, new Rect(0, 0, z.width, z.height)); img = o.getImage() }
+  const i = w.addImage(img); i.resizable = true; i.centerAlignImage(); return w }
 /* text: y is the top of the line box; align l/c/r with x as left edge / centre / right edge */
 function T(c, s, x, y, size, wt, color, align, faux) {
   s = String(s); const W = 1200, f = (FW[wt] || FW.r)(size); const rx = align === 'c' ? x - W / 2 : align === 'r' ? x - W : x;
@@ -1050,7 +1059,8 @@ async function preview(p) {
 
 module.exports = async function main(mode) {
   const saved = mode ? PICK(mode).get() : '';
-  if (config.runsInWidget) { Script.setWidget(await build(args.widgetParameter || saved || mode)); return Script.complete() }
+  let wp = String(args.widgetParameter || '').trim(); if (/^lock$/i.test(wp)) { LOCKBG = true; wp = '' }
+  if (config.runsInWidget) { Script.setWidget(await build(wp || saved || mode)); return Script.complete() }
   await token();
   if (mode) { await choose(mode); await preview(PICK(mode).get() || mode); return Script.complete() }
   /* the System script itself: install/refresh the per-type scripts, then offer previews */
