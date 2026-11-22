@@ -31,7 +31,13 @@ function sQB(n){if(!n||!n.asleep)return null;const g=(SSET&&SSET.goal||8)*60,a=n
   const wk=sWakes(n),offM=n.start?Math.round(Math.abs((()=>{const d=new Date(n.start),b=d.getHours()*60+d.getMinutes(),[h,m]=sBedFor().split(':').map(Number);let o=Math.abs(b-(h*60+m));return Math.min(o,1440-o)})())):0;
   const P=[['Duration',dur,40,fmtHM(a)],['Deep',deep,15,Math.round(n.deep||0)+'m'],['REM',rem,15,Math.round(n.rem||0)+'m'],['Efficiency',eff,10,bed?Math.round(a/bed*100)+'% asleep':''],['Restfulness',aw,10,wk!=null?wk+' wake-up'+(wk===1?'':'s'):Math.round(n.awake||0)+'m awake'],['Timing',tim,10,n.start?offM+'m off':'']].filter(x=>hasSt||(x[0]!=='Deep'&&x[0]!=='REM'));
   const W=P.reduce((t,x)=>t+x[2],0);return {parts:P,score:Math.round(P.reduce((t,x)=>t+x[1]*x[2],0)/W*100)}}
-function sWakes(n){const g=(n.segs||[]).map(([a,b,st])=>[+new Date(a),+new Date(b),st]).sort((x,y)=>x[0]-y[0]);const sl=g.filter(x=>x[2]!=='awake');if(!sl.length)return null;
+/* one clean timeline from overlapping sources (Watch + phone): at every moment the most specific stage wins, gaps count as awake, blips under 3 min fold into their neighbour */
+function sNorm(segs){const g=(segs||[]).map(([a,b,st])=>[+new Date(a),+new Date(b),st]).filter(x=>x[1]>x[0]);if(!g.length)return [];
+  const P={deep:4,rem:3,awake:2,core:1};const bs=[...new Set(g.flatMap(x=>[x[0],x[1]]))].sort((a,b)=>a-b);const out=[];
+  for(let i=0;i<bs.length-1;i++){const a=bs[i],b=bs[i+1];let best=null;for(const x of g)if(x[0]<=a&&x[1]>=b&&(!best||(P[x[2]]||0)>(P[best]||0)))best=x[2];const st=best||'awake';const l=out[out.length-1];if(l&&l[2]===st&&l[1]===a)l[1]=b;else out.push([a,b,st])}
+  for(let k=0;k<3;k++)for(let i=out.length-1;i>=0;i--){if(out.length<2)break;if(out[i][1]-out[i][0]<18e4){const prev=out[i-1],next=out[i+1];if(prev){prev[1]=out[i][1];out.splice(i,1);if(next&&next[2]===prev[2]){prev[1]=next[1];out.splice(i,1)}}else if(next){next[0]=out[i][0];out.splice(i,1)}}}
+  return out}
+function sWakes(n){const g=sNorm(n.segs);const sl=g.filter(x=>x[2]!=='awake');if(!sl.length)return null;
   const t0=sl[0][0],t1=sl[sl.length-1][1];let c=0,end=-1;g.forEach(([a,b,st])=>{if(st!=='awake'||a<t0||b>t1)return;if(a-end>6e4)c++;end=b});return c}
 function sQ(n){const b=sQB(n);return b?b.score:0}
 function renderSleep(){if(!sleepLoaded){loadSleep();return}
@@ -244,9 +250,9 @@ function sSleepIv(){const iv=[];Object.values(SNIGHTS).forEach(n=>{const sg=(n.s
 function sRegularity(k){const iv=sSleepIv();const at=t=>{for(const [a,b] of iv){if(a>t)return 0;if(t<b)return 1}return 0};let same=0,tot=0;
   for(let i=0;i<7;i++){const d=sAddD(k,-i),p=sAddD(k,-i-1),n=SNIGHTS[d];if(!n||!n.end||!SNIGHTS[p])continue;const e=+new Date(n.end);for(let t=e-864e5;t<e;t+=3e5){tot++;if(at(t)===at(t-864e5))same++}}
   return tot?Math.round(same/tot*100):null}
-function sLatency(n){const sg=(n.segs||[]).filter(x=>x[2]!=='awake').map(x=>+new Date(x[0])).sort((a,b)=>a-b);return sg.length&&n.start?Math.max(0,Math.round((sg[0]-new Date(n.start))/6e4)):null}
+function sLatency(n){const sg=sNorm(n.segs).filter(x=>x[2]!=='awake').map(x=>x[0]);return sg.length&&n.start?Math.max(0,Math.round((sg[0]-new Date(n.start))/6e4)):null}
 /* the night as one smooth line: awake at the top, deep at the bottom */
-function sWave(n,H=200){const segs=(n.segs||[]).map(([s,e,st])=>[+new Date(s),+new Date(e),st]).sort((a,b)=>a[0]-b[0]);if(!segs.length)return '<div class="sl-note">No stage data for this night — your Watch needs to be worn to bed.</div>';
+function sWave(n,H=200){const segs=sNorm(n.segs);if(!segs.length)return '<div class="sl-note">No stage data for this night — your Watch needs to be worn to bed.</div>';
   const t0=Math.min(+new Date(n.start)||segs[0][0],segs[0][0]),t1=Math.max(+new Date(n.end)||0,segs[segs.length-1][1]),W=1000,L={awake:0,rem:1,core:2,deep:3},pt=16,Y=st=>(pt+(L[st]??2)*(H-2*pt)/3).toFixed(1),X=t=>((t-t0)/(t1-t0||1))*W;
   const m=[];segs.forEach(s=>{const l=m[m.length-1];if(l&&l[2]===s[2]&&s[0]-l[1]<12e4)l[1]=Math.max(l[1],s[1]);else m.push([...s])});
   let d=`M0,${Y(m[0][2])} L${X(m[0][0]).toFixed(1)},${Y(m[0][2])}`;
