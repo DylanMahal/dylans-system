@@ -99,12 +99,12 @@ function mAdd(k){const canSer=k==='anime'||k==='manga';let ser=canSer&&LS.get('m
     if(MEDIA[k].items[x.key])return mEntry(k,x.key);const it=mk(x,x.key);MEDIA[k].items[it.key]=it;saveMedia(k);flash('added');mEntry(k,it.key,true);menrich(k,it).then(()=>{const a=document.activeElement;if($('sheet').classList.contains('on')&&$('sheetTitle').textContent===it.title&&!(a&&/INPUT|TEXTAREA|SELECT/.test(a.tagName)))mEntry(k,it.key)})};
   $('msManual').onclick=()=>{const title=($('msQ').value||'').trim()||'untitled';const it={key:'m'+rid(),src:'manual',title,img:'',st:'plan',prog:0,rating:null,added:DAYK,upd:new Date().toISOString(),log:[],tags:[],genres:[]};if(ser)mSeriesify(it,null);MEDIA[k].items[it.key]=it;saveMedia(k);mEntry(k,it.key,true)}}
 
-/* ---- decimal rating control (score + slider, 0.5 steps by drag, any 0.1 by typing) ---- */
+/* ---- decimal rating control (score + slider in 0.1 steps, or type it) ---- */
 const RWORD=v=>['','Appalling','Horrible','Very bad','Bad','Average','Fine','Good','Very good','Great','Masterpiece'][Math.max(1,Math.min(10,Math.floor(+v)))];
 const fmtR=v=>kgs(Math.round(+v*10)/10);
 function rateCtl(id,v,sm){const has=v!=null&&v!=='';
   return `<div class="me-rate${sm?' sm':''}${has?'':' unset'}" data-rc="${id}" data-v="${has?+v:''}"><div class="me-rtop"><input class="me-rnum num" value="${has?fmtR(v):''}" placeholder="–" inputmode="decimal" aria-label="Score"><span class="me-rof">/10</span><span class="me-rw">${has?RWORD(v):'Not rated'}</span>${sm?'':`<button type="button" class="me-rclr" data-rate=""${has?'':' hidden'}>Clear</button>`}</div>
-  <input type="range" class="me-slider" min="1" max="10" step="0.5" value="${has?v:5.5}" style="--p:${has?(+v-1)/9*100:0}%" aria-label="Rating"><div class="me-ticks">${[...Array(10)].map((_,i)=>`<span>${i+1}</span>`).join('')}</div></div>`}
+  <input type="range" class="me-slider" min="1" max="10" step="0.1" value="${has?v:5.5}" style="--p:${has?(+v-1)/9*100:0}%" aria-label="Rating"><div class="me-ticks">${[...Array(10)].map((_,i)=>`<span>${i+1}</span>`).join('')}</div></div>`}
 function rateSync(box,v){const has=v!=null&&!isNaN(v);box.classList.toggle('unset',!has);box.dataset.v=has?v:'';const s=box.querySelector('.me-slider'),n=box.querySelector('.me-rnum'),c=box.querySelector('.me-rclr');
   if(has){s.value=v;if(document.activeElement!==n)n.value=fmtR(v)}else n.value='';s.style.setProperty('--p',(has?(v-1)/9*100:0)+'%');box.querySelector('.me-rw').textContent=has?RWORD(v):'Not rated';if(c)c.hidden=!has}
 const rateVal=box=>box&&box.dataset.v!==''?+box.dataset.v:null;
@@ -140,7 +140,7 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
   <div class="tes-foot"><button class="tes-del" type="button" id="meDel">Remove</button><span style="flex:1"></span><button class="btn p tes-save" type="button" id="meOk">Done</button></div></div>`);
   const sb=$('sheetBody');if(keep)sb.scrollTop=keep;
   ['mePg','meTot','meEpN'].forEach(id=>{const el=$(id);if(el)el.onfocus=()=>setTimeout(()=>el.select(),0)});
-  sb.onclick=async e=>{const b=e.target.closest('button');if(!b)return;
+  sb.onclick=async e=>{if(e.target.classList.contains('me-in')){try{e.target.showPicker()}catch(x){}return}const b=e.target.closest('button');if(!b)return;
     if(b.dataset.st){it.st=b.dataset.st;if(it.st==='cur'&&!it.start)it.start=DAYK;if(it.st==='done'){if(!it.fin)it.fin=DAYK;if(it.total)it.prog=it.total;if(!(it.log||[]).length)it.log=[{d:DAYK,r:it.rating,re:false}]}persist();mEntry(k,key);if(it.st==='done')flash('completed');return}
     if(b.dataset.rate!=null){it.rating=b.dataset.rate===''?null:+b.dataset.rate;if((it.log||[]).length)it.log[it.log.length-1].r=it.rating;persist();mEntry(k,key);return}
     if(b.dataset.pg){it.prog=Math.max(0,(+it.prog||0)+ +b.dataset.pg);if(it.total&&it.prog>=it.total){it.prog=+it.total;if(it.st!=='done'){it.st='done';it.fin=DAYK;it.log=[...(it.log||[]),{d:DAYK,r:it.rating,re:false}];flash('completed');burst(innerWidth/2,innerHeight/2,80)}}else if(it.st==='plan'||!it.st){it.st='cur';it.start=it.start||DAYK}persist();mEntry(k,key);return}
