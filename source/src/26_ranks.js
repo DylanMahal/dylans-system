@@ -2,7 +2,16 @@
    Score 0–21+: 3 divisions per tier, Bronze I … Grand Champion III, then Supersonic Legend.
    Exercise rank = your best set vs bodyweight-scaled strength standards.
    Session rank = working sets + records + volume vs your recent sessions + how strong the sets were. */
-const rlBW=()=>typeof curKg==='function'?(curKg()||80):80;
+/* bodyweight for scoring: the ranks keep their own copy of the weigh-ins (loaded once, kept live), so every screen
+   scores with the same numbers whatever page loaded first; each set is judged at the weight you were that day */
+let RLW=null,rlWP=null;
+function rlEnsureW(){if(RLW||rlWP||typeof load!=='function')return;rlWP=load('body/wt').then(d=>{RLW=((d&&d.r)||[]).filter(x=>+x.kg>0).map(x=>({d:String(x.t||'').slice(0,10),kg:+x.kg})).sort((a,b)=>a.d<b.d?-1:1);if(typeof cur!=='undefined'&&cur==='gym'&&typeof loadGym==='function')loadGym(true)}).catch(()=>{RLW=[]})}
+if(typeof watch==='function')watch('body/wt',d=>{if(d)RLW=(d.r||[]).filter(x=>+x.kg>0).map(x=>({d:String(x.t||'').slice(0,10),kg:+x.kg})).sort((a,b)=>a.d<b.d?-1:1)});
+function rlBWAt(day){rlEnsureW();const L=RLW||[];if(!L.length)return (typeof FPROF!=='undefined'&&FPROF&&+FPROF.kg)||80;if(!day)return L[L.length-1].kg;
+  let k=L[0].kg;for(const x of L){if(x.d<=day)k=x.kg;else break}return k}
+const rlBW=()=>rlBWAt(null);
+/* allometric bodyweight scaling (the ⅔ power used by strength-scoring formulas), anchored so an 80 kg lifter's ratio is unchanged */
+const rlNorm=(load,bw)=>load/(Math.pow(bw,2/3)*Math.pow(80,1/3));
 const rlSets=w=>(w.ex||[]).reduce((a,x)=>a+x.sets.filter(s=>s.t!=='w'&&s.done!==false).length,0);
 const rlVol=w=>w.vol!=null?+w.vol:stats(w).vol;
 const RL=[['bronze','#d08a52','#5a2d12'],['silver','#dfe6ef','#59627a'],['gold','#ffd23f','#7a4f00'],['platinum','#7af0f7','#13636d'],
@@ -43,6 +52,13 @@ function rlBadge(score,sz=26){rlDefs();const r=rlOf(score),t=r.t;const [,c1,c2]=
 const rlChip=(score,sz=20)=>{const r=rlOf(score);return `<span class="rlchip" style="--rc:${RL[r.t][1]}">${rlBadge(score,sz)}<span>${r.name}</span></span>`};
 /* strength standards as multiples of bodyweight: beginner, novice, intermediate, advanced, elite */
 const RL_STD=[
+  [/romanian|rdl|stiff.?leg/i,null,[.6,1,1.4,1.9,2.4]],[/hack squat/i,null,[.6,1.1,1.7,2.4,3.1]],[/bulgarian|split squat/i,'dumbbell',[.15,.3,.5,.75,1]],
+  [/lunge/i,'barbell',[.4,.7,1,1.4,1.8]],[/lunge/i,'dumbbell',[.15,.25,.4,.55,.75]],[/lateral raise|side raise/i,null,[.05,.1,.17,.26,.36]],
+  [/pushdown|push-?down/i,null,[.2,.35,.55,.8,1.05]],[/skull|lying.*extension|tricep.*extension/i,null,[.15,.3,.5,.75,1]],
+  [/seated.*row|cable row/i,null,[.4,.6,.9,1.25,1.6]],[/row/i,'dumbbell',[.2,.35,.55,.8,1.05]],[/leg extension/i,null,[.4,.7,1.05,1.5,2]],
+  [/leg curl|hamstring curl/i,null,[.3,.5,.8,1.15,1.5]],[/pec deck|butterfly/i,null,[.3,.55,.9,1.3,1.7]],[/fly|flye/i,'dumbbell',[.08,.15,.26,.4,.55]],
+  [/fly|flye/i,'cable',[.1,.2,.35,.55,.75]],[/calf raise/i,null,[.6,1,1.6,2.3,3]],[/shrug/i,'barbell',[.6,1,1.5,2.1,2.7]],[/shrug/i,'dumbbell',[.25,.4,.6,.85,1.1]],
+  [/chest press/i,'machine',[.4,.7,1.05,1.5,1.95]],[/shoulder press/i,'machine',[.25,.45,.7,1,1.35]],
   [/front squat/i,'barbell',[.6,1,1.25,1.75,2.2]],[/incline.*bench|incline.*press/i,'barbell',[.4,.65,1,1.4,1.7]],
   [/bench press/i,'barbell',[.5,.75,1.25,1.75,2]],[/squat/i,'barbell',[.75,1.25,1.5,2.25,2.75]],[/deadlift/i,'barbell',[1,1.5,2,2.5,3]],
   [/overhead press|shoulder press|military press/i,'barbell',[.4,.55,.8,1.05,1.35]],[/row/i,'barbell',[.5,.75,1,1.5,1.75]],[/hip thrust/i,null,[.75,1.25,1.75,2.5,3.25]],
@@ -61,18 +77,19 @@ function rlStd(e){if(!e||e.cat&&!/strength|powerlifting|olympic|strongman/.test(
   return {k:'wr',s:[.25,.4,.6,.85,1].map(f=>f*el)}}
 function rlScoreRatio(v,s){const P=[[0,0],[s[0],3],[s[1],6],[s[2],9],[s[3],12],[s[4],15],[s[4]*1.15,18],[s[4]*1.3,21]];
   for(let i=1;i<P.length;i++)if(v<=P[i][0]){const [a,x]=P[i-1],[b,y]=P[i];return x+(v-a)/(b-a||1)*(y-x)}return 21}
-function rlSetScore(e,s,std){std=std||rlStd(e);if(!std||!std.s||s.t==='w'||s.done===false)return null;const bw=rlBW();const r=Math.min(12,+s.r||0);
-  if(std.k==='bw')return +s.r>0?rlScoreRatio(+s.r,std.s):null;
-  if(std.k==='wbw')return r>0?rlScoreRatio((bw+(+s.kg||0))*(1+r/30)/bw,std.s):null;
-  return (+s.kg>0&&r>0)?rlScoreRatio((+s.kg)*(1+r/30)/bw,std.s):null}
-function rlBestIn(e,x,std){let b=null;(x.sets||[]).forEach(s=>{const v=rlSetScore(e,s,std);if(v!=null&&(b==null||v>b))b=v});return b}
+const rlE1=(kg,r)=>r<=1?kg:kg*(1+Math.min(10,r)/30);   /* Epley, trusted up to 10 reps */
+function rlSetScore(e,s,std,bw){std=std||rlStd(e);if(!std||!std.s||s.t==='w'||s.done===false)return null;bw=bw||rlBW();const r=+s.r||0;
+  if(std.k==='bw')return r>0?rlScoreRatio(r,std.s):null;
+  if(std.k==='wbw')return r>0?rlScoreRatio(rlE1(bw+(+s.kg||0),r)/bw,std.s):null;
+  return (+s.kg>0&&r>0)?rlScoreRatio(rlNorm(rlE1(+s.kg,r),bw),std.s):null}
+function rlBestIn(e,x,std,bw){let b=null;(x.sets||[]).forEach(s=>{const v=rlSetScore(e,s,std,bw);if(v!=null&&(b==null||v>b))b=v});return b}
 /* best score for an exercise across history (optionally excluding a workout id) plus extra sets */
 function rlEx(id,excl,extra){const e=EXMAP.get(id)||exOf({id,n:id});const std=rlStd(e);if(!std||!std.s)return null;let b=null;
-  exHistory(e.id,excl).forEach(o=>{const v=rlBestIn(e,o.x,std);if(v!=null&&(b==null||v>b))b=v});
-  if(extra){const v=rlBestIn(e,extra,std);if(v!=null&&(b==null||v>b))b=v}return b}
+  exHistory(e.id,excl).forEach(o=>{const v=rlBestIn(e,o.x,std,rlBWAt(o.w&&o.w.date));if(v!=null&&(b==null||v>b))b=v});
+  if(extra){const v=rlBestIn(e,extra,std,rlBWAt(null));if(v!=null&&(b==null||v>b))b=v}return b}
 function rlSession(w,ws){ws=ws||WORKOUTS;const t=w.startedAt||w.date;const prev=ws.filter(o=>o.id!==w.id&&(o.startedAt||o.date)<t).slice(0,10);
   const vols=prev.map(rlVol).filter(v=>v>0);const avg=vols.length?vols.reduce((a,b)=>a+b,0)/vols.length:0;const r=avg?rlVol(w)/avg:1;
-  const sc=(w.ex||[]).map(x=>rlBestIn(exOf(x),x)).filter(v=>v!=null);const q=sc.length?sc.reduce((a,b)=>a+b,0)/sc.length:0;
+  const wbw=rlBWAt(w.date),sc=(w.ex||[]).map(x=>rlBestIn(exOf(x),x,null,wbw)).filter(v=>v!=null);const q=sc.length?sc.reduce((a,b)=>a+b,0)/sc.length:0;
   const prs=w.prs?w.prs.length:(w._prs||0);
   return Math.min(21.5,Math.min(9,rlSets(w)*.45)+Math.min(5,prs*1.5)+Math.max(0,Math.min(5,(r-.6)/.8*5))+q/21*2.5)}
 /* live session for the active workout (records counted from ticked sets) */
@@ -88,14 +105,14 @@ function rlNext(e,score){const std=rlStd(e);if(!std||!std.s||score>=21)return ''
   const nm=rlOf(tgt).name,bw=rlBW();
   if(std.k==='bw')return `${Math.ceil(v)} reps in a set for ${nm}`;
   if(std.k==='wbw')return `${kgs(Math.max(0,Math.ceil(v*bw-bw)))} kg added (1RM) for ${nm}`;
-  return `est. 1RM of ${kgs(Math.ceil(v*bw*2)/2)} kg for ${nm}`}
+  return `est. 1RM of ${kgs(Math.ceil(v*Math.pow(bw,2/3)*Math.pow(80,1/3)*2)/2)} kg for ${nm}`}
 function rlExBlock(e){const sc=rlEx(e.id);if(sc==null)return '';const r=rlOf(sc);
   return `<div class="rlblock" style="--rc:${RL[r.t][1]}">${rlBadge(sc,54)}<div><span class="dim">Rank</span><b>${r.name}</b>${r.t<7?`<div class="rpgbar"><i style="width:${r.frac*100}%;background:var(--rc);box-shadow:0 0 8px var(--rc)"></i></div>`:''}<small class="dim">${esc(rlNext(e,sc))||'top of the ladder'}</small></div></div>`}
 function rlTopList(n){const seen=new Map();WORKOUTS.forEach(w=>(w.ex||[]).forEach(x=>{const e=exOf(x);if(!seen.has(e.id))seen.set(e.id,e)}));
   return [...seen.values()].map(e=>[e,rlEx(e.id)]).filter(a=>a[1]!=null).sort((a,b)=>b[1]-a[1]).slice(0,n)}
 
-/* overall rank = average of your 5 best-ranked lifts (needs at least one ranked lift) */
-function rlOverall(){const L=rlTopList(5);return L.length?L.reduce((a,x)=>a+x[1],0)/L.length:null}
+/* overall rank = average of your 5 best-ranked lifts, at most 2 of them isolation lifts (needs at least one ranked lift) */
+function rlOverall(){const L=rlTopList(99),pick=[];let iso=0;for(const x of L){const c=rlComp(x[0]);if(!c&&iso>=2)continue;if(!c)iso++;pick.push(x);if(pick.length===5)break}return pick.length?pick.reduce((a,x)=>a+x[1],0)/pick.length:null}
 function rlWindow(){const ov=rlOverall();if(ov==null)return `<div class="rlwin empty"><span class="dim">Log a lift like bench, squat or deadlift and your rank shows up here.</span></div>`;
   const r=rlOf(ov),last=WORKOUTS[0]?rlSession(WORKOUTS[0]):null,top=rlTopList(3);
   return `<button type="button" class="rlwin" data-rl="open" style="--rc:${RL[r.t][1]}">

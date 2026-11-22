@@ -1024,7 +1024,7 @@ const inT = mins => mins <= 0 ? 'now' : mins >= 60 ? `in ${Math.floor(mins / 60)
 function dsHead(c, d, x, y, w, h, sz) {
   const s = doseState(d), nx = s.next[0]; cap(c, 'Next dose', x, y); if (nx) T(c, inT(nx.m - s.m), x + w, y, 11, 's', K.t1, 'r');
   if (!d.items.length) { T(c, 'No doses today', x, y + 26, 16, 'b', K.t2); return }
-  if (nx) { T(c, fit(nx.n, sz === 'm' ? 19 : 22, w, 'b'), x, y + 20, sz === 'm' ? 19 : 22, 'b'); T(c, [nx.t, nx.dose].filter(Boolean).join('  ·  '), x, y + (sz === 'm' ? 46 : 50), 12, 'm', K.t2) }
+  if (nx) { T(c, fit(nx.n, sz === 'm' ? 19 : 22, w, 'b'), x, y + 20, sz === 'm' ? 19 : 22, 'b'); const ln = [nx.t, nx.dose].filter(Boolean).join('  ·  '); T(c, tws(ln, 12, 'm') <= w ? ln : nx.t, x, y + (sz === 'm' ? 46 : 50), 12, 'm', K.t2) }
   else T(c, 'All taken', x, y + 20, 22, 'b', GOODC);
   const by = y + (sz === 'm' ? h - 26 : 78); T(c, `${s.taken} of ${s.L.length} taken${s.missed.length ? '' : ''}`, x, by, 11, 's', K.t2); if (s.missed.length) T(c, `${s.missed.length} missed`, x + w, by, 11, 's', BADC, 'r');
   rr(c, x, by + 17, w, 6, 3, K.trk2); if (s.taken) rr(c, x, by + 17, Math.max(6, w * s.taken / s.L.length), 6, 3, K.t1);
@@ -1035,8 +1035,10 @@ function dsList(c, d, x, y, w, h, sz) {
   cut.forEach((i, k) => {
     const yy = y + k * rh, miss = !i.d && i.m < s.m - 15;
     if (i.d) check(c, x, yy, 17, K.t3, new Color('#1c1c1e')); else circle(c, x, yy, 17, miss ? BADC : K.t2, 1.7);
-    T(c, i.t, x + 26, yy + 1.5, 12, 'mono', K.t2); const dw = i.dose ? Math.min(90, tws(i.dose, 11, 'm') + 8) : 0;
-    T(c, fit(i.n, 13, w - 82 - dw, 's'), x + 70, yy + 1, 13, 's', i.d ? K.t3 : K.t1); if (dw) T(c, fit(i.dose, 11, dw, 'm'), x + w, yy + 2.5, 11, 'm', K.t3, 'r');
+    T(c, i.t, x + 26, yy + 1.5, 12, 'mono', K.t2);
+    /* the compound's name comes first; the amount only shows if it fits beside the full name */
+    const room = w - 70, nw = tws(i.n, 13, 's'), dw = i.dose ? tws(i.dose, 11, 'm') : 0, both = dw && nw + 12 + dw <= room;
+    T(c, fit(i.n, 13, room, 's'), x + 70, yy + 1, 13, 's', i.d ? K.t3 : K.t1); if (both) T(c, i.dose, x + w, yy + 2.5, 11, 'm', K.t3, 'r');
   });
 }
 function dsSmall(c, d, x, y, w, h) {
