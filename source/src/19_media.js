@@ -1,6 +1,6 @@
 /* ================= MEDIA — anime · movies · manga · books (Letterboxd + MyAnimeList style) ================= */
-const MK={anime:{label:'anime',verb:'watch',unit:'ep',units:'episodes',ing:'watching',stars:10,icon:'◐'},movies:{label:'movies',verb:'watch',unit:'',units:'',ing:'watching',stars:10,icon:'▶︎'},manga:{label:'manga',verb:'read',unit:'ch',units:'chapters',ing:'reading',stars:10,icon:'❏'},books:{label:'books',verb:'read',unit:'p',units:'pages',ing:'reading',stars:10,icon:'▤'}};
-const MSTAT=k=>[['cur',MK[k].ing],['done','completed'],['hold','on hold'],['plan','plan to '+MK[k].verb],['drop','dropped']];
+const MK={anime:{label:'anime',verb:'watch',unit:'ep',units:'episodes',ing:'watching',stars:10,icon:'◐'},movies:{label:'film & TV',verb:'watch',unit:'',units:'',ing:'watching',stars:10,icon:'▶︎'},manga:{label:'manga',verb:'read',unit:'ch',units:'chapters',ing:'reading',stars:10,icon:'❏'},books:{label:'books',verb:'read',unit:'p',units:'pages',ing:'reading',stars:10,icon:'▤'}};
+const MSTAT=k=>[['cur',MK[k].ing],['hold','on hold'],['plan','plan to '+MK[k].verb],['drop','dropped'],['done','completed']];
 let MEDIA={anime:{items:{},lists:[]},movies:{items:{},lists:[]},manga:{items:{},lists:[]},books:{items:{},lists:[]}},MEDIAK=LS.get('mediak')||'anime',MEDIAV='library',MFILT={st:'all',sort:'recent',q:''},mediaLoaded=false;
 async function loadMedia(){if(mediaLoaded)return;const r=await Promise.all(Object.keys(MK).map(k=>load('media/'+k)));Object.keys(MK).forEach((k,i)=>{MEDIA[k]={items:{},lists:[],...(r[i]||{})};if(r[i]&&r[i].items)mMig(k)});mediaLoaded=true}
 Object.keys(MK).forEach(k=>watch('media/'+k,d=>{if(d){MEDIA[k]={items:{},lists:[],...d};if(d.items)mMig(k);if(cur==='media')renderMedia()}}));
@@ -52,14 +52,14 @@ async function msearch1(k,q){const errs=[];
   MSEARCH_ERR=errs.join(' · ');return ok?[]:null}
 /* fill in details (genres, director, runtime, synopsis) for a film after it's picked */
 async function menrich(k,it){if(k!=='movies'||it.src!=='imdb')return;try{const t=it.kind==='series'?'series':'movie';const j=await mfetch(`https://v3-cinemeta.strem.io/meta/${t}/${it.id}.json`);const m=j.meta||{};
-  const cur=MEDIA[k].items[it.key];if(!cur)return;Object.assign(cur,{genres:m.genres||m.genre||cur.genres||[],by:[].concat(m.director||[]).join(', ')||(m.cast||[]).slice(0,3).join(', '),syn:m.description||cur.syn,dur:parseInt(m.runtime)||cur.dur,mal:m.imdbRating?+m.imdbRating:cur.mal});
+  const cur=MEDIA[k].items[it.key];if(!cur)return;Object.assign(cur,{genres:m.genres||m.genre||cur.genres||[],by:[].concat(m.director||[]).join(', ')||(m.cast||[]).slice(0,3).join(', '),syn:m.description||cur.syn,dur:parseInt(m.runtime)||cur.dur,mal:m.imdbRating?+m.imdbRating:cur.mal});if(t==='series'){const ss={};(m.videos||[]).forEach(v=>{if(+v.season>0)ss[v.season]=(ss[v.season]||0)+1});if(Object.keys(ss).length)cur.sEps=ss;else cur.sEps=cur.sEps||{}}
   saveMedia(k)}catch(e){}}
 
 /* ---- shell ---- */
 async function renderMedia(){const el=$('v-media-body');if(!el)return;await loadMedia();
   $('mediaCards').querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',b.dataset.mk===MEDIAK);const n=mItems(b.dataset.mk);b.querySelector('span').textContent=`${n.filter(x=>x.st==='done').length} done · ${n.filter(x=>x.st==='cur').length} ${MK[b.dataset.mk].ing}`});
   const tabs=[['library','library'],['diary','diary'],['lists','lists'],['stats','stats']];
-  el.innerHTML=`<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div class="seg" id="mSeg">${tabs.map(([k,l])=>`<button type="button" data-mv="${k}" aria-pressed="${MEDIAV===k}">${l}</button>`).join('')}</div><button class="btn p" type="button" id="mAddBtn">+ Add ${MK[MEDIAK].label==='movies'?'film':MK[MEDIAK].label==='books'?'book':MEDIAK}</button></div><div id="mBody"></div>`;
+  el.innerHTML=`<div class="row" style="justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px"><div class="seg" id="mSeg">${tabs.map(([k,l])=>`<button type="button" data-mv="${k}" aria-pressed="${MEDIAV===k}">${l}</button>`).join('')}</div><button class="btn p" type="button" id="mAddBtn">+ Add ${MEDIAK==='movies'?'title':MEDIAK==='books'?'book':MEDIAK}</button></div><div id="mBody"></div>`;
   $('mSeg').onclick=e=>{const b=e.target.closest('[data-mv]');if(b){MEDIAV=b.dataset.mv;renderMedia()}};$('mAddBtn').onclick=()=>mAdd(MEDIAK);
   ({library:mLibrary,diary:mDiary,lists:mLists,stats:mStats})[MEDIAV](MEDIAK)}
 function initMediaNav(){$('mediaCards').onclick=e=>{const b=e.target.closest('[data-mk]');if(!b)return;MEDIAK=b.dataset.mk;LS.set('mediak',MEDIAK);renderMedia();staggerIn($('v-media-body'))}}
@@ -157,7 +157,8 @@ function rateSync(box,v){const has=v!=null&&!isNaN(v),mx=+box.dataset.max||10,lo
 const rateVal=box=>box&&box.dataset.v!==''?+box.dataset.v:null;
 
 /* ---- entry sheet ---- */
-function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const max=MK[k].stars;const K=MK[k];
+function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const max=MK[k].stars;const K=MK[k];const tvS=k==='movies'&&it.kind==='series';const sns=tvS?[...new Set([...Object.keys(it.sEps||{}),...Object.keys(it.seasons||{})].map(Number))].sort((a,b)=>a-b):[];
+  if(tvS&&!it.sEps&&it.src==='imdb'&&!mEntry.busy){mEntry.busy=1;menrich(k,it).finally(()=>{mEntry.busy=0;if(!MEDIA[k].items[key].sEps)MEDIA[k].items[key].sEps={};if($('sheet').classList.contains('on')&&mEntry.cur===key)mEntry(k,key)})}
   const keep=$('sheet').classList.contains('on')&&mEntry.cur===key?$('sheetBody').scrollTop:0;mEntry.cur=key;
   const persist=()=>{it.upd=new Date().toISOString();saveMedia(k);if(cur==='media')renderMedia()};
   const SH={cur:K.ing,done:'Completed',plan:'Planned',hold:'On hold',drop:'Dropped'};const lg=it.log||[];
@@ -172,7 +173,8 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
     ${it.genres&&it.genres.length?`<div class="me-gen">${it.genres.slice(0,5).map(g=>`<span>${esc(g)}</span>`).join('')}</div>`:''}
     <div class="me-pills">${it.mal?`<span class="me-pill">${src} <b class="num">${it.mal}</b></span>`:''}${it.url?`<a class="me-pill" href="${esc(it.url)}" target="_blank" rel="noopener">Open ↗</a>`:''}</div></div></div></div>
   <div class="me-seg" id="meSt">${MSTAT(k).map(([s])=>`<button type="button" data-st="${s}" aria-pressed="${it.st===s}">${esc(SH[s][0].toUpperCase()+SH[s].slice(1))}</button>`).join('')}</div>
-  <div class="tes-lab">Your rating</div><div class="me-card me-pad">${rateCtl('meRate',it.rating,false,max)}</div>
+  <div class="tes-lab">${tvS?'Overall rating':'Your rating'}</div><div class="me-card me-pad">${rateCtl('meRate',it.rating,false,max)}</div>
+  ${tvS?`<div class="tes-lab">Seasons <span class="num">${sns.length||''}</span></div><div class="me-card">${sns.map(n=>`<div class="me-sn"><div class="me-snh"><b>Season ${n}</b><span>${(it.sEps||{})[n]?it.sEps[n]+' episodes':''}</span></div>${rateCtl('meSn'+n,((it.seasons||{})[n]||{}).r,true)}</div>`).join('')||`<div class="me-sn me-snload">${it.sEps?'No season list found.':'Loading seasons…'}</div>`}<button type="button" class="tes-add" id="meSnAdd">${MSVG('<path d="M12 5v14M5 12h14"/>')} Add season</button></div>`:''}
   ${K.unit?`<div class="tes-lab">Progress</div><div class="me-card me-pad"><div class="me-prow"><button class="me-step" type="button" data-pg="-1" aria-label="Minus one">−</button><div class="me-pv"><input class="num" id="mePg" value="${prog||''}" placeholder="0" inputmode="numeric" aria-label="Progress"><span>/</span><input class="num" id="meTot" value="${it.total||''}" placeholder="?" inputmode="numeric" aria-label="Total"></div><button class="me-step p" type="button" data-pg="1">+1</button></div>
     <div class="me-bar"><i style="width:${pct||0}%"></i></div><div class="me-psub"><span>${K.units}</span><span class="num">${pct!=null?pct+'%':''}</span></div></div>`:''}
   ${it.series&&it.parts&&it.parts.length?`<div class="tes-lab">Included <span class="num">${it.parts.length}</span></div><div class="me-card">${it.parts.map((p,i)=>`<div class="me-row me-part"><i class="num">${i+1}</i><span class="me-l">${esc(p.t)}<small>${[p.y,p.f].filter(Boolean).map(esc).join(' · ')}</small></span><span class="me-v num">${p.n?p.n+' '+(K.unit||''):''}</span></div>`).join('')}</div>`:''}
@@ -198,7 +200,7 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
     if(b.dataset.epd){if(!b.dataset.arm){b.dataset.arm=1;b.classList.add('arm');return}delete it.eps[b.dataset.epd];persist();mEntry(k,key);return}
     if(b.id==='meEpSave'){const n=parseInt($('meEpN').value);if(!(n>0)){flash('which_'+EPU(k));return}const r=rateVal(sb.querySelector('[data-rc="meEpR"]')),note=$('meEpNote').value.trim();
       it.eps={...(it.eps||{}),[n]:{r,note,d:((it.eps||{})[n]||{}).d||DAYK}};if(K.unit&&(+it.prog||0)<n&&(!it.total||n<=it.total)){it.prog=n;if(it.st==='plan'||!it.st){it.st='cur'}}persist();flash(EPU(k)+'_'+n+'_saved');mEntry(k,key);setTimeout(()=>{const el=$('meEpList');el&&el.scrollIntoView({block:'center'})},60);return}
-    if(b.id==='meOk'){closeSheet()}};
+    if(b.id==='meSnAdd'){const n=Math.max(0,...sns)+1;it.seasons={...(it.seasons||{}),[n]:{r:null}};persist();mEntry(k,key);return}if(b.id==='meOk'){closeSheet()}};
   const toSer=async el=>{if(el.checked){const row=el.closest('.me-row');row.classList.add('busy');const f=await mFranchise(k,it);mSeriesify(it,f,true);flash(f?'series_'+f.parts.length+'_parts':'whole_series')}else{Object.assign(it,it.single||{title:mClean(it.title)});it.series=false;delete it.parts;delete it.single}persist();mEntry(k,key)};
   let tt=null;const deb=e=>{const id=e.target.id;clearTimeout(tt);tt=setTimeout(()=>{
     if(id==='mePg'){it.prog=+e.target.value||0;if(it.prog>0&&(it.st==='plan'||!it.st)){it.st='cur'}}if(id==='meTot'){it.total=+e.target.value||null}if(id==='meRev')it.review=e.target.value;
@@ -209,7 +211,7 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
   sb.oninput=e=>{const t=e.target;if(t.id==='mePg'||t.id==='meTot')liveBar();if(t.classList.contains('me-slider')){rateSync(t.closest('.me-rate'),+t.value);return}if(t.classList.contains('me-rnum')||t.type==='checkbox'||t.type==='date'||t.id==='meEpN'||t.id==='meEpNote')return;deb(e)};
   sb.onchange=e=>{const t=e.target;
     if(t.classList.contains('me-slider')||t.classList.contains('me-rnum')){const box=t.closest('.me-rate');let v=t.classList.contains('me-rnum')?(t.value.trim()===''?null:parseFloat(t.value.replace(',','.'))):+t.value;if(v!=null){const mx=+box.dataset.max||10;v=isNaN(v)?null:Math.min(mx,Math.max(mx===10?1:.5,Math.round(v*10)/10))}rateSync(box,v);
-      if(box.dataset.rc==='meRate'){it.rating=v;if((it.log||[]).length)it.log[it.log.length-1].r=v;persist()}return}
+      if(box.dataset.rc==='meRate'){it.rating=v;if((it.log||[]).length)it.log[it.log.length-1].r=v;persist()}else if(box.dataset.rc.startsWith('meSn')){const n=box.dataset.rc.slice(4);it.seasons={...(it.seasons||{}),[n]:{...((it.seasons||{})[n]||{}),r:v}};persist()}return}
     if(t.id==='meS'||t.id==='meF'){it[t.id==='meS'?'start':'fin']=t.value;persist();mEntry(k,key);return}
     if(t.id==='meLd'){const v=t.closest('.me-row').querySelector('.me-v');v.textContent=t.value?nice(t.value):'None';return}
     if(t.id==='meFav'){it.fav=t.checked;persist();return}
