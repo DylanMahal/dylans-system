@@ -25,11 +25,14 @@ function sQB(n){if(!n||!n.asleep)return null;const g=(SSET&&SSET.goal||8)*60,a=n
   const hasSt=(n.deep||0)+(n.rem||0)+(n.core||0)>0;
   const deep=sCl((n.deep||0)/(g*.16)),rem=sCl((n.rem||0)/(g*.1875));
   const bed=n.start&&n.end?(new Date(n.end)-new Date(n.start))/6e4:0;
-  const eff=bed>a?sCl((a/bed-.70)/.20):1;
-  const aw=sCl(1-((n.awake||0)-10)/50);
+  const eff=bed>a?sCl((a/bed-.75)/.17):1; /* share of time in bed asleep: 92%+ full, 75% zero */
+  const aw=sWakes(n)!=null?sCl(1-(sWakes(n)-2)/10):sCl(1-((n.awake||0)-20)/70); /* wake-ups: ≤2 full, 12+ zero */
   let tim=1;if(n.start){const d=new Date(n.start),b=d.getHours()*60+d.getMinutes(),[h,m]=sBedFor().split(':').map(Number);let off=Math.abs(b-(h*60+m));off=Math.min(off,1440-off);tim=sCl(1-(off-30)/120)}
-  const P=[['Duration',dur,40],['Deep',deep,15],['REM',rem,15],['Efficiency',eff,10],['Restfulness',aw,10],['Timing',tim,10]].filter(x=>hasSt||(x[0]!=='Deep'&&x[0]!=='REM'));
+  const wk=sWakes(n),offM=n.start?Math.round(Math.abs((()=>{const d=new Date(n.start),b=d.getHours()*60+d.getMinutes(),[h,m]=sBedFor().split(':').map(Number);let o=Math.abs(b-(h*60+m));return Math.min(o,1440-o)})())):0;
+  const P=[['Duration',dur,40,fmtHM(a)],['Deep',deep,15,Math.round(n.deep||0)+'m'],['REM',rem,15,Math.round(n.rem||0)+'m'],['Efficiency',eff,10,bed?Math.round(a/bed*100)+'% asleep':''],['Restfulness',aw,10,wk!=null?wk+' wake-up'+(wk===1?'':'s'):Math.round(n.awake||0)+'m awake'],['Timing',tim,10,n.start?offM+'m off':'']].filter(x=>hasSt||(x[0]!=='Deep'&&x[0]!=='REM'));
   const W=P.reduce((t,x)=>t+x[2],0);return {parts:P,score:Math.round(P.reduce((t,x)=>t+x[1]*x[2],0)/W*100)}}
+function sWakes(n){const g=(n.segs||[]).map(([a,b,st])=>[+new Date(a),+new Date(b),st]).sort((x,y)=>x[0]-y[0]);const sl=g.filter(x=>x[2]!=='awake');if(!sl.length)return null;
+  const t0=sl[0][0],t1=sl[sl.length-1][1];let c=0,end=-1;g.forEach(([a,b,st])=>{if(st!=='awake'||a<t0||b>t1)return;if(a-end>6e4)c++;end=b});return c}
 function sQ(n){const b=sQB(n);return b?b.score:0}
 function renderSleep(){if(!sleepLoaded){loadSleep();return}
   document.querySelectorAll('#sleepSeg [data-sv]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sv===SV));
@@ -58,7 +61,7 @@ function sNight(k){const n=SNIGHTS[k];const q=sQ(n);const a=n.asleep||1;const pc
     ${sStBar(n)}
     <div class="sl-legend">${['awake','rem','core','deep'].map(s=>`<div><i style="background:${SLC[s]}"></i><span>${SLN[s]}</span><b class="num">${s==='awake'?Math.round(n.awake||0)+'m':fmtHM(n[s])}</b><em class="num">${s==='awake'?'':pc(s)+'%'}</em></div>`).join('')}</div>
     ${sHyp(n,112)}${sQBars(n)}</div>`}
-function sQBars(n){const b=sQB(n);if(!b)return '';return `<div class="sl-qb">${b.parts.map(([l,v])=>{const p=Math.round(v*100);return `<div><span>${l}</span><i><b style="width:${p}%;background:${sQC(p)}"></b></i><em class="num">${p}</em></div>`}).join('')}</div>`}
+function sQBars(n){const b=sQB(n);if(!b)return '';return `<div class="sl-qb">${b.parts.map(([l,v,,x])=>{const p=Math.round(v*100);return `<div><span>${l}<small>${x||''}</small></span><i><b style="width:${p}%;background:${sQC(p)}"></b></i><em class="num">${p}</em></div>`}).join('')}</div>`}
 function sRow(k){const n=SNIGHTS[k];const q=sQ(n);
   return `<button type="button" class="sl-hrow" data-sn="${k}"><span class="sl-hd"><b>${esc(nice(k))}</b><small class="num">${n.start?sT(n.start)+' – '+sT(n.end):''}</small></span><span class="sl-hbar">${sStBar(n)}</span><span class="sl-hv num">${fmtHM(n.asleep)}</span><span class="sl-pill num" style="--c:${sQC(q)}">${q}</span><svg class="sl-chev" viewBox="0 0 8 14" width="7" height="12"><path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`}
 function sLast(){const el=$('sleepBody');const k=Object.keys(SNIGHTS).sort().pop();
