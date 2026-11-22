@@ -483,7 +483,7 @@ function wGoal(d) {
    ===================================================================================== */
 const K = { t1: new Color('#ffffff'), t2: new Color('#ebebf5', .62), t3: new Color('#ebebf5', .32), trk: new Color('#ffffff', .13), trk2: new Color('#ffffff', .08), card: new Color('#ffffff', .07) };
 const FW = { r: Font.systemFont, m: Font.mediumSystemFont, s: Font.semiboldSystemFont, b: Font.boldSystemFont, h: Font.heavySystemFont, rb: Font.boldRoundedSystemFont, rh: Font.heavyRoundedSystemFont, rs: Font.semiboldRoundedSystemFont, mono: Font.mediumMonospacedSystemFont, serif: z => new Font('Baskerville-Italic', z) };
-function dims(f) { const pad = Device.isPad(); if (f === 'small') return [158, 158]; if (f === 'large' || f === 'extraLarge') return pad ? [357, 357] : [338, 354]; return pad ? [357, 158] : [338, 158] }
+function dims(f) { const pad = Device.isPad(); if (f === 'small') return [158, 158]; if (f === 'extraLarge') return [758, 357]; if (f === 'large') return pad ? [357, 357] : [338, 354]; return pad ? [357, 158] : [338, 158] }
 function canvas(f) { const [W, H] = dims(f), c = ctx(W, H); return { c, W, H } }
 function done(w, c) { w.setPadding(0, 0, 0, 0); const i = w.addImage(c.getImage()); i.resizable = true; i.centerAlignImage(); return w }
 /* text: y is the top of the line box; align l/c/r with x as left edge / centre / right edge */
@@ -492,7 +492,7 @@ function T(c, s, x, y, size, wt, color, align, faux) {
   const draw = dx => text(c, s, rx + dx, y, W, size * 1.35, f, color || K.t1, align === 'c' ? 'c' : align === 'r' ? 'r' : 'l');
   draw(0); if (faux) { draw(.35); draw(-.35) }
 }
-const tws = (s, size, wt) => tw(s, size, /^(b|h|rb|rh)$/.test(wt)) * (/^(rh|h)$/.test(wt) ? 1.1 : /^(b|s)$/.test(wt) ? 1.04 : 1);
+const tws = (s, size, wt) => tw(s, size, /^(b|h|rb|rh)$/.test(wt)) * (/^(rh|h)$/.test(wt) ? 1.0 : /^(b|s)$/.test(wt) ? 1.04 : 1);
 function fit(s, size, maxW, wt) { s = String(s); if (tws(s, size, wt) <= maxW) return s; while (s.length > 1 && tws(s + '…', size, wt) > maxW) s = s.slice(0, -1); return s.trimEnd() + '…' }
 function ringAt(c, cx, cy, r, sw, frac, color, track) { arc(c, cx, cy, r, 0, Math.PI * 2, sw, track || K.trk); if (frac > .001) arc(c, cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, frac), sw, color || K.t1) }
 function cap(c, s, x, y, color, align) { T(c, String(s).toUpperCase(), x, y, 11, 's', color || K.t2, align) }
@@ -503,7 +503,7 @@ function dur(c, mins, x, y, big, align) {
   const h = Math.floor(mins / 60), m = Math.round(mins % 60), sm = big * .5;
   const parts = [[h, big, 'rh', K.t1], ['h ', sm, 's', K.t2], [pad(m), big, 'rh', K.t1], ['m', sm, 's', K.t2]];
   const wsum = parts.reduce((t, p) => t + tws(p[0], p[1], p[2]), 0); let cx = align === 'r' ? x - wsum : x;
-  parts.forEach(([s, sz, wt, col]) => { T(c, s, cx, y + (big - sz) * 1.02, sz, wt, col, 'l', wt === 'rh'); cx += tws(s, sz, wt) + (wt === 'rh' ? 1.5 : 0) });
+  parts.forEach(([s, sz, wt, col]) => { T(c, s, cx, y + (big - sz) * 1.02, sz, wt, col, 'l', wt === 'rh'); cx += tws(s, sz, wt) + (wt === 'rh' ? .5 : -1) });
   return wsum;
 }
 
@@ -559,14 +559,34 @@ function cvTasks(d, f) {
 
 /* ---------- SLEEP ---------- */
 const ST = { awake: [0, new Color('#ffffff', .9)], rem: [1, new Color('#ffffff', .66)], core: [2, new Color('#ffffff', .42)], deep: [3, new Color('#ffffff', .24)] };
-function hypno(c, segs, x, y, w, h, labels) {
+/* the app's sleep graph: one smooth line stepping between stage lanes, tinted from awake (warm) to deep (cool) */
+const WAVE = [[0, [255, 176, 122]], [.34, [255, 122, 156]], [.68, [143, 168, 216]], [1, [79, 179, 200]]];
+function waveCol(t) { for (let i = 1; i < WAVE.length; i++) if (t <= WAVE[i][0]) { const [a, ca] = WAVE[i - 1], [b, cb] = WAVE[i], k = (t - a) / (b - a); return new Color('#' + ca.map((v, j) => Math.round(v + (cb[j] - v) * k).toString(16).padStart(2, '0')).join('')) } return new Color('#4fb3c8') }
+function hypno(c, segs, x, y, w, h, labels, lw) {
   if (!segs || !segs.length) { T(c, 'No stage data', x, y + h / 2 - 7, 11, 'm', K.t3); return }
-  const t0 = segs[0][0], t1 = segs[segs.length - 1][1], lane = h / 4, bh = lane * .62;
-  for (let i = 0; i < 4; i++) { c.setFillColor(K.trk2); c.fillRect(new Rect(x, y + lane * i + lane / 2 - .5, w, 1)) }
-  /* vertical joins first, then blocks over them */
-  c.setFillColor(K.trk); for (let i = 1; i < segs.length; i++) { const a = ST[segs[i - 1][2]], b = ST[segs[i][2]]; if (!a || !b) continue; const xx = x + w * (segs[i][0] - t0) / (t1 - t0); const ya = y + lane * Math.min(a[0], b[0]) + lane / 2, yb = y + lane * Math.max(a[0], b[0]) + lane / 2; c.fillRect(new Rect(xx - .6, ya, 1.2, yb - ya)) }
-  segs.forEach(([a, b, st]) => { const s = ST[st]; if (!s) return; const xa = x + w * (a - t0) / (t1 - t0), xb = x + w * (b - t0) / (t1 - t0); rr(c, xa, y + lane * s[0] + (lane - bh) / 2, Math.max(2, xb - xa), bh, Math.min(bh / 2, 3), s[1]) });
-  if (labels) ['Awake', 'REM', 'Core', 'Deep'].forEach((l, i) => T(c, l, x - 8, y + lane * i + lane / 2 - 6, 9, 'm', K.t3, 'r'));
+  const t0 = segs[0][0], t1 = segs[segs.length - 1][1], pt = Math.max(3, h * .08), L = { awake: 0, rem: 1, core: 2, deep: 3 };
+  const Y = st => y + pt + (L[st] ?? 2) * (h - 2 * pt) / 3, X = t => x + (t - t0) / (t1 - t0 || 1) * w;
+  for (let i = 0; i < 4; i++) { c.setFillColor(K.trk2); c.fillRect(new Rect(x, y + pt + i * (h - 2 * pt) / 3 - .5, w, 1)) }
+  if (labels) ['Awake', 'REM', 'Core', 'Deep'].forEach((l, i) => T(c, l, x - 8, y + pt + i * (h - 2 * pt) / 3 - 6, 9, 'm', K.t3, 'r'));
+  const m = []; segs.forEach(s => { const l = m[m.length - 1]; if (l && l[2] === s[2] && s[0] - l[1] < 12e4) l[1] = Math.max(l[1], s[1]); else m.push([...s]) });
+  /* build the line as points (curves sampled), same shape as the app */
+  const pts = [[x, Y(m[0][2])], [X(m[0][0]), Y(m[0][2])]], bz = (p0, p1, p2, p3, t) => { const u = 1 - t; return [u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0], u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]] };
+  const s1000 = w / 1000;
+  m.forEach((sg, i) => {
+    const x0 = X(sg[0]), x1 = X(sg[1]), nx = m[i + 1], ya = Y(sg[2]);
+    if (!nx) { pts.push([x + w, ya]); return }
+    const nw = X(nx[1]) - X(nx[0]), r = Math.max(.5 * s1000, Math.min(42 * s1000, (x1 - x0) * .45, nw * .45)), xb = X(nx[0]), yb = Y(nx[2]);
+    const a = [x1 - r, ya], b = [x1 + r * .1, ya], cc = [xb - r * .1, yb], d = [xb + r, yb]; pts.push(a);
+    for (let k = 1; k <= 12; k++) pts.push(bz(a, b, cc, d, k / 12));
+  });
+  const lwid = lw || Math.max(1.6, h / 40);
+  for (let i = 1; i < pts.length; i++) {
+    const [ax, ay] = pts[i - 1], [bx, by] = pts[i]; if (Math.abs(bx - ax) < .01 && Math.abs(by - ay) < .01) continue;
+    const p = new Path(); p.move(new Point(ax, ay)); p.addLine(new Point(bx, by)); c.addPath(p);
+    c.setStrokeColor(waveCol(((ay + by) / 2 - y - pt) / (h - 2 * pt))); c.setLineWidth(lwid); c.strokePath();
+  }
+  /* round the joins and ends */
+  pts.forEach(([px, py], i) => { if (i % 3 && i !== pts.length - 1) return; c.setFillColor(waveCol((py - y - pt) / (h - 2 * pt))); c.fillEllipse(new Rect(px - lwid / 2, py - lwid / 2, lwid, lwid)) });
 }
 function cvSleep(d, f) {
   const { c, W, H } = canvas(f), P = 16;
@@ -606,7 +626,7 @@ function cvHabits(s, f) {
   const { c, W, H } = canvas(f), P = 16, L = s.items.filter(h => h.due), n = L.filter(h => h.done).length, order = [...L.filter(h => !h.done), ...L.filter(h => h.done)];
   if (f === 'small') {
     cap(c, 'Habits', P, P);
-    ringAt(c, W / 2, 84, 40, 9, L.length ? n / L.length : 0); T(c, n, W / 2, 66, 26, 'rh', K.t1, 'c', 1); T(c, `of ${L.length}`, W / 2, 96, 11, 'm', K.t2, 'c');
+    ringAt(c, W / 2, 78, 36, 8.5, L.length ? n / L.length : 0); T(c, n, W / 2, 61, 24, 'rh', K.t1, 'c', 1); T(c, `of ${L.length}`, W / 2, 90, 10, 'm', K.t2, 'c');
     if (order[0] && !order[0].done) T(c, fit(order[0].n, 12, W - 2 * P, 's'), W / 2, H - P - 14, 12, 's', K.t2, 'c');
     return c;
   }
@@ -683,19 +703,29 @@ function cvWeek(d, f) {
   /* large: the week as a time grid */
   const timed = d.days.flatMap(x => x.ev.filter(e => !e.ad));
   const h0 = Math.min(8, ...timed.map(e => Math.floor(e.s / 60))), h1 = Math.max(22, ...timed.map(e => Math.ceil(Math.min(e.e, 1440) / 60)));
-  const lx = P + 16, top = P + 40, colW = (W - P - lx) / 7, ph = (H - P - top) / ((h1 - h0) * 60), N = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const lx = P + 18, top = P + 42, colW = (W - P - lx) / 7, ph = (H - P - top) / ((h1 - h0) * 60), N = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
   d.days.forEach((x, i) => {
     const cx = lx + i * colW + colW / 2, isT = i === ti;
     T(c, N[i], cx, P, 10, 's', isT ? new Color('#ff453a') : K.t3, 'c');
     if (isT) { c.setFillColor(new Color('#ff453a')); c.fillEllipse(new Rect(cx - 11, P + 14, 22, 22)) }
     T(c, new Date(x.k + 'T12:00').getDate(), cx, P + 17, 13, 'b', isT ? K.t1 : K.t2, 'c');
   });
-  for (let h = h0; h <= h1; h += 2) { const y = top + (h - h0) * 60 * ph; c.setFillColor(K.trk2); c.fillRect(new Rect(lx, y, W - P - lx, 1)); T(c, h % 24, lx - 5, y - 6, 9, 'm', K.t3, 'r') }
-  d.days.forEach((x, i) => x.ev.filter(e => !e.ad).forEach(e => {
-    const y = top + (Math.max(e.s, h0 * 60) - h0 * 60) * ph, hh = Math.max(10, (Math.min(e.e, h1 * 60) - Math.max(e.s, h0 * 60)) * ph - 1.5), X = lx + i * colW + 1.5, cw2 = colW - 3;
-    rr(c, X, y, cw2, hh, 4, new Color('#ffffff', .16 + (CALK[e.c] || .32) * .2)); rr(c, X, y, 2.5, hh, 1.25, new Color('#ffffff', .85));
-    if (hh >= 14) T(c, fit(e.t, 8.5, cw2 - 6, 's'), X + 5, y + 2, 8.5, 's');
-  }));
+  for (let h = h0; h <= h1; h += 2) { const y = top + (h - h0) * 60 * ph; c.setFillColor(K.trk2); c.fillRect(new Rect(lx, y, W - P - lx, 1)); if (h < 24) T(c, h, lx - 5, y - 6, 9, 'm', K.t3, 'r') }
+  const xl = f === 'extraLarge', fsz = xl ? 10 : 8.5;
+  d.days.forEach((x, i) => {
+    /* lay out clashes side by side, like the app's calendar */
+    const ev = x.ev.filter(e => !e.ad).map(e => ({ ...e })).sort((a, b) => a.s - b.s || b.e - a.e); let grp = [], end = -1;
+    const flush = () => { const cols = []; grp.forEach(e => { let k = cols.findIndex(t => t <= e.s); if (k < 0) { k = cols.length; cols.push(0) } cols[k] = e.e; e.col = k }); grp.forEach(e => e.n = cols.length); grp = [] };
+    ev.forEach(e => { if (e.s >= end) { flush(); end = -1 } grp.push(e); end = Math.max(end, e.e) }); flush();
+    ev.forEach(e => {
+      const y = top + (Math.max(e.s, h0 * 60) - h0 * 60) * ph, hh = Math.max(9, (Math.min(e.e, h1 * 60) - Math.max(e.s, h0 * 60)) * ph - 1.5);
+      const sub = (colW - 3) / e.n, X = lx + i * colW + 1.5 + e.col * sub, cw2 = sub - (e.n > 1 ? 1.5 : 0);
+      rr(c, X, y, cw2, hh, 4, new Color('#ffffff', .16 + (CALK[e.c] || .32) * .2)); rr(c, X, y, 2.5, hh, 1.25, new Color('#ffffff', .85));
+      if (hh >= fsz + 4 && cw2 > 16) T(c, fit(e.t, fsz, cw2 - 10, 's'), X + 5, y + 2, fsz, 's');
+      if (xl && hh >= 2 * fsz + 8 && cw2 > 40) T(c, `${pad(Math.floor(e.s / 60) % 24)}:${pad(e.s % 60)}`, X + 5, y + 3 + fsz * 1.2, fsz - 1, 'm', K.t2);
+    });
+  });
+
   if (nm >= h0 * 60 && nm <= h1 * 60) { const y = top + (nm - h0 * 60) * ph; c.setFillColor(new Color('#ff453a')); c.fillRect(new Rect(lx + ti * colW, y - .75, colW, 1.5)); c.fillEllipse(new Rect(lx + ti * colW - 3, y - 3, 6, 6)) }
   return c;
 }
