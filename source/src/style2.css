@@ -1535,3 +1535,14 @@ html.inkfull-on,html.inkfull-on body{overflow:hidden}
 .sl-ring .in svg{width:22px;height:22px;transform:none}
 .bk-sealed{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.06);color:#a1a1a6;font-size:12px}
 .jdel{color:var(--dim)}.jdel.arm{background:rgba(255,59,59,.16);color:#ff6b6b;gap:6px}.jdel span{font-size:11.5px}
+/* journal prompt bar */
+.jpr{display:flex;gap:2px;padding:3px;border-radius:13px;background:rgba(255,255,255,.04);overflow-x:auto;scrollbar-width:none;max-width:100%;-webkit-overflow-scrolling:touch}
+.jpr::-webkit-scrollbar{display:none}
+.jpb{appearance:none;flex:1 0 auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 14px;border:0;border-radius:10px;background:none;color:#a1a1a6;font:500 12.5px var(--mono);white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .16s var(--ease),color .16s var(--ease),transform .12s var(--ease)}
+.jpb:hover{background:rgba(255,255,255,.07);color:var(--fg)}.jpb:active{transform:scale(.96)}
+.jpb svg{flex:none;opacity:.9}
+.jpb.pr{background:rgba(255,42,109,.16);color:var(--pink)}.jpb.pr:hover{background:rgba(255,42,109,.24);color:var(--pink)}
+.jpb.busy{opacity:.6;pointer-events:none}.jpb.busy svg{animation:jpspin 1s linear infinite}
+@keyframes jpspin{to{transform:rotate(360deg)}}
+.jpr{flex:1 1 auto;min-width:0}
+@media (max-width:600px){.jpr{flex-wrap:wrap;overflow:visible}.jpb{flex:1 1 30%;padding:0 8px}}

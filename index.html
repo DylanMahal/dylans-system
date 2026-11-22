@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1795314905">
+<link rel="stylesheet" href="app.css?v=1795315207">
 </head>
 <body class="fx">
 <style>
@@ -397,7 +397,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
           <h3 class="jdate" id="jDate"></h3>
           <div class="jmood" id="jMood" role="group" aria-label="Mood"></div>
           <div class="jtagrow" id="jTags"></div>
-          <div class="row" style="justify-content:space-between;margin:12px 0 8px"><div class="chips" id="jPrompts" style="margin:0"></div></div>
+          <div class="row" style="justify-content:space-between;margin:12px 0 8px"><div class="jpr" id="jPrompts"></div></div>
           <div class="jtools" id="jTools"></div>
           <div class="inkhost jpage" id="jPage"><textarea class="jtext" id="jText" placeholder="What happened today? How did it feel?" spellcheck="true"></textarea><canvas class="inkcv" id="jCanvas"></canvas></div>
           <div class="dim" style="font-size:11px;text-align:right" id="jWords"></div>
@@ -526,9 +526,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1795314905"</script>
-<script src="config.js?v=1795314905"></script>
+<script>window.APP_V="1795315207"</script>
+<script src="config.js?v=1795315207"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1795314905"></script>
+<script src="app.js?v=1795315207"></script>
 </body>
 </html>

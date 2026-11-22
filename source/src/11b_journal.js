@@ -2,7 +2,9 @@
 const PAGE_W=1000,PAGE_H=1400;
 const MOODS=[...Array(10)].map((_,i)=>[String(i+1),String(i+1)]);
 const MOODC=['#ff2a2a','#ff5a1f','#ff8a00','#ffb000','#d9c400','#9fd400','#57e08a','#05d9e8','#3aa8ff','#c77dff'];const moodI=v=>`<i class="mood" style="background:${MOODC[(+v||1)-1]||'#777'}"></i>`;
-const PROMPTS=[['woop','WOOP\nWish: \nOutcome: \nObstacle: \nPlan (if…then…): '],['wins','3 wins today\n1. \n2. \n3. '],['grat','Grateful for\n- '],['tmrw','Tomorrow, the one thing that matters: ']];
+const PROMPTS=[['grat','Gratitude',"3 good things today, and why they happened\n1. \n   why: \n2. \n   why: \n3. \n   why: "],['review','Review',"Review\nWhat went well: \nWhat didn't: \nWhat I learned: \nWhat I'll do differently: "],['unload','Unload',"Unload: what's on my mind, and how I honestly feel about it\n"],['tmrw','Tomorrow',"Tomorrow\nThe one thing that matters: \nWhen and where I'll do it: \nIf ___ gets in the way, then I'll: \nEverything else to remember:\n- "]];
+const JPI={recap:'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',grat:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',review:'<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/><path d="M12 8v4l3 2"/>',unload:'<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',tmrw:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'};
+const jpBtn=(k,l,c)=>`<button class="jpb${c?' '+c:''}" type="button" data-pr="${k}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${JPI[k]}</svg><span>${l}</span></button>`;
 let JDATE=null,JE=null,JLIST=[],jSaveT=null,jLoaded=false;
 const jpath=d=>'journal/e-'+d;
 async function loadJournal(){
@@ -47,11 +49,11 @@ $('jTags').onclick=e=>{const b=e.target.closest('[data-rmtag]');if(b){JE.tags.sp
 $('jTags').onkeydown=e=>{if(e.target.id!=='jTagIn')return;if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.trim().replace(/^#/,'');if(v){JE.tags=[...(JE.tags||[]),v];saveJ();renderJEditor();$('jTagIn').focus()}}};
 function autoGrow(){const t=$('jText');t.style.height='auto';t.style.height=Math.max(260,t.scrollHeight)+'px'}
 $('jText').oninput=()=>{JE.text=$('jText').value;autoGrow();$('jWords').textContent=((JE.text||'').trim().match(/\S+/g)||[]).length+' words';saveJ()};
-$('jPrompts').innerHTML=`<button class="chip pr" type="button" data-pr="recap">day recap</button>`+PROMPTS.map(([k])=>`<button class="chip" type="button" data-pr="${k}">${k==='woop'?'WOOP':k==='wins'?'3 wins':k==='grat'?'grateful for':'tomorrow'}</button>`).join('');
+$('jPrompts').innerHTML=jpBtn('recap','Day recap','pr')+PROMPTS.map(([k,l])=>jpBtn(k,l)).join('');
 $('jDel').onclick=function(){if(!this.dataset.arm){this.dataset.arm=1;this.classList.add('arm');this.insertAdjacentHTML('beforeend','<span>delete?</span>');clearTimeout(this._t);this._t=setTimeout(()=>{delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove()},3000);return}
   clearTimeout(this._t);clearTimeout(jSaveT);delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove();
   const d=JDATE;removeDoc(jpath(d));JLIST=JLIST.filter(e=>e.date!==d);JE={date:d,text:'',mood:null,tags:[],ink:{h:PAGE_H,strokes:[]}};if(typeof JL!=='undefined')JL.reset();renderJList();renderJEditor();$('jSaved').textContent='deleted'};
-$('jPrompts').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b)return;if(b.dataset.pr==='recap'){jInsertRecap(b);return}const p=PROMPTS.find(x=>x[0]===b.dataset.pr)[1];JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+p;renderJEditor();const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ();if(b.dataset.pr==='woop')autoTick(/^WOOP/)};
+$('jPrompts').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b)return;if(b.dataset.pr==='recap'){jInsertRecap(b);return}const p=PROMPTS.find(x=>x[0]===b.dataset.pr)[2];JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+p;renderJEditor();const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ()};
 
 /* --- handwriting: drawn straight over the typed page (shared layer in 11a) --- */
 const JL=inkLayer({host:$('jPage'),canvas:$('jCanvas'),bar:$('jTools'),full:$('jEditor'),paper:false,get:()=>JE&&JE.ink||null,make:()=>{if(!JE.ink)JE.ink={h:IH,strokes:[]};return JE.ink},changed:saveJ});
@@ -126,9 +128,9 @@ async function jRecap(d){
   }catch(e){}
   return L.length?L.join('\n'):'nothing logged in the app for this day yet.'}
 async function jInsertRecap(btn){
-  if(btn){btn.disabled=true;btn.textContent='reading…'}
+  if(btn){btn.disabled=true;btn.classList.add('busy')}
   let txt='';try{txt=await jRecap(JDATE)}catch(e){txt='could not read the day.'}
-  if(btn){btn.disabled=false;btn.textContent='day recap'}
+  if(btn){btn.disabled=false;btn.classList.remove('busy')}
   const head='── recap · '+nice(JDATE).toLowerCase()+' ──\n';
   JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+head+txt+'\n────\n\n';
   renderJEditor();
