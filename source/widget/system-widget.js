@@ -977,6 +977,46 @@ const cvMoney = (d, f) => {
   mnHead(c, d, P, P, W - 2 * P, 104, 'l'); mnCats(c, d, P, P + 132, W - 2 * P, H - 2 * P - 132 - 64, 'l'); c.setFillColor(K.trk2); c.fillRect(new Rect(P, H - P - 52, W - 2 * P, 1)); mnStats(c, d, P, H - P - 40, W - 2 * P); return c;
 };
 
+/* ---------- BUDGET: actual spend this month (typed into Money) against the category budgets ---------- */
+async function dBudget() {
+  const o = await docs(['widget/today', 'money/actuals']), cats = (o['widget/today'] || {}).cats || {}, A = (o['money/actuals'] || {}).months || {};
+  const n = new Date(), mk = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`, key = mk(n), mon = A[key] || {};
+  const list = Object.entries(cats).map(([c, b]) => ({ c: c === 'Personal & Other' ? 'Personal' : c, b: +b || 0, a: mon[c] == null || mon[c] === '' ? null : +mon[c] })).sort((a, b) => b.b - a.b);
+  const tb = list.reduce((t, x) => t + x.b, 0), ta = list.reduce((t, x) => t + (x.a || 0), 0), logged = list.some(x => x.a != null);
+  const hist = [...Array(6)].map((_, i) => { const d = new Date(n.getFullYear(), n.getMonth() - 5 + i, 1), m = A[mk(d)] || {}; return { l: d.toLocaleDateString('en-GB', { month: 'short' }), v: Object.keys(cats).reduce((s, c) => s + (+m[c] || 0), 0) } });
+  const dim = new Date(n.getFullYear(), n.getMonth() + 1, 0).getDate();
+  return { month: n.toLocaleDateString('en-GB', { month: 'long' }), list, tb, ta, logged, hist, prog: n.getDate() / dim, left: tb - ta, none: !Object.keys(cats).length };
+}
+function bgHead(c, d, x, y, w, h, sz) {
+  cap(c, `Budget · ${d.month}`, x, y);
+  if (d.none) { T(c, 'Open the app once', x, y + 24, 16, 'b', K.t2); return }
+  if (!d.logged) { T(c, gbp(d.tb), x - 1, y + 18, sz === 'm' ? 30 : 34, 'rh', K.t2, 'l', 1); T(c, 'monthly budget', x, y + (sz === 'm' ? 56 : 60), 11, 's', K.t2); T(c, sz === 'm' ? 'Nothing logged yet' : `Nothing logged for ${d.month} yet`, x, y + (sz === 'm' ? 74 : 78), 11, 's', K.t3); return }
+  T(c, gbp(d.left), x - 1, y + 18, sz === 'm' ? 30 : 34, 'rh', d.left < 0 ? BADC : K.t1, 'l', 1);
+  T(c, (d.left < 0 ? `over your ${gbp(d.tb)}` : `left of ${gbp(d.tb)}`), x, y + (sz === 'm' ? 56 : 60), 11, 's', K.t2);
+  const by = y + (sz === 'm' ? h - 22 : 84); rr(c, x, by, w, 7, 3.5, K.trk2); const fr = d.tb ? Math.min(1, d.ta / d.tb) : 0; if (fr) rr(c, x, by, Math.max(7, w * fr), 7, 3.5, d.ta > d.tb ? BADC : K.t1);
+  const tx = x + w * d.prog; c.setFillColor(K.t2); c.fillRect(new Rect(tx - .75, by - 4, 1.5, 15));
+  if (sz === 'l') T(c, `${Math.round(d.prog * 100)}% through the month`, x, by + 13, 10, 'm', K.t3);
+}
+function bgCats(c, d, x, y, w, h, sz) {
+  const rows = d.list.slice(0, Math.max(1, Math.floor((h + 6) / (sz === 'm' ? 31 : 34)))), rh = sz === 'm' ? 31 : 34;
+  if (sz !== 'm') cap(c, 'Categories', x, y);
+  const y0 = sz === 'm' ? y : y + 20;
+  rows.slice(0, Math.floor((h - (y0 - y) + 6) / rh)).forEach((r, i) => {
+    const yy = y0 + i * rh; T(c, fit(r.c, 12, w - 90, 's'), x, yy, 12, 's'); T(c, r.a == null ? `${gbp(r.b)}` : `${gbp(r.a)} / ${gbp(r.b)}`, x + w, yy, 11, 'm', r.a > r.b ? BADC : K.t2, 'r');
+    rr(c, x, yy + 18, w, 5, 2.5, K.trk2); if (r.a) rr(c, x, yy + 18, Math.max(5, w * Math.min(1, r.a / (r.b || 1))), 5, 2.5, r.a > r.b ? BADC : K.t1);
+  });
+}
+function bgHist(c, d, x, y, w, h) { cap(c, 'Last 6 months', x, y); bars(c, d.hist.map(z => z.v), d.hist.map(z => z.l), x, y + 20, w, h - 20, { goal: d.tb, today: 5, colOf: v => v > d.tb ? BADC : K.t1 }) }
+function bgSmall(c, d, x, y, w, h) {
+  cap(c, `Budget · ${d.month.slice(0, 3)}`, x, y); if (d.none) { T(c, 'Open the app once', x, y + 26, 14, 'b', K.t2); return }
+  if (!d.logged) { T(c, gbp(d.tb), x - 1, y + 20, 30, 'rh', K.t2, 'l', 1); T(c, 'monthly budget', x, y + 56, 11, 's', K.t2); T(c, 'Nothing logged yet', x, y + 74, 11, 's', K.t3); return }
+  T(c, gbp(d.left), x - 1, y + 20, 30, 'rh', d.left < 0 ? BADC : K.t1, 'l', 1); T(c, (d.left < 0 ? `over your ${gbp(d.tb)}` : `left of ${gbp(d.tb)}`), x, y + 56, 11, 's', K.t2); T(c, `${gbp(d.ta)} spent`, x, y + 74, 11, 'm', K.t3);
+  const by = y + h - 10; rr(c, x, by, w, 7, 3.5, K.trk2); const fr = d.tb ? Math.min(1, d.ta / d.tb) : 0; if (fr) rr(c, x, by, Math.max(7, w * fr), 7, 3.5, d.ta > d.tb ? BADC : K.t1); c.setFillColor(K.t2); c.fillRect(new Rect(x + w * d.prog - .75, by - 4, 1.5, 15));
+}
+const cvBudget = (d, f) => f === 'extraLarge' ? (() => { const { c, W, H, P } = frame(f), lw = 300; bgHead(c, d, P, P, lw, 120, 'l'); bgHist(c, d, P, P + 140, lw, H - 2 * P - 140); c.setFillColor(K.trk2); c.fillRect(new Rect(P + lw + 16, P, 1, H - 2 * P)); bgCats(c, d, P + lw + 32, P, W - P - (P + lw + 32), H - 2 * P, 'l'); return c })()
+  : f === 'large' ? (() => { const { c, W, H, P } = frame(f); bgHead(c, d, P, P, W - 2 * P, 104, 'k'); bgCats(c, d, P, P + 116, W - 2 * P, 98, 'l'); c.setFillColor(K.trk2); c.fillRect(new Rect(P, P + 214, W - 2 * P, 1)); bgHist(c, d, P, P + 226, W - 2 * P, H - 2 * P - 226); return c })()
+  : layout(f, d, bgHead, (c, d, x, y, w, h) => bgCats(c, d, x, y + 2, w, h, 'm'), bgHist, bgSmall);
+
 /* ---------- DOSES ---------- */
 async function dDoses() { const t = (await docs(['widget/today']))['widget/today']; if (!t) throw new Error('Open the app once to publish doses'); return { items: t.doses || [], date: t.date } }
 function doseState(d) { const m = nowMin(), L = d.items.map(i => ({ ...i, m: toMin(i.t) })); const next = L.filter(i => !i.d && i.m >= m - 15); const missed = L.filter(i => !i.d && i.m < m - 15); return { L, next, missed, taken: L.filter(i => i.d).length, m } }
@@ -1012,6 +1052,8 @@ const cvDoses = (d, f) => f === 'extraLarge' ? (() => { const { c, W, H, P } = f
 /* lock-screen content for the four new widgets */
 function wScreen(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nScreen(d) : done(base('tools'), cvScreen(d, f)); if (d.y == null) return lock({ p: null, v: '–', l: 'screen', lines: ['Screen time', 'No data yet'], inline: 'screen time: no data' }); const df = d.y - d.goal; return lock({ p: Math.min(1, d.y / (d.goal * 1.5)), v: d.y >= 60 ? Math.floor(d.y / 60) + 'h' : Math.round(d.y) + 'm', l: 'screen', lines: [`Screen ${hmS(d.y)}`, `${hmS(Math.abs(df))} ${df > 0 ? 'over' : 'under'} goal`, d.on ? 'Bricked now' : 'Yesterday'], inline: `📱 ${hmS(d.y)} yesterday` }) }
 function wGym(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nGym(d) : done(base('gym'), cvGym(d, f)); return lock({ p: Math.min(1, d.n / 5), v: String(d.n), l: 'gym', lines: [`${d.n} session${d.n === 1 ? '' : 's'}`, d.last ? d.last.name : 'No workouts yet', d.last ? ago(d.last.date) : ''], inline: `🏋 ${d.n} this week${d.last ? ' · ' + ago(d.last.date).toLowerCase() : ''}` }) }
+function wBudget(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nBudget(d) : done(base('money'), cvBudget(d, f)); if (!d.logged) return lock({ p: null, v: '£', l: 'budget', lines: [`${gbp(d.tb)} budget`, `Nothing logged for ${d.month}`], inline: `budget ${gbp(d.tb)} · nothing logged` }); const L = Math.abs(d.left), v = L >= 1000 ? '£' + (L / 1000).toFixed(1) + 'k' : '£' + Math.round(L); return lock({ p: d.tb ? Math.min(1, d.ta / d.tb) : 0, v, l: d.left < 0 ? 'over' : 'left', lines: [`${gbp(d.left)} ${d.left < 0 ? 'over' : 'left'}`, `${gbp(d.ta)} of ${gbp(d.tb)}`, d.month], inline: `£ ${gbp(d.left).slice(1)} ${d.left < 0 ? 'over' : 'left'} this month` }) }
+const nBudget = d => d.none ? nSmall('money', 'Budget', '', '–', '', 'Open the app once', '', null) : !d.logged ? nSmall('money', `Budget · ${d.month.slice(0, 3)}`, '', gbp(d.tb), '', 'monthly budget', 'Nothing logged yet', null) : nSmall('money', `Budget · ${d.month.slice(0, 3)}`, '', gbp(d.left), '', (d.left < 0 ? `over your ${gbp(d.tb)}` : `left of ${gbp(d.tb)}`), `${gbp(d.ta)} spent`, d.tb ? d.ta / d.tb : 0);
 function wMoney(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nMoney(d) : done(base('money'), cvMoney(d, f)); if (d.none) return lock({ p: null, v: '£', l: 'money', lines: ['Money', 'Open the app once'], inline: 'money: open the app once' }); const L = Math.abs(d.left), v = L >= 1000 ? '£' + (L / 1000).toFixed(1) + 'k' : '£' + Math.round(L); return lock({ p: d.take ? Math.min(1, d.out / d.take) : 0, v, l: d.left < 0 ? 'over' : 'spare', lines: [`${gbp(d.left)} ${d.left < 0 ? 'over' : 'left over'}`, `${gbp(d.out)} out of ${gbp(d.take)}`, `${Math.round(d.save / (d.take || 1) * 100)}% saved`], inline: `£ ${gbp(d.left).slice(1)} ${d.left < 0 ? 'over' : 'spare'} / month` }) }
 function wDoses(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nDoses(d) : done(base('stack'), cvDoses(d, f)); const s = doseState(d), nx = s.next[0]; return lock({ p: s.L.length ? s.taken / s.L.length : 0, v: nx ? nx.t : '✓', l: 'dose', lines: nx ? [nx.n, `${nx.t} · ${inT(nx.m - s.m)}`, `${s.taken}/${s.L.length} taken${s.missed.length ? ` · ${s.missed.length} missed` : ''}`] : ['All doses taken', `${s.taken}/${s.L.length} today`], inline: nx ? `💊 ${nx.t} ${nx.n}` : '💊 all taken' }) }
 
@@ -1042,7 +1084,8 @@ async function build(param) {
   try {
     if (m === 'screen' || m === 'screentime') return wScreen(await load('screen', dScreen));
     if (m === 'gym') return wGym(await load('gym', dGym));
-    if (m === 'money' || m === 'budget') return wMoney(await load('money', dMoney));
+    if (m === 'budget') return wBudget(await load('budget', dBudget));
+    if (m === 'money') return wMoney(await load('money', dMoney));
     if (m === 'doses' || m === 'dose') return wDoses(await load('doses', dDoses));
     if (m === 'tasks') return wTasks(await load(m, dTasks));
     if (m === 'cals' || m === 'calories' || m === 'food') return wCals(await load('cals', dCals));
@@ -1059,7 +1102,7 @@ async function build(param) {
 
 /* one script per widget type, so the type is picked from Scriptable's Script dropdown */
 const TYPES = [['Today', 'today', 'sun.max'], ['Tasks', 'tasks', 'check-circle'], ['Calories', 'cals', 'utensils'], ['Sleep', 'sleep', 'moon'], ['Week', 'week', 'calendar-alt'],
-  ['Habits', 'habits', 'tasks'], ['Habit Grid', 'habit', 'th'], ['Streak', 'streak', 'fire'], ['Next Goal', 'goal', 'dumbbell'], ['Screen Time', 'screen', 'mobile-alt'], ['Gym', 'gym', 'running'], ['Money', 'money', 'pound-sign'], ['Doses', 'doses', 'pills']];
+  ['Habits', 'habits', 'tasks'], ['Habit Grid', 'habit', 'th'], ['Streak', 'streak', 'fire'], ['Next Goal', 'goal', 'dumbbell'], ['Screen Time', 'screen', 'mobile-alt'], ['Gym', 'gym', 'running'], ['Budget', 'budget', 'wallet'], ['Money', 'money', 'pound-sign'], ['Doses', 'doses', 'pills']];
 function scriptsDir() {
   try { const ic = FileManager.iCloud(), d = ic.documentsDirectory(); if (ic.fileExists(ic.joinPath(d, Script.name() + '.js'))) return [ic, d] } catch (e) { }
   const lf = FileManager.local(); return [lf, lf.documentsDirectory()];
