@@ -15,7 +15,7 @@ const ATHEME={
 let ALTER={egos:[]},alterLoaded=false,AEGO=null,AE=null,aIO=null,aLO=null,aBusy=0;
 /* the section keeps its router classes — wiping className used to unhide alter over every other view */
 const aBase=el=>'view'+(el.classList.contains('on')?' on':'');
-/* inside an ego the app's chrome gets out of the way: no tabs, no bottom nav, no ticker */
+/* inside an ego the app's chrome gets out of the way: no tabs, no bottom nav */
 function aLeave(){document.body.classList.remove('asolo')}
 const aPath=(e,f)=>`${UID}/alter/${e}/${f}`;
 async function loadAlter(){if(alterLoaded){renderAlter();return}

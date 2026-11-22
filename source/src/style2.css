@@ -1736,15 +1736,4 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 .sl-qb{display:grid;gap:7px;margin-top:14px}.sl-qb>div{display:grid;grid-template-columns:84px 1fr 28px;align-items:center;gap:10px;font-size:12px}.sl-qb span{opacity:.7}.sl-qb i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.sl-qb i b{display:block;height:100%;border-radius:3px}.sl-qb em{font-style:normal;text-align:right;opacity:.8}
 .sl-qb>div{grid-template-columns:128px 1fr 28px}.sl-qb span small{display:block;font-size:10px;opacity:.6;margin-top:1px}
 
-/* bottom terminal line: quotes typed out at a shell prompt */
-.ticker{height:42px;box-shadow:none;border-top:1px solid rgba(255,255,255,.07);background:#060607;justify-content:flex-start;padding:0 22px}
-.ticker.ticker::after{display:block!important;content:""!important;position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px),radial-gradient(120% 140% at 50% 120%,rgba(255,42,109,.07),transparent 60%)}
-.ticker .tkt{display:flex;align-items:center;gap:12px;min-width:0;width:100%;font:500 13.5px/1 var(--mono);white-space:nowrap}
-.ticker .tkp{flex:none;color:#ff2a6d;text-shadow:0 0 10px rgba(255,42,109,.55)}
-.ticker .tkp em{font-style:normal;color:#05d9e8;text-shadow:0 0 10px rgba(5,217,232,.45)}
-.ticker .tkx{display:flex;align-items:center;min-width:0;overflow:hidden}
-.ticker .tkx span{color:#ececec;text-shadow:0 0 8px rgba(255,255,255,.22);overflow:hidden;text-overflow:ellipsis}
-.ticker .tkx b{flex:none;font-weight:500;color:#6d6d74;white-space:pre}
-.ticker .tkc{flex:none;width:8px;height:15px;margin-left:2px;background:#ff2a6d;box-shadow:0 0 10px rgba(255,42,109,.8);animation:tkblink 1.05s steps(1) infinite}
-.ticker .tkx.typing .tkc{animation:none}
-@keyframes tkblink{50%{opacity:0}}
+@media (min-width:901px){body{padding-bottom:16px}}
