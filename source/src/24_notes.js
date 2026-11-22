@@ -136,20 +136,34 @@ function tBind(){const el=$('jPaneT');
       const row=b.closest('.trow');if(row)row.classList.add('pop');setTimeout(()=>{tSave();renderTasks();renderTodayTasks()},260);return}
     if(d.te)return tEdit(d.te)}}
 function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const draft=clone(tk);draft.sub=draft.sub||[];
-  const draw=()=>{$('sheetBody').innerHTML=`<input class="inp tetitle" id="teT" value="${esc(draft.t)}"><textarea class="inp" id="teN" rows="2" placeholder="description" style="margin-top:8px">${esc(draft.note||'')}</textarea>
-    <div class="fgrid4" style="margin-top:8px"><label class="fl">date<input type="date" class="inp" id="teD" value="${draft.d||''}"></label><label class="fl">time (reminder)<input type="time" class="inp" id="teTm" value="${draft.tm||''}"></label>
-    <label class="fl">repeat<select class="inp" id="teR">${['','daily','weekdays','weekly','monthly','yearly','every mon','every tue','every wed','every thu','every fri','every sat','every sun'].map(r=>`<option value="${r}" ${draft.rep===r?'selected':''}>${r||'never'}</option>`).join('')}</select></label>
-    <label class="fl">project<select class="inp" id="teP"><option value="">inbox</option>${TASKS.projects.map(P=>`<option value="${P.id}" ${draft.proj===P.id?'selected':''}>${esc(P.n)}</option>`).join('')}</select></label></div>
-    <div class="seg mini" id="tePr">${[1,2,3,4].map(p=>`<button type="button" data-tp="${p}" aria-pressed="${(draft.p||4)===p}" style="color:${PCOL[4-p]}">p${p}</button>`).join('')}</div>
-    <div class="dim" style="font-size:11px;margin:12px 0 4px">sub-tasks</div>${draft.sub.map((s,i)=>`<div class="tsub"><button type="button" class="tchk${s.x?' x':''}" data-ts="${i}"></button><input class="inp" data-tsi="${i}" value="${esc(s.t)}"><button type="button" class="iconbtn" data-tsd="${i}">✕</button></div>`).join('')}
-    <button type="button" class="iconbtn" id="teSub" style="margin-top:6px">+ sub-task</button>
-    <div class="bigbtns" style="margin-top:14px"><button class="btn d" type="button" id="teDel">delete</button><span style="flex:1"></span><button class="btn p" type="button" id="teOk">save</button></div>`};
-  openSheet('task','');draw();const sb=$('sheetBody');
+  const REPS=[['','Never'],['daily','Every day'],['weekdays','Weekdays'],['weekly','Every week'],['monthly','Every month'],['yearly','Every year'],...['mon','tue','wed','thu','fri','sat','sun'].map(d=>['every '+d,'Every '+new Date(2024,0,{mon:1,tue:2,wed:3,thu:4,fri:5,sat:6,sun:7}[d]).toLocaleDateString('en-GB',{weekday:'long'})])];
+  const PRI=[[4,'None'],[3,'Low'],[2,'Medium'],[1,'High']];
+  const row=(ic,l,val,ctrl,clr)=>`<label class="tes-row"><span class="tes-ic">${TSV(ic)}</span><span class="tes-l">${l}</span><span class="tes-v${val?'':' none'}">${val||'None'}</span>${clr&&val?`<button type="button" class="tes-clr" data-clr="${clr}" aria-label="Clear">${TSV('<path d="M7 7l10 10M17 7L7 17"/>')}</button>`:TSV('<path d="M9 6l6 6-6 6"/>').replace('<svg','<svg class="tes-chev"')}${ctrl}</label>`;
+  const P=TASKS.projects.find(x=>x.id===draft.proj);
+  const draw=()=>{const P=TASKS.projects.find(x=>x.id===draft.proj);$('sheetBody').innerHTML=`<div class="tes">
+    <textarea class="tes-t" id="teT" rows="1" placeholder="Task name">${esc(draft.t)}</textarea>
+    <textarea class="tes-n" id="teN" rows="2" placeholder="Add notes">${esc(draft.note||'')}</textarea>
+    <div class="tes-card">
+      ${row(TIC.cal,'Date',draft.d?tCap(tWhen({d:draft.d})):'',`<input type="date" class="tes-in" id="teD" value="${draft.d||''}">`,'d')}
+      ${row('<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>','Time',draft.tm||'',`<input type="time" class="tes-in" id="teTm" value="${draft.tm||''}">`,'tm')}
+      ${row(TIC.rep,'Repeat',draft.rep?(REPS.find(r=>r[0]===draft.rep)||[0,tCap(draft.rep)])[1]:'',`<select class="tes-in" id="teR">${REPS.map(([v,l])=>`<option value="${v}" ${(draft.rep||'')===v?'selected':''}>${l}</option>`).join('')}</select>`)}
+      ${row(TIC.inbox,'Project',P?`<i class="tkdot" style="background:${P.col}"></i>${esc(P.n)}`:'Inbox',`<select class="tes-in" id="teP"><option value="">Inbox</option>${TASKS.projects.map(P=>`<option value="${P.id}" ${draft.proj===P.id?'selected':''}>${esc(P.n)}</option>`).join('')}</select>`)}
+    </div>
+    <div class="tes-lab">Priority</div>
+    <div class="tes-seg" id="tePr">${PRI.map(([p,l])=>`<button type="button" data-tp="${p}" class="${TPR[p]}" aria-pressed="${(draft.p||4)===p}">${l}</button>`).join('')}</div>
+    <div class="tes-lab">Subtasks${draft.sub.length?` <span class="num">${draft.sub.filter(s=>s.x).length}/${draft.sub.length}</span>`:''}</div>
+    <div class="tes-card">${draft.sub.map((s,i)=>`<div class="tes-sub${s.x?' done':''}"><button type="button" class="tkchk" data-ts="${i}" aria-label="Complete">${TSV('<path d="M6.5 12.5l3.5 3.5 7.5-8"/>')}</button><input data-tsi="${i}" value="${esc(s.t)}" placeholder="Subtask"><button type="button" class="tes-clr" data-tsd="${i}" aria-label="Remove">${TSV('<path d="M7 7l10 10M17 7L7 17"/>')}</button></div>`).join('')}
+      <button type="button" class="tes-add" id="teSub">${TSV(TIC.plus)}Add subtask</button></div>
+    <div class="tes-foot"><button type="button" class="tes-del" id="teDel">Delete task</button><span style="flex:1"></span><button type="button" class="tkgo tes-save" id="teOk">Save</button></div></div>`;
+    const t=$('teT');const fit=()=>{t.style.height='auto';t.style.height=t.scrollHeight+'px'};fit();t.oninput=fit;
+    $('sheetBody').querySelectorAll('input.tes-in').forEach(x=>x.addEventListener('click',()=>{try{x.showPicker&&x.showPicker()}catch(e){}}))};
+  openSheet('Task','');draw();const sb=$('sheetBody');sb.onchange=e=>{if(e.target.classList.contains('tes-in')){read();draw()}};
   const read=()=>{draft.t=$('teT').value.trim()||draft.t;draft.note=$('teN').value;draft.d=$('teD').value||null;draft.tm=$('teTm').value||null;draft.rep=$('teR').value||null;draft.proj=$('teP').value||null;sb.querySelectorAll('[data-tsi]').forEach(x=>draft.sub[+x.dataset.tsi].t=x.value)};
   sb.onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
+    if(d.clr){e.preventDefault();read();draft[d.clr]=null;draw();return}
     if(d.tp){read();draft.p=+d.tp;draw();return}if(d.ts){read();const s=draft.sub[+d.ts];s.x=!s.x;draw();return}if(d.tsd){read();draft.sub.splice(+d.tsd,1);draw();return}
     if(b.id==='teSub'){read();draft.sub.push({t:'',x:false});draw();const ins=sb.querySelectorAll('[data-tsi]');ins[ins.length-1].focus();return}
-    if(b.id==='teDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}TASKS.list=TASKS.list.filter(x=>x.id!==id);tSave();closeSheet();renderTasks();return}
+    if(b.id==='teDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Tap again to delete';b.classList.add('arm');return}TASKS.list=TASKS.list.filter(x=>x.id!==id);tSave();closeSheet();renderTasks();return}
     if(b.id==='teOk'){read();draft.sub=draft.sub.filter(s=>s.t.trim());Object.assign(tk,draft);tSave();closeSheet();renderTasks()}}}
 
 /* ---- today's tasks, mirrored into the Today view ---- */
