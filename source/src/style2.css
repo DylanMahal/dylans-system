@@ -1819,3 +1819,63 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 .tes-foot{display:flex;align-items:center;margin-top:24px}
 .tes-del{appearance:none;border:0;background:none;color:#ff6b6b;font:500 15px var(--sf);padding:10px 4px;cursor:pointer}.tes-del.arm{background:rgba(255,107,107,.14);padding:10px 14px;border-radius:12px}
 .tes-save{height:42px;padding:0 26px;font-size:15px;border-radius:12px}
+/* ---- tasks: jira-style board ---- */
+.jw{--sf:-apple-system,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;font-family:var(--sf);padding:20px 20px 26px;min-width:0}
+.jtop{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.jcrumb{font-size:12.5px;color:#8c8c8c}.jcrumb span{margin:0 4px;color:#555}
+.jtitle{font:750 26px/1.2 var(--sf);letter-spacing:-.015em;color:#fff;margin:4px 0 0;background:none;-webkit-text-fill-color:currentColor;text-shadow:none}
+.jsub{font-size:13px;color:#8c8c8c;margin-top:3px}
+.jvt{display:flex;gap:2px;padding:3px;border-radius:11px;background:rgba(255,255,255,.06);flex:none}
+.jvt button{appearance:none;border:0;background:none;display:flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:8px;color:#9a9a9a;font:600 13px var(--sf);cursor:pointer}
+.jvt button[aria-pressed="true"]{background:rgba(255,255,255,.13);color:#fff;box-shadow:0 1px 5px rgba(0,0,0,.4)}
+.jprojs,.jbar{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin-top:16px;align-items:center}.jprojs::-webkit-scrollbar,.jbar::-webkit-scrollbar{display:none}
+.jchip,.jfch{appearance:none;flex:none;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 13px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#cfcfcf;font:500 13px var(--sf);cursor:pointer;white-space:nowrap}
+.jchip.on{background:#fff;color:#111;border-color:#fff}.jnewp{color:#8c8c8c;border-style:dashed}
+.jbar{margin-top:10px}.jfch{height:30px;font-size:12.5px;color:#9a9a9a}.jfch.on{background:rgba(255,42,109,.16);border-color:rgba(255,42,109,.5);color:#fff}
+.jsearch{flex:1 0 150px;display:flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:10px;background:rgba(255,255,255,.06);color:#888}
+.jsearch input{flex:1;min-width:0;border:0;outline:0;background:none;color:#fff;font:15px var(--sf)}.jsearch input::-webkit-search-cancel-button{filter:invert(.6)}
+.jadd{display:flex;align-items:center;gap:8px;margin-top:14px;height:46px;padding:0 6px 0 14px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.035)}
+.jadd:focus-within{border-color:rgba(255,42,109,.55)}.jadd input{flex:1;min-width:0;border:0;outline:0;background:none;color:#fff;font:16px var(--sf)}.jadd input::placeholder{color:#777}
+.jbody{margin-top:8px}
+.jboard{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding-bottom:4px}.jboard::-webkit-scrollbar{display:none}
+.jcol{scroll-snap-align:start;background:rgba(255,255,255,.035);border-radius:14px;padding:8px;min-height:200px;display:flex;flex-direction:column;transition:background .15s,box-shadow .15s}
+.jcol.dropok{background:rgba(255,42,109,.08);box-shadow:inset 0 0 0 1.5px rgba(255,42,109,.45)}
+.jcol-h{display:flex;align-items:center;gap:8px;padding:6px 6px 10px;font:700 11.5px var(--sf);letter-spacing:.06em;text-transform:uppercase;color:#9fadbc}.jcol-h .num{color:#6b7785;font-weight:600}
+.jcol-b{display:flex;flex-direction:column;gap:8px}
+.jc{display:block;background:#1d1f22;border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:11px 12px 10px;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,.35);transition:transform .15s,box-shadow .15s,background .15s;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.jc:hover{background:#24272b}.jc.drag{opacity:.45}.jc.held,.jr.held{transform:scale(.97);background:#2a2d31}
+.jc-t{font-size:14.5px;line-height:1.4;color:#e8e8e8;overflow-wrap:anywhere}.jc.done .jc-t{color:#8a8a8a;text-decoration:line-through}
+.jc-l{margin-top:8px}.jlab{display:inline-block;font:700 10.5px var(--sf);letter-spacing:.04em;text-transform:uppercase;padding:2px 6px;border-radius:4px;color:var(--c);background:color-mix(in srgb,var(--c) 18%,transparent)}
+.jc-f{display:flex;align-items:center;gap:7px;margin-top:10px;font-size:12px;color:#9a9a9a}.jsp{flex:1}
+.jkey{font:600 12px var(--sf);color:#8c9bab;letter-spacing:.01em;white-space:nowrap}.jc.done .jkey{text-decoration:line-through}
+.ji{display:inline-flex;flex:none}.ji svg{width:16px;height:16px}
+.jt-task{color:#4bade8}.jt-bug{color:#e5493a}.jt-story{color:#63ba3c}
+.jp-1{color:#ff5630}.jp-2{color:#ff7452}.jp-3{color:#ffab00}.jp-4{color:#2684ff}
+.jdue{display:inline-flex;align-items:center;gap:4px;padding:2px 6px;border-radius:5px;background:rgba(255,255,255,.07);color:#b6b6b6;font-size:11.5px;white-space:nowrap}.jdue svg{width:12px;height:12px}
+.jdue.now{background:rgba(94,234,212,.14);color:#5eead4}.jdue.late{background:rgba(255,86,48,.16);color:#ff8f73}
+.jm{display:inline-flex;align-items:center;gap:3px}.jm svg{width:13px;height:13px}
+.jpts{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:18px;padding:0 5px;border-radius:9px;background:rgba(255,255,255,.12);color:#ddd;font:600 11px var(--sf)}
+.jcreate{appearance:none;border:0;background:none;display:flex;align-items:center;gap:8px;padding:9px 8px;border-radius:9px;color:#9a9a9a;font:500 14px var(--sf);cursor:pointer;text-align:left}.jcreate:hover{background:rgba(255,255,255,.06);color:#fff}
+.jst{appearance:none;border:0;flex:none;padding:3px 7px;border-radius:4px;font:700 11px var(--sf);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;cursor:pointer}
+.js-todo{background:rgba(255,255,255,.1);color:#c7d1db}.js-prog{background:rgba(87,157,255,.2);color:#85b8ff}.js-review{background:rgba(159,143,239,.22);color:#b8acf6}.js-done{background:rgba(75,206,151,.2);color:#7ee2b8}
+.jlg{margin-top:18px}.jlg-h{display:flex;align-items:center;gap:10px;margin:0 2px 8px}.jlg-h .num{font-size:12.5px;color:#8c8c8c}
+.jlg-e{font-size:13px;color:#666;padding:10px 4px}
+.jlist{border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;background:rgba(255,255,255,.02)}
+.jr{display:flex;align-items:center;gap:9px;min-height:46px;padding:6px 12px;border-bottom:1px solid rgba(255,255,255,.06);cursor:pointer;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;transition:background .15s,transform .15s}.jr:last-child{border-bottom:0}.jr:hover{background:rgba(255,255,255,.04)}
+.jr-t{flex:1;min-width:0;font-size:14.5px;color:#e8e8e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.jr.done .jr-t{color:#8a8a8a;text-decoration:line-through}
+@media (max-width:900px){
+  .jw{padding:18px 14px 22px}.jtitle{font-size:23px}.jvt button span{display:none}.jvt button{padding:0 10px}
+  .jboard{grid-template-columns:repeat(4,82%);margin:0 -14px;padding:0 14px 4px;scroll-padding:0 14px}
+  .jr .jdue,.jr .jpts{display:none}.jr .jkey{font-size:11.5px}
+}
+/* editor additions */
+.tes-meta{display:flex;margin-bottom:12px}
+.tes-ty{display:flex;gap:4px}
+.tes-ty button,.tes-seg button{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.tes-ty button{appearance:none;border:1px solid rgba(255,255,255,.1);background:none;height:30px;padding:0 10px;border-radius:8px;color:#9a9a9a;font:600 12.5px var(--sf);cursor:pointer}
+.tes-ty button[aria-pressed="true"]{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.2);color:#fff}
+.tes-ty .ji svg{width:14px;height:14px}.tes-seg .ji svg{width:14px;height:14px}
+.tes-st{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:16px}
+.tes-st button{appearance:none;border:0;height:34px;border-radius:8px;font:700 11px var(--sf);letter-spacing:.03em;text-transform:uppercase;cursor:pointer;opacity:.45;transition:opacity .15s,box-shadow .15s}
+.tes-st button[aria-pressed="true"]{opacity:1;box-shadow:inset 0 0 0 1.5px currentColor}
+@media (max-width:520px){.tes-seg button span{font-size:12px}.tes-st button{font-size:10px;letter-spacing:0}}
