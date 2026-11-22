@@ -10,7 +10,8 @@ const PINK = new Color('#ff2a6d'), CYAN = new Color('#05d9e8'), OK = new Color('
 const CARD = new Color('#141414'), WHITE = new Color('#f2f2f2'), GREY = new Color('#8e8e93'), TRACK = new Color('#2c2c2e'), RED = new Color('#ff453a');
 const mono = (s, b) => b ? Font.boldMonospacedSystemFont(s) : Font.regularMonospacedSystemFont(s);
 const NAMED = { pink: '#ff2a6d', cyan: '#05d9e8', ok: '#57f5a8', green: '#57f5a8', amber: '#ffb000', purple: '#9b5cff', orange: '#ff6b3d', blue: '#4da3ff', fg: '#e6e6e6' };
-const col = (c, f) => { c = String(c || ''); if (/^#[0-9a-f]{3,8}$/i.test(c)) return new Color(c); const m = c.match(/--([a-z]+)/i); return new Color((m && NAMED[m[1]]) || f || '#e6e6e6') };
+const colHex = (c, f) => { c = String(c || ''); if (/^#[0-9a-f]{3,8}$/i.test(c)) return c; const m = c.match(/--([a-z]+)/i); return (m && NAMED[m[1]]) || f || '#e6e6e6' };
+const col = (c, f, a) => new Color(colHex(c, f), a == null ? 1 : a);
 const CAL_COL = { job: '#3d4a5c', study: '#52637a', gym: '#6b7d96', fun: '#8392a8', other: '#666a71' };
 
 /* ---------------- auth: one refresh at a time, access token reused until it expires ---------------- */
@@ -83,7 +84,7 @@ function pic(stack, img, w, h) { const i = stack.addImage(img); i.imageSize = ne
 const FAM = () => config.widgetFamily || 'medium';
 const SIZE = { small: [158, 158], medium: [338, 158], large: [338, 354], extraLarge: [715, 354] };
 const acc = f => f.startsWith('accessory');
-function base(url) { const w = new ListWidget(); w.backgroundColor = CARD; w.url = APP_URL + (url ? '#' + url : ''); w.refreshAfterDate = new Date(Date.now() + 15 * 6e4); w.setPadding(14, 16, 14, 16); return w }
+function base(url) { const w = new ListWidget(); w.backgroundColor = SURF; w.url = APP_URL + (url ? '#' + url : ''); w.refreshAfterDate = new Date(Date.now() + 15 * 6e4); w.setPadding(16, 16, 16, 16); return w }
 function cache(mode, d) { const fm = FileManager.local(), p = fm.joinPath(fm.cacheDirectory(), 'ds-' + mode.replace(/[^a-z0-9]/gi, '_') + '.json'); if (d !== undefined) { fm.writeString(p, JSON.stringify(d)); return d } return fm.fileExists(p) ? JSON.parse(fm.readString(p)) : null }
 /* lock-screen widgets: every mode hands back {p: 0..1, v, l, lines, inline} */
 function lock(o) {
@@ -100,49 +101,55 @@ function lock(o) {
   return w
 }
 
-/* =============================== TODAY (original) =============================== */
+/* =============================== shared look (iOS widget conventions) =============================== */
+const SURF = new Color('#1c1c1e'), T1 = Color.white(), T2 = new Color('#8e8e93'), T3 = new Color('#48484a'), TRK = new Color('#3a3a3c'), GOOD = new Color('#30d158');
+const F = { r: Font.systemFont, m: Font.mediumSystemFont, s: Font.semiboldSystemFont, b: Font.boldSystemFont, rb: Font.boldRoundedSystemFont, rh: Font.heavyRoundedSystemFont, rs: Font.semiboldRoundedSystemFont };
+function lbl(st, s, size, wt, color, lines) { const t = st.addText(String(s)); t.font = F[wt || 'r'](size); t.textColor = color || T1; t.lineLimit = lines || 1; t.minimumScaleFactor = .75; return t }
+/* content width of the current widget, so rows can split into even columns */
+function cw() { const f = FAM(), s = Device.screenSize(), sw = Math.min(s.width, s.height); const small = Device.isPad() ? 155 : Math.round(sw * .43); const full = Device.isPad() ? 340 : Math.round(sw * .86); return (f === 'small' ? small : full) - 32 }
+/* horizontal bar drawn wide and thin; added without a size so it stretches to the row */
+function hbar(st, frac, color, h) { const c = ctx(600, 12); rr(c, 0, 0, 600, 12, 6, TRK); if (frac > 0) rr(c, 0, 0, Math.max(12, 600 * Math.min(1, frac)), 12, 6, color); const i = st.addImage(c.getImage()); i.resizable = true; return i }
+/* a square with a drawn ring as its background and real text on top */
+function ringBox(st, size, frac, color, w) { const b = st.addStack(); b.size = new Size(size, size); b.backgroundImage = ring(size, frac, color, w); b.layoutVertically(); b.centerAlignContent(); return b }
+const centred = (st, fn) => { const r = st.addStack(); r.addSpacer(); fn(r); r.addSpacer(); return r };
+
+/* =============================== TODAY =============================== */
 function nowMin() { const n = new Date(); let m = n.getHours() * 60 + n.getMinutes(); if (m < 300) m += 1440; return m }
 function toMin(t) { const [h, m] = t.split(':').map(Number); let v = h * 60 + m; if (v < 300) v += 1440; return v }
-function bar(pct, w, h) {
-  const c = ctx(w, h);
-  c.setFillColor(new Color('#1c1c1c')); c.fillRect(new Rect(0, 0, w, h));
-  c.setFillColor(pct >= 80 ? OK : PINK); c.fillRect(new Rect(0, 0, Math.max(2, w * pct / 100), h));
-  c.setFillColor(OK); c.fillRect(new Rect(w * .8 - 1, 0, 2, h));
-  return c.getImage();
-}
 async function wToday() {
   const fam = FAM(); let d = null, err = null;
   try { d = (await docs(['widget/today']))['widget/today']; if (d) cache('today', d) } catch (e) { err = e.message; d = cache('today') }
-  const w = new ListWidget(); w.backgroundColor = BG; w.url = APP_URL; w.refreshAfterDate = new Date(Date.now() + 15 * 60 * 1000);
-  if (!d) { txt(w, 'SYSTEM', 14, PINK, true); w.addSpacer(4); txt(w, err || 'no data yet', 10, DIM); return w }
-  const m = nowMin(); const up = d.items.filter(i => toMin(i.t) > m && !i.d); const nxt = up[0];
-  const mins = nxt ? toMin(nxt.t) - m : null; const eta = mins == null ? '' : mins >= 60 ? `${Math.floor(mins / 60)}h${String(mins % 60).padStart(2, '0')}` : `${mins}m`;
+  if (!d) return errW(err || 'no data yet');
+  const m = nowMin(), up = d.items.filter(i => toMin(i.t) > m && !i.d), nxt = up[0];
+  const mins = nxt ? toMin(nxt.t) - m : null, eta = mins == null ? '' : mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
   if (acc(fam)) return lock({ p: d.pct / 100, v: `${d.pct}%`, l: 'day', lines: [`${d.pct}% · ${d.done}/${d.total}`, ...(nxt ? [`${nxt.t} ${nxt.n}`, `in ${eta}`] : [])], inline: nxt ? `${d.pct}% · ${nxt.t} ${nxt.n}` : `${d.pct}% today` });
-  w.setPadding(12, 14, 12, 14);
-  const top = w.addStack(); top.centerAlignContent(); txt(top, 'dylan@stack', 9, PINK, true); top.addSpacer(); txt(top, d.date.slice(5).replace('-', '/'), 9, DIM);
-  w.addSpacer(6);
-  const row = w.addStack(); row.topAlignContent();
-  const left = row.addStack(); left.layoutVertically();
-  txt(left, `${d.pct}%`, fam === 'small' ? 34 : 38, d.pct >= 80 ? OK : FG, true);
-  left.addSpacer(2); const b = left.addImage(bar(d.pct, fam === 'small' ? 120 : 130, 5)); b.imageSize = new Size(fam === 'small' ? 120 : 130, 5);
-  left.addSpacer(3); txt(left, `${d.done}/${d.total} ticked`, 9, DIM);
+  const w = base('today'), pc = d.pct >= 80 ? GOOD : T1;
+  const day = new Date(d.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase();
   if (fam === 'small') {
+    const h = w.addStack(); h.centerAlignContent(); lbl(h, 'TODAY', 11, 's', T2); h.addSpacer(); lbl(h, `${d.done}/${d.total}`, 11, 's', T2);
+    w.addSpacer(6);
+    const r = w.addStack(); r.centerAlignContent(); const b = ringBox(r, 58, d.pct / 100, pc, 6); centred(b, x => lbl(x, `${d.pct}%`, 15, 'rb'));
     w.addSpacer();
-    if (nxt) { txt(w, `NEXT · ${eta}`, 9, PINK, true); txt(w, nxt.n, 11, FG) } else txt(w, 'nothing left today', 10, DIM);
+    if (nxt) { lbl(w, `NEXT · ${eta.toUpperCase()}`, 10, 's', T2); w.addSpacer(2); lbl(w, nxt.n, 14, 's', T1, 2) } else lbl(w, 'All done today', 14, 's', T2);
     return w;
   }
-  row.addSpacer(14);
-  const right = row.addStack(); right.layoutVertically();
-  txt(right, nxt ? `NEXT · ${eta}` : 'DONE FOR TODAY', 9, PINK, true); right.addSpacer(3);
-  up.slice(0, fam === 'large' ? 14 : 4).forEach(i => { const r = right.addStack(); txt(r, i.t + ' ', 10, i.c ? CYAN : DIM); txt(r, i.n, 10, FG) });
-  w.addSpacer();
-  const hb = w.addStack(); hb.spacing = 6;
-  (d.habits || []).slice(0, fam === 'large' ? 8 : 6).forEach(h => { const s = hb.addStack(); s.centerAlignContent(); const dot = s.addText(h.d ? '■' : '□'); dot.font = mono(9, true); dot.textColor = h.d ? OK : DIM; s.addSpacer(2); txt(s, h.l, 8, h.d ? FG : DIM) });
-  if (fam === 'large') {
-    w.addSpacer(6);
-    const st = w.addStack(); st.spacing = 14;
-    txt(st, `water ${d.water}/${d.waterTarget}`, 10, CYAN); txt(st, `deep work ${Math.floor(d.dw / 60)}h${String(d.dw % 60).padStart(2, '0')}`, 10, FG); txt(st, `leetcode ${d.lc}/8`, 10, FG);
+  const top = w.addStack(); top.centerAlignContent();
+  const b = ringBox(top, fam === 'large' ? 84 : 72, d.pct / 100, pc, 7);
+  centred(b, x => lbl(x, `${d.pct}%`, fam === 'large' ? 20 : 17, 'rb')); centred(b, x => lbl(x, `${d.done}/${d.total}`, 10, 'm', T2));
+  top.addSpacer(14);
+  const R = top.addStack(); R.layoutVertically();
+  lbl(R, day, 11, 's', T2); R.addSpacer(2);
+  lbl(R, nxt ? nxt.n : 'All done today', 16, 's', nxt ? T1 : T2, 2);
+  if (nxt) { R.addSpacer(2); lbl(R, `${nxt.t} · in ${eta}`, 12, 'm', T2) }
+  top.addSpacer();
+  if (fam === 'medium') {
+    w.addSpacer();
+    const rest = up.slice(1, 3); rest.forEach((i, k) => { if (k) w.addSpacer(4); const r = w.addStack(); r.centerAlignContent(); const t = lbl(r, i.t, 12, 'm', T2); t.font = Font.regularMonospacedSystemFont(12); r.addSpacer(10); lbl(r, i.n, 13, 'm') });
+    return w;
   }
+  w.addSpacer(14); lbl(w, 'UP NEXT', 11, 's', T2); w.addSpacer(6);
+  up.slice(1, 10).forEach((i, k) => { if (k) w.addSpacer(7); const r = w.addStack(); r.centerAlignContent(); const t = lbl(r, i.t, 13, 'm', T2); t.font = Font.regularMonospacedSystemFont(13); r.addSpacer(12); lbl(r, i.n, 14, 'm'); r.addSpacer() });
+  w.addSpacer();
   return w;
 }
 
@@ -189,32 +196,54 @@ async function dCals() {
   const today = D.find(x => x.k === k), prior = D.filter(x => x.k < k && x.logged).reduce((t, x) => t + x.eat - x.allow, 0);
   return { k, B, D, eat: today.eat, allow: today.allow, left: today.allow - today.eat, prior: Math.round(prior) };
 }
-function gauge(d, s) {
-  const c = ctx(s, s), cx = s / 2, cy = s / 2 + s * .04, r = s / 2 - s * .09, w = s * .075, a0 = Math.PI * .75, a1 = Math.PI * 2.25;
-  arc(c, cx, cy, r, a0, a1, w, TRACK);
-  const fr = Math.min(1, d.eat / d.allow); if (fr > 0) arc(c, cx, cy, r, a0, a0 + (a1 - a0) * fr, w, d.left < 0 ? RED : new Color('#c7c7cc'));
-  text(c, Math.abs(d.left).toLocaleString(), 0, cy - s * .2, s, s * .26, Font.heavyRoundedSystemFont(s * .2), d.left < 0 ? RED : new Color('#c7c7cc'), 'c');
-  text(c, d.left < 0 ? 'OVER' : 'UNDER', 0, cy + s * .05, s, s * .14, Font.semiboldSystemFont(s * .085), GREY, 'c');
+function gaugeImg(d, s) {
+  const c = ctx(s, s), cx = s / 2, cy = s / 2, w = s * .085, r = s / 2 - w / 2 - s * .04, a0 = Math.PI * .75, span = Math.PI * 1.5;
+  arc(c, cx, cy, r, a0, a0 + span, w, TRK);
+  const fr = Math.min(1, d.eat / d.allow);
+  if (fr > 0) arc(c, cx, cy, r, a0, a0 + span * fr, w, d.left < 0 ? RED : new Color('#d1d1d6'));
+  /* marker where today stands, sitting just outside the arc */
+  const a = a0 + span * fr, r0 = r - w / 2 + 1, r1 = r + w / 2 + s * .035, p = new Path();
+  p.move(new Point(cx + r0 * Math.cos(a), cy + r0 * Math.sin(a))); p.addLine(new Point(cx + r1 * Math.cos(a), cy + r1 * Math.sin(a)));
+  c.addPath(p); c.setStrokeColor(new Color('#e5e5ea')); c.setLineWidth(s * .022); c.strokePath();
   return c.getImage();
+}
+function dayBar(x) {
+  const W = 40, H = 200, c = ctx(W, H), line = H * .2;
+  rr(c, 0, 0, W, H, 9, TRK);
+  if (x.eat > 0) {
+    const fr = x.eat / x.allow, fh = Math.min(H, (H - line) * fr);
+    rr(c, 0, H - fh, W, fh, 9, new Color('#8e8e93'));
+    if (fr > 1) { const oh = Math.min(fh, (H - line) * (fr - 1)); rr(c, 0, H - fh, W, oh, 9, RED) }
+  }
+  c.setFillColor(new Color('#d1d1d6')); c.fillRect(new Rect(3, line - 2, W - 6, 4));
+  return c.getImage();
+}
+function capLine(st, num, word) { const r = st.addStack(); r.centerAlignContent(); lbl(r, num, 13, 'b', T2); lbl(r, ' ' + word, 13, 'm', T2); return r }
+function gaugeBox(st, d, s) {
+  const b = st.addStack(); b.size = new Size(s, s); b.backgroundImage = gaugeImg(d, s); b.layoutVertically(); b.addSpacer();
+  centred(b, x => lbl(x, Math.abs(d.left).toLocaleString('en-GB'), s * .2, 'rh', d.left < 0 ? RED : new Color('#d1d1d6')));
+  centred(b, x => lbl(x, d.left < 0 ? 'OVER' : 'UNDER', s * .095, 's', T2));
+  b.addSpacer(); return b;
 }
 function wCals(d) {
   const f = FAM();
   if (acc(f)) return lock({ p: d.eat / d.allow, v: Math.abs(d.left) >= 1000 ? (Math.abs(d.left) / 1000).toFixed(1) + 'k' : String(Math.abs(d.left)), l: d.left < 0 ? 'over' : 'left', lines: [`${Math.abs(d.left)} kcal ${d.left < 0 ? 'over' : 'left'}`, `${d.eat} eaten of ${d.allow}`], inline: `${Math.abs(d.left)} kcal ${d.left < 0 ? 'over' : 'left'}` });
-  const w = base('food'); w.setPadding(10, 14, 10, 14);
-  if (f === 'small') { const s = w.addStack(); s.addSpacer(); pic(s, gauge(d, 118), 118, 118); s.addSpacer(); const b = w.addStack(); b.addSpacer(); sf(b, d.eat.toLocaleString(), Font.boldSystemFont(12), GREY); sf(b, ' CALS', Font.systemFont(12), GREY); b.addSpacer(); return w }
-  const W = 310, H = 138, c = ctx(W, H);
-  c.drawImageInRect(gauge(d, 112), new Rect(0, 0, 112, 112));
-  text(c, d.eat.toLocaleString() + ' CALS', 0, 116, 112, 18, Font.semiboldSystemFont(12), GREY, 'c');
-  const x0 = 128, bw = 19, gap = (W - x0 - bw * 7) / 6, bh = 92, L = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su'];
+  const w = base('food');
+  if (f === 'small') { w.setPadding(12, 12, 12, 12); centred(w, x => gaugeBox(x, d, 112)); w.addSpacer(); centred(w, x => capLine(x, d.eat.toLocaleString('en-GB'), 'CALS')); return w }
+  w.setPadding(14, 16, 12, 18);
+  const row = w.addStack(); row.centerAlignContent();
+  const L = row.addStack(); L.layoutVertically(); gaugeBox(L, d, 112); L.addSpacer(4); centred(L, x => capLine(x, d.eat.toLocaleString('en-GB'), 'CALS'));
+  row.addSpacer(18);
+  const R = row.addStack(); R.layoutVertically();
+  const bars = R.addStack(); const N = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su'];
   d.D.forEach((x, i) => {
-    const bx = x0 + i * (bw + gap); rr(c, bx, 4, bw, bh, 5, TRACK);
-    const fr = Math.min(1.25, x.eat / x.allow), fh = Math.min(bh, bh * fr / 1.25);
-    if (fh > 1) rr(c, bx, 4 + bh - fh, bw, fh, 5, x.eat > x.allow ? RED : new Color('#5a5a5e'));
-    c.setFillColor(new Color('#c7c7cc')); c.fillRect(new Rect(bx + 2, 4 + bh - bh / 1.25 - 1, bw - 4, 2));
-    text(c, L[i], bx - 6, bh + 10, bw + 12, 16, x.k === d.k ? Font.boldSystemFont(12) : Font.systemFont(12), x.k === d.k ? WHITE : GREY, 'c');
+    if (i) bars.addSpacer();
+    const col = bars.addStack(); col.layoutVertically(); col.size = new Size(26, 0);
+    centred(col, y => pic(y, dayBar(x), 20, 100)); col.addSpacer(5);
+    centred(col, y => lbl(y, N[i], 12, x.k === d.k ? 'b' : 'r', x.k === d.k ? T1 : T2));
   });
-  text(c, `${Math.abs(d.prior).toLocaleString()} ${d.prior > 0 ? 'OVER' : 'UNDER'} PRIOR TO TODAY`, x0, 116, W - x0, 18, Font.semiboldSystemFont(12), GREY, 'c');
-  pic(w, c.getImage(), W, H);
+  R.addSpacer(8);
+  centred(R, x => capLine(x, Math.abs(d.prior).toLocaleString('en-GB'), (d.prior > 0 ? 'OVER' : 'UNDER') + ' PRIOR TO TODAY'));
   return w;
 }
 
@@ -250,23 +279,23 @@ async function dSleep() {
 const sCol = s => new Color(s >= 80 ? '#57f5a8' : s >= 60 ? '#ffb000' : '#ff453a');
 function wSleep(d) {
   const f = FAM();
-  if (d.none) { if (acc(f)) return lock({ p: null, v: '–', l: 'sleep', lines: ['No sleep data yet'], inline: 'no sleep data' }); const w = base('sleep'); sf(w, 'Sleep', Font.semiboldSystemFont(15)); w.addSpacer(); sf(w, 'No data for last night yet', Font.systemFont(12), GREY, 2); return w }
+  if (d.none) { if (acc(f)) return lock({ p: null, v: '–', l: 'sleep', lines: ['No sleep data yet'], inline: 'no sleep data' }); const w = base('sleep'); lbl(w, 'SLEEP', 11, 's', T2); w.addSpacer(); lbl(w, 'No data for last night yet', 14, 's', T2, 2); return w }
   if (acc(f)) return lock({ p: d.score / 100, v: String(d.score), l: 'sleep', lines: [`Sleep ${d.score}% · ${hm(d.asleep)}`, d.start ? `${clock(d.start)} → ${clock(d.end)}` : '', `deep ${hm(d.deep)} · rem ${hm(d.rem)}`], inline: `sleep ${d.score}% · ${hm(d.asleep)}` });
-  const w = base('sleep'); w.setPadding(14, 16, 14, 16);
-  const top = w.addStack(); top.centerAlignContent();
-  const rs = 58, rc = ctx(rs, rs); rc.drawImageInRect(ring(rs, d.score / 100, sCol(d.score), 6), new Rect(0, 0, rs, rs));
-  text(rc, d.score, 0, rs / 2 - 12, rs, 24, Font.boldRoundedSystemFont(20), WHITE, 'c'); pic(top, rc.getImage(), rs, rs);
-  top.addSpacer(10); const tv = top.addStack(); tv.layoutVertically();
-  sf(tv, d.old ? 'NIGHT BEFORE' : 'LAST NIGHT', Font.semiboldSystemFont(9), GREY); tv.addSpacer(2);
-  sf(tv, hm(d.asleep), Font.boldRoundedSystemFont(17)); sf(tv, `of ${d.goal / 60}h goal`, Font.systemFont(10), GREY);
-  w.addSpacer();
-  if (d.start) { const r = w.addStack(); r.centerAlignContent(); sf(r, '☾ ' + clock(d.start), Font.mediumSystemFont(12), WHITE); r.addSpacer(); sf(r, '☀︎ ' + clock(d.end), Font.mediumSystemFont(12), WHITE) }
+  const w = base('sleep');
+  const h = w.addStack(); h.centerAlignContent(); lbl(h, d.old ? 'NIGHT BEFORE' : 'LAST NIGHT', 11, 's', T2); h.addSpacer(); lbl(h, '☾', 12, 's', new Color('#5e5ce6'));
   w.addSpacer(6);
-  /* stage strip */
-  const tot = d.deep + d.rem + d.core + d.awake || 1, W = 126, c = ctx(W, 6); let x = 0;
-  [[d.deep, '#5e5ce6'], [d.core, '#0a84ff'], [d.rem, '#64d2ff'], [d.awake, '#ff9f0a']].forEach(([v, cc]) => { const ww = W * v / tot; if (ww > 0) { c.setFillColor(new Color(cc)); c.fillRect(new Rect(x, 0, ww, 6)) } x += ww });
-  pic(w, c.getImage(), W, 6); w.addSpacer(3);
-  sf(w, `deep ${Math.round(d.deep)}m · rem ${Math.round(d.rem)}m`, Font.systemFont(10), GREY);
+  const r = w.addStack(); r.centerAlignContent();
+  const b = ringBox(r, 56, d.score / 100, sCol(d.score), 6); centred(b, x => lbl(x, d.score, 18, 'rb'));
+  r.addSpacer(10); const v = r.addStack(); v.layoutVertically();
+  const t = v.addStack(); t.bottomAlignContent(); lbl(t, Math.floor(d.asleep / 60), 22, 'rb'); lbl(t, 'h ', 13, 's', T2); lbl(t, Math.round(d.asleep % 60), 22, 'rb'); lbl(t, 'm', 13, 's', T2);
+  lbl(v, `of ${d.goal / 60}h goal`, 11, 'm', T2);
+  w.addSpacer();
+  /* stage strip, stretched to the row */
+  const tot = d.deep + d.rem + d.core + d.awake || 1, c = ctx(600, 12); let x = 0;
+    [[d.deep, '#5e5ce6'], [d.core, '#0a84ff'], [d.rem, '#64d2ff'], [d.awake, '#ff9f0a']].forEach(([val, cc], i, a) => { const ww = 600 * val / tot; if (ww > 0) { rr(c, x, 0, Math.min(600 - x, ww + (i < a.length - 1 ? 12 : 0)), 12, 6, new Color(cc)) } x += ww });
+  const im = w.addImage(c.getImage()); im.resizable = true;
+  w.addSpacer(6);
+  if (d.start) { const s = w.addStack(); s.centerAlignContent(); lbl(s, clock(d.start), 12, 's'); s.addSpacer(); lbl(s, clock(d.end), 12, 's') }
   return w;
 }
 
@@ -312,26 +341,38 @@ function wHabit(s, q, mode) {
   else pic(r, grid(h, weeks, cell, gap), weeks * (cell + gap) - gap, 7 * (cell + gap) - gap);
   return w;
 }
+function habitRow(st, h, W) {
+  const r = st.addStack(); r.size = new Size(W, 32); r.centerAlignContent();
+  const ic = r.addStack(); ic.size = new Size(28, 28); ic.cornerRadius = 14; ic.backgroundColor = col(h.col, null, .22); ic.centerAlignContent(); lbl(ic, h.ic || '•', 14);
+  r.addSpacer(8);
+  const v = r.addStack(); v.layoutVertically();
+  lbl(v, h.n, 13, 's', h.done ? T2 : T1);
+  lbl(v, h.done ? 'Done' : h.t > 1 ? `${h.c} of ${h.t}` : h.streak ? `${h.streak}${h.unit === 'wk' ? 'w' : 'd'} streak` : 'Not yet', 10, 'm', T2);
+  r.addSpacer();
+  if (h.done) { const c = ctx(20, 20); c.setFillColor(GOOD); c.fillEllipse(new Rect(1, 1, 18, 18)); const p = new Path(); p.move(new Point(6, 10.5)); p.addLine(new Point(9, 13.5)); p.addLine(new Point(14.5, 7)); c.addPath(p); c.setStrokeColor(Color.black()); c.setLineWidth(2.2); c.strokePath(); pic(r, c.getImage(), 18, 18) }
+  else pic(r, ring(20, h.t ? h.c / h.t : 0, col(h.col), 2.5), 18, 18);
+  return r;
+}
 function wHabits(s) {
   const f = FAM(), L = s.items.filter(h => h.due), done = L.filter(h => h.done).length;
   if (acc(f)) return lock({ p: L.length ? done / L.length : 0, v: `${done}/${L.length}`, l: 'habits', lines: [`Habits ${done}/${L.length}`, L.filter(h => !h.done).slice(0, 2).map(h => `${h.ic || ''} ${h.n}`).join('  ')], inline: `habits ${done}/${L.length}` });
-  const w = base('streaks'); w.setPadding(14, 16, 14, 16);
-  const hd = w.addStack(); hd.centerAlignContent(); sf(hd, 'Habits', Font.semiboldSystemFont(15)); hd.addSpacer(); sf(hd, `${done}/${L.length}`, Font.semiboldSystemFont(15), GREY);
-  w.addSpacer();
-  const per = f === 'small' ? 3 : 5, rowsN = f === 'small' ? 2 : f === 'large' ? 4 : 1, rs = f === 'small' ? 36 : 44, show = L.slice(0, per * rowsN);
-  if (!show.length) { sf(w, 'Nothing due today', Font.systemFont(12), GREY); w.addSpacer(); return w }
-  for (let r = 0; r * per < show.length; r++) {
-    if (r) w.addSpacer(f === 'large' ? 14 : 8);
-    const row = w.addStack(); row.spacing = f === 'small' ? 6 : 12;
-    show.slice(r * per, r * per + per).forEach(h => {
-      const cell = row.addStack(); cell.layoutVertically(); cell.size = new Size(rs + (f === 'small' ? 0 : 10), 0);
-      const c = ctx(rs, rs); c.drawImageInRect(ring(rs, h.done ? 1 : h.t ? h.c / h.t : 0, col(h.col), f === 'small' ? 4 : 5), new Rect(0, 0, rs, rs));
-      text(c, h.ic || '✓', 0, rs / 2 - rs * .2, rs, rs * .4, Font.systemFont(rs * .32), WHITE, 'c');
-      const ic = cell.addStack(); ic.addSpacer(); pic(ic, c.getImage(), rs, rs); ic.addSpacer();
-      if (f !== 'small') { cell.addSpacer(4); const nm = cell.addStack(); nm.addSpacer(); sf(nm, h.n, Font.systemFont(9), h.done ? WHITE : GREY); nm.addSpacer() }
-    });
+  const w = base('streaks'), left = L.filter(h => !h.done), order = [...left, ...L.filter(h => h.done)];
+  if (f === 'small') {
+    const h = w.addStack(); lbl(h, 'HABITS', 11, 's', T2); h.addSpacer();
+    w.addSpacer(); const b = centred(w, x => { const rb = ringBox(x, 84, L.length ? done / L.length : 0, GOOD, 8); centred(rb, y => lbl(y, done, 22, 'rb')); centred(rb, y => lbl(y, `of ${L.length}`, 10, 'm', T2)) });
+    w.addSpacer(); if (left[0]) lbl(w, `Next: ${left[0].n}`, 12, 's', T2); return w;
+  }
+  const h = w.addStack(); h.centerAlignContent(); lbl(h, 'Habits', 15, 's'); h.addSpacer(); lbl(h, `${done} of ${L.length}`, 13, 's', T2);
+  w.addSpacer(6); const pb = w.addStack(); hbar(pb, L.length ? done / L.length : 0, GOOD);
+  w.addSpacer(10);
+  if (!L.length) { lbl(w, 'Nothing due today', 13, 'm', T2); w.addSpacer(); return w }
+  const W = cw(), cell = Math.floor((W - 14) / 2), rowsN = f === 'large' ? 7 : 2, show = order.slice(0, rowsN * 2);
+  for (let i = 0; i < show.length; i += 2) {
+    if (i) w.addSpacer(f === 'large' ? 8 : 6);
+    const r = w.addStack(); habitRow(r, show[i], cell); r.addSpacer(14); if (show[i + 1]) habitRow(r, show[i + 1], cell); else r.addSpacer(cell);
   }
   w.addSpacer();
+  if (order.length > show.length) lbl(w, `${left.length - show.filter(x => !x.done).length > 0 ? `+${left.length - show.filter(x => !x.done).length} more to do` : `+${order.length - show.length} more`}`, 11, 'm', T2);
   return w;
 }
 
@@ -415,7 +456,7 @@ function wGoal(d) {
   w.addSpacer(4); sf(w, `${d.target}kg ${name}`, Font.semiboldSystemFont(f === 'small' ? 17 : 22), WHITE);
   if (f !== 'small') { w.addSpacer(2); sf(w, d.best ? `best ${d.bestKg}kg × ${d.bestR} · e1RM ${d.best}kg` : 'no sets logged yet', Font.systemFont(11), GREY) }
   w.addSpacer();
-  const W = f === 'small' ? 126 : 306, c = ctx(W, 5); rr(c, 0, 0, W, 5, 2.5, new Color('#ffffff', .15)); if (d.pct) rr(c, 0, 0, Math.max(5, W * d.pct / 100), 5, 2.5, WHITE); pic(w, c.getImage(), W, 5);
+  const gb = w.addStack(); { const c = ctx(600, 10); rr(c, 0, 0, 600, 10, 5, new Color('#ffffff', .15)); if (d.pct) rr(c, 0, 0, Math.max(10, 6 * d.pct), 10, 5, WHITE); const i = gb.addImage(c.getImage()); i.resizable = true }
   w.addSpacer(8);
   const b = w.addStack(); b.centerAlignContent(); sf(b, `${d.pct}%`, Font.semiboldSystemFont(f === 'small' ? 15 : 17), WHITE); b.addSpacer();
   if (d.left != null) sf(b, d.left >= 0 ? `${d.left} DAYS LEFT` : `${-d.left} DAYS OVER`, Font.semiboldSystemFont(9), GREY);
