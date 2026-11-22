@@ -19,23 +19,58 @@ let FOCUS={sessions:[],pomo:false,brk:10,task:''},MUSIC={list:[],cur:null,vol:60
 const DW_TARGET=260;
 function tmLeft(){return TM.end?Math.max(0,Math.round((TM.end-Date.now())/1000)):TM.left}
 function tmTotal(){return (TM.phase==='break'?FOCUS.brk:TM.len)*60}
-function logDw(minutes,task){if(minutes<1)return;DAY.dw=(DAY.dw||0)+minutes;persistDay();FOCUS.sessions.unshift({d:DAYK,at:new Date().toISOString(),min:minutes,task:task||FOCUS.task||''});FOCUS.sessions=FOCUS.sessions.slice(0,600);save('tools/focus',FOCUS);if(TOOLV==='focus'&&cur==='tools')renderFocus();toolCardSubs()}
+function logDw(minutes,task){if(minutes<1)return;DAY.dw=(DAY.dw||0)+minutes;persistDay();FOCUS.sessions.unshift({d:DAYK,at:new Date().toISOString(),min:minutes,task:task||''});FOCUS.sessions=FOCUS.sessions.slice(0,600);save('tools/focus',FOCUS);if(TOOLV==='focus'&&cur==='tools')renderFocus();toolCardSubs()}
+/* icons — drawn, never unicode glyphs (iOS turns those into emoji) */
+const FZSV=(p,f)=>'<svg viewBox="0 0 24 24" aria-hidden="true" '+(f?'fill="currentColor"':'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"')+'>'+p+'</svg>';
+const FI={
+  play:FZSV('<path d="M8 5.6v12.8a1 1 0 0 0 1.52.85l10.4-6.4a1 1 0 0 0 0-1.7L9.52 4.75A1 1 0 0 0 8 5.6z"/>',1),
+  pause:FZSV('<rect x="6" y="4.5" width="4.2" height="15" rx="1.3"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.3"/>',1),
+  prev:FZSV('<rect x="4" y="5" width="2.4" height="14" rx="1"/><path d="M20 6.3v11.4a.9.9 0 0 1-1.4.75L9.9 12.75a.9.9 0 0 1 0-1.5l8.7-5.7A.9.9 0 0 1 20 6.3z"/>',1),
+  next:FZSV('<rect x="17.6" y="5" width="2.4" height="14" rx="1"/><path d="M4 6.3v11.4a.9.9 0 0 0 1.4.75l8.7-5.7a.9.9 0 0 0 0-1.5L5.4 5.55A.9.9 0 0 0 4 6.3z"/>',1),
+  shuf:FZSV('<path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/>'),
+  bell:FZSV('<path d="M10.27 21a1.94 1.94 0 0 0 3.46 0M3.26 15.33A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.67C19.41 13.96 18 12.5 18 8A6 6 0 0 0 6 8c0 4.5-1.41 5.96-2.74 7.33"/>',1),
+  x:FZSV('<path d="M18 6 6 18M6 6l12 12"/>'),
+  chev:FZSV('<path d="m9 18 6-6-6-6"/>'),
+  full:FZSV('<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>'),
+  vid:FZSV('<rect x="2" y="5" width="14" height="14" rx="2.5"/><path d="m16 10 6-3.5v11L16 14"/>'),
+  link:FZSV('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
+  plus:FZSV('<path d="M12 5v14M5 12h14"/>'),
+  vlo:FZSV('<path d="M11 5 6 9H2v6h4l5 4z"/>'),
+  vhi:FZSV('<path d="M11 5 6 9H2v6h4l5 4zM15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/>'),
+  cup:FZSV('<path d="M17 8h1a4 4 0 0 1 0 8h-1M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4zM6 2v2M10 2v2M14 2v2"/>'),
+  moon:FZSV('<path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/>'),
+  rain:FZSV('<path d="M20 16.6A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25M8 19v2M8 13v2M16 19v2M16 13v2M12 21v2M12 15v2"/>'),
+  waves:FZSV('<path d="M2 7c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2c1.3 0 1.9.5 2.5 1M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2c1.3 0 1.9.5 2.5 1M2 17c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2c1.3 0 1.9.5 2.5 1"/>'),
+  wind:FZSV('<path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2M9.6 4.6A2 2 0 1 1 11 8H2M12.6 19.4A2 2 0 1 0 14 16H2"/>'),
+  noise:FZSV('<path d="M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4"/>')};
+const AMBS=[['rain','Rain','rain'],['brown','Brown','waves'],['pink','Pink','wind'],['white','White','noise'],['cafe','Café','cup']];
+const fzHm=m=>Math.floor(m/60)+'h '+pad(m%60)+'m';
 function renderFocus(){const el=$('t-focus');if(!el)return;const live=YTP&&$('mBox')&&el.contains($('mBox'))?$('mBox').closest('.panel'):null;
   const today=FOCUS.sessions.filter(s=>s.d===DAYK);const dw=DAY.dw||0;
-  const days=[...Array(7)].map((_,i)=>addDays(DAYK,i-6));const per=days.map(d=>FOCUS.sessions.filter(s=>s.d===d).reduce((a,s)=>a+s.min,0)+(d===DAYK?0:0));per[6]=Math.max(per[6],dw);const mx=Math.max(DW_TARGET,...per);
+  const days=[...Array(7)].map((_,i)=>addDays(DAYK,i-6));const per=days.map(d=>FOCUS.sessions.filter(s=>s.d===d).reduce((a,s)=>a+s.min,0));per[6]=Math.max(per[6],dw);const mx=Math.max(DW_TARGET,...per);
+  const pct=Math.min(100,Math.round(dw/DW_TARGET*100));
   const html=`<div class="focusgrid">
-  <div class="panel fcard"><div class="ph"><span class="tag" id="fPhase">${TM.phase==='break'?'break':'focus'}</span><span class="row" style="gap:6px"><button class="iconbtn" type="button" id="fPomo" aria-pressed="${FOCUS.pomo}">auto-break ${FOCUS.pomo?'on':'off'}</button><button class="iconbtn" type="button" id="fFull">⤢ focus mode</button></span></div><div class="pb">
-    <input class="fintent" id="fTask" placeholder="what are you working on?" value="${esc(FOCUS.task||'')}">
-    <div class="fring"><svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" class="rbg"/><circle cx="110" cy="110" r="100" class="rfg" id="fRing"/></svg><div class="ftime num" id="timer">--:--</div></div>
-    <div class="seg fpresets" id="tmPresets">${[90,75,50,25].map(m=>`<button type="button" data-m="${m}">${m}</button>`).join('')}<button type="button" data-m="custom">…</button></div>
-    <div class="bigbtns" style="margin-top:14px;justify-content:center"><button class="btn p fbig" type="button" id="tmGo">start</button><button class="btn" type="button" id="tmReset">stop + log</button></div>
-    <div style="margin-top:16px"><div class="dim" style="font-size:11px;margin-bottom:4px">deep work today · ${Math.floor(dw/60)}h ${pad(dw%60)}m of ${Math.floor(DW_TARGET/60)}h ${pad(DW_TARGET%60)}m</div><div class="meter"><span style="width:${Math.min(100,dw/DW_TARGET*100)}%"></span></div></div>
+  <div class="panel fcard fz"><div class="pb">
+    <div class="fz-ring"><svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" class="rbg"/><circle cx="110" cy="110" r="100" class="rfg" id="fRing"/></svg>
+      <div class="fz-in"><span class="fz-ph" id="fPhase">Focus</span><div class="fz-time num" id="timer">--:--</div><span class="fz-end num" id="fEnd"></span></div></div>
+    <div class="fz-ctl"><button type="button" class="fz-c" id="tmReset">End</button><button type="button" class="fz-c go" id="tmGo">Start</button></div>
+    <div class="fz-dur"><div class="fz-seg" id="tmPresets">${[25,50,75,90].map(m=>`<button type="button" data-m="${m}">${m}m</button>`).join('')}</div><div class="fz-step" id="tmStep"><button type="button" data-d="-5" aria-label="5 minutes less">−</button><i></i><button type="button" data-d="5" aria-label="5 minutes more">+</button></div></div>
+    <div class="fz-list">
+      <label class="fz-row"><span class="fz-ic g">${FI.moon}</span><span class="fz-t"><b>Auto break</b><small>Breaks start on their own</small></span><input type="checkbox" class="sl-sw" id="fPomo"${FOCUS.pomo?' checked':''}></label>
+      ${FOCUS.pomo?`<div class="fz-row"><span class="fz-ic b">${FI.cup}</span><span class="fz-t"><b>Break length</b></span><div class="fz-step" id="fBrk"><button type="button" data-b="-5" aria-label="Shorter break">−</button><span class="num" id="fBrkV">${FOCUS.brk} min</span><button type="button" data-b="5" aria-label="Longer break">+</button></div></div>`:''}
+      <button type="button" class="fz-row tap" id="fFull"><span class="fz-ic p">${FI.full}</span><span class="fz-t"><b>Focus mode</b><small>Full screen, nothing else</small></span><span class="fz-chev">${FI.chev}</span></button>
+    </div>
   </div></div>
   <div class="fside">
-    <div class="panel"><div class="ph"><span class="tag">audio deck</span></div><div class="pb${MUSIC.showVid?' showvid':''}" id="mBox">${musicHTML()}</div></div>
-    <div class="panel"><div class="ph"><span class="tag">ambient</span></div><div class="pb"><div class="chips" id="ambBtns" style="margin:0 0 8px">${['rain','brown','pink','white','cafe'].map(k=>`<button class="chip" type="button" data-amb="${k}" aria-pressed="${AMB.kind===k}">${k}</button>`).join('')}</div><input type="range" id="ambVol" min="0" max="100" value="${AMB.vol}" class="vol"></div></div>
-    <div class="panel"><div class="ph"><span class="tag">last 7 days</span><span class="dim">${today.length} session${today.length===1?'':'s'} today</span></div><div class="pb"><div class="wkbars" style="grid-template-columns:repeat(7,1fr);height:100px">${per.map((v,i)=>`<div class="d"><span class="p num">${v?Math.round(v/6)/10+'h':''}</span><div class="b" style="height:${v/mx*100}%"></div><span class="l">${new Date(days[i]+'T12:00').toLocaleDateString('en-GB',{weekday:'short'}).toLowerCase()}</span></div>`).join('')}</div>
-      <div class="flog">${today.map(s=>`<div><span class="num">${new Date(s.at).toTimeString().slice(0,5)}</span><span>${esc(s.task||'focus')}</span><b class="num">${s.min}m</b></div>`).join('')}</div></div></div>
+    <div class="panel fz-today"><div class="ph"><span class="tag">Today</span><span class="dim">${today.length} session${today.length===1?'':'s'}</span></div><div class="pb">
+      <div class="fz-big num">${Math.floor(dw/60)}<small>h</small> ${pad(dw%60)}<small>m</small></div><div class="fz-goal">of ${fzHm(DW_TARGET)} deep work · ${pct}%</div>
+      <div class="meter"><span style="width:${pct}%"></span></div>
+      <div class="fz-wk"><div class="gl" style="bottom:calc(22px + (100% - 22px) * ${(DW_TARGET/mx).toFixed(3)})"></div>${per.map((v,i)=>`<div class="d${i===6?' now':''}${v>=DW_TARGET?' hit':''}"><div class="bw"><div class="b" style="height:${(v/mx*100).toFixed(1)}%" title="${fzHm(v)}"></div></div><span class="l">${new Date(days[i]+'T12:00').toLocaleDateString('en-GB',{weekday:'narrow'})}</span></div>`).join('')}</div>
+      ${today.length?`<div class="fz-log">${today.map(s=>`<div><span class="t num">${new Date(s.at).toTimeString().slice(0,5)}</span><span class="n">${esc(s.task||'Focus session')}</span><b class="num">${s.min} min</b></div>`).join('')}</div>`:`<div class="fz-empty">No sessions yet today</div>`}
+    </div></div>
+    <div class="panel"><div class="ph"><span class="tag">Audio deck</span></div><div class="pb${MUSIC.showVid?' showvid':''}" id="mBox">${musicHTML()}</div></div>
+    <div class="panel"><div class="ph"><span class="tag">Ambient</span></div><div class="pb"><div class="fz-amb" id="ambBtns">${AMBS.map(([k,l,ic])=>`<button type="button" data-amb="${k}" aria-pressed="${AMB.kind===k}"><i>${FI[ic]}</i>${l}</button>`).join('')}</div>
+      <div class="fz-vol">${FI.vlo}<input type="range" id="ambVol" min="0" max="100" value="${AMB.vol}" class="fz-range" style="--v:${AMB.vol}%" aria-label="Ambient volume">${FI.vhi}</div></div></div>
   </div></div>`;
   if(live){/* swap in everything except the audio deck, so whatever is playing keeps playing */
     const tmp=document.createElement('div');tmp.innerHTML=html;const fresh=tmp.querySelector('#mBox').closest('.panel');fresh.replaceWith(document.createComment('deck'));
@@ -45,24 +80,33 @@ function renderFocus(){const el=$('t-focus');if(!el)return;const live=YTP&&$('mB
   }else el.innerHTML=html;
   drawTimer();bindFocus(!!live);
 }
+function setLen(m){TM={len:m,end:null,left:m*60,phase:'focus'};LS.set('timer',TM);drawTimer()}
 function bindFocus(keepDeck){
-  $('tmGo').onclick=()=>{if(TM.end){TM.left=tmLeft();TM.end=null;pushCancel('focus')}else{TM.end=Date.now()+TM.left*1000;if(typeof brickAuto==='function'&&TM.phase==='focus')brickAuto(true,Math.ceil(TM.left/60));if(nOn('focus'))pushOne('focus',TM.end,TM.phase==='break'?'Break over':'Focus session complete',TM.phase==='break'?'Time to get back to it':(FOCUS.task?'Finished: '+FOCUS.task:'Time for a break'),'./#tools')}LS.set('timer',TM);drawTimer();glitchAll()};
-  $('tmReset').onclick=()=>{if(TM.phase==='focus'){const done=Math.floor((TM.len*60-tmLeft())/60);logDw(done)}TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
-  $('tmPresets').onclick=e=>{const b=e.target.closest('button');if(!b)return;let m=b.dataset.m;if(m==='custom'){m=parseInt(prompt('Minutes?',TM.len)||'');if(!(m>0))return}TM={len:+m,end:null,left:+m*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
-  $('fTask').oninput=e=>{FOCUS.task=e.target.value;clearTimeout(bindFocus.t);bindFocus.t=setTimeout(()=>save('tools/focus',FOCUS),600)};
-  $('fPomo').onclick=()=>{FOCUS.pomo=!FOCUS.pomo;save('tools/focus',FOCUS);renderFocus()};
+  $('tmGo').onclick=()=>{if(TM.end){TM.left=tmLeft();TM.end=null;pushCancel('focus')}else{TM.end=Date.now()+TM.left*1000;if(typeof brickAuto==='function'&&TM.phase==='focus')brickAuto(true,Math.ceil(TM.left/60));if(nOn('focus'))pushOne('focus',TM.end,TM.phase==='break'?'Break over':'Focus session complete',TM.phase==='break'?'Time to get back to it':'Time for a break','./#tools')}LS.set('timer',TM);drawTimer();glitchAll()};
+  $('tmReset').onclick=()=>{if(TM.phase==='focus'){const done=Math.floor((TM.len*60-tmLeft())/60);logDw(done)}if(TM.end)pushCancel('focus');TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
+  $('tmPresets').onclick=e=>{const b=e.target.closest('button');if(!b||TM.end)return;setLen(+b.dataset.m)};
+  $('tmStep').onclick=e=>{const b=e.target.closest('button');if(!b||TM.end)return;setLen(Math.max(5,Math.min(240,TM.len+(+b.dataset.d))))};
+  $('fPomo').onchange=e=>{FOCUS.pomo=e.target.checked;save('tools/focus',FOCUS);setTimeout(renderFocus,220)};
+  if($('fBrk'))$('fBrk').onclick=e=>{const b=e.target.closest('button');if(!b)return;FOCUS.brk=Math.max(5,Math.min(30,(FOCUS.brk||10)+(+b.dataset.b)));$('fBrkV').textContent=FOCUS.brk+' min';save('tools/focus',FOCUS);drawTimer()};
   $('fFull').onclick=openFocusMode;
   $('mBox').onclick=musicClick;vizAttach($('vizC'));
   $('ambBtns').onclick=e=>{const b=e.target.closest('[data-amb]');if(!b)return;ambient(AMB.kind===b.dataset.amb?null:b.dataset.amb);$('ambBtns').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.amb===AMB.kind))};
   $('ambVol').oninput=e=>{AMB.vol=+e.target.value;LS.set('amb',{vol:AMB.vol});if(AMB.g)AMB.g.gain.value=AMB.vol/100*.6};
   if(deckSrc()&&!keepDeck)ensureYT();
 }
-function drawTimer(){const l=tmLeft();const tot=tmTotal();const txt=pad(Math.floor(l/60))+':'+pad(l%60);
-  ['timer','fmTime'].forEach(id=>{const t=$(id);if(t){t.textContent=txt;t.classList.toggle('run',!!TM.end)}});
-  const ring=$('fRing');if(ring){const C=628.3;ring.style.strokeDasharray=C;ring.style.strokeDashoffset=C*(l/tot);ring.classList.toggle('brk',TM.phase==='break')}
-  if($('tmGo'))$('tmGo').textContent=TM.end?'pause':(l<tot?'resume':'start');if($('fmGo'))$('fmGo').textContent=TM.end?'pause':'start';
-  if($('fPhase'))$('fPhase').textContent=TM.phase==='break'?'break':'focus';
-  if($('tmPresets'))$('tmPresets').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.m===TM.len));
+/* sliders paint their own filled track */
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.classList&&t.classList.contains('fz-range'))t.style.setProperty('--v',t.value+'%')});
+function drawTimer(){const l=tmLeft();const tot=tmTotal();const hh=Math.floor(l/3600);const txt=(hh?hh+':'+pad(Math.floor(l%3600/60)):pad(Math.floor(l/60)))+':'+pad(l%60);
+  const brk=TM.phase==='break',fresh=!TM.end&&l>=tot;
+  ['timer','fmTime'].forEach(id=>{const t=$(id);if(t){t.textContent=txt;t.classList.toggle('run',!!TM.end);t.classList.toggle('long',txt.length>5)}});
+  const f=tot?l/tot:0;['fRing','fmRing'].forEach(id=>{const r=$(id);if(r){const C=628.3;r.style.strokeDasharray=C;r.style.strokeDashoffset=(C*(1-f)).toFixed(1);r.classList.toggle('brk',brk)}});
+  const end=TM.end?new Date(TM.end):new Date(Date.now()+l*1000);const et=pad(end.getHours())+':'+pad(end.getMinutes());
+  ['fEnd','fmEnd'].forEach(id=>{const e=$(id);if(e){if(e.dataset.t!==et){e.innerHTML=FI.bell+'<span>'+et+'</span>';e.dataset.t=et}e.classList.toggle('paused',!TM.end)}});
+  const ph=brk?'Break':TM.end?'Focusing':fresh?'Focus':'Paused';['fPhase','fmPhase'].forEach(id=>{if($(id))$(id).textContent=ph});
+  ['tmGo','fmGo'].forEach(id=>{const b=$(id);if(b){b.textContent=TM.end?'Pause':fresh?'Start':'Resume';b.classList.toggle('pause',!!TM.end)}});
+  ['tmReset','fmStop'].forEach(id=>{const b=$(id);if(b){b.textContent=brk?'Skip':'End';b.disabled=fresh&&!brk}});
+  if($('tmPresets'))$('tmPresets').querySelectorAll('button').forEach(b=>{b.setAttribute('aria-pressed',+b.dataset.m===TM.len);b.disabled=!!TM.end});
+  if($('tmStep'))$('tmStep').querySelectorAll('button').forEach(b=>b.disabled=!!TM.end);
   if(TM.end&&l===0){chime();if(TM.phase==='focus'){logDw(TM.len);if(typeof brickAuto==='function')brickAuto(false);flash('block_done');shake();burst(innerWidth/2,innerHeight/2,160,true);
       TM=FOCUS.pomo?{len:TM.len,phase:'break',left:FOCUS.brk*60,end:Date.now()+FOCUS.brk*60*1000}:{len:TM.len,end:null,left:TM.len*60,phase:'focus'}}
     else{flash('back_to_work');TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'}}LS.set('timer',TM);drawTimer()}}
@@ -71,10 +115,15 @@ function chime(){try{const A=window.AudioContext||window.webkitAudioContext;cons
 
 /* focus mode (full screen) */
 function openFocusMode(){let fm=$('focusMode');if(!fm){fm=document.createElement('div');fm.id='focusMode';fm.className='focusmode';document.body.appendChild(fm)}
-  fm.innerHTML=`<button class="iconbtn fmx" type="button" id="fmX">exit</button><div class="fmtask">${esc(FOCUS.task||'deep work')}</div>${DECKS[deckNow()].audio&&deckSrc()?'<canvas class="viz fmviz" id="fmViz"></canvas>':''}<div class="fmtime num" id="fmTime"></div><div class="bigbtns" style="justify-content:center"><button class="btn p" type="button" id="fmGo">start</button>${deckSrc()?'<button class="btn" type="button" id="fmMus">⏯ audio</button><button class="btn" type="button" id="fmVid">⛶ video</button>':''}</div><div class="fmnow" id="fmNow"></div>`;
+  const src=deckSrc();
+  fm.innerHTML=`${DECKS[deckNow()].audio&&src?'<canvas class="viz fmviz" id="fmViz"></canvas>':''}<button class="fm-x" type="button" id="fmX" aria-label="Exit focus mode">${FI.x}</button>
+    <div class="fz-ring fm-ring"><svg viewBox="0 0 220 220"><circle cx="110" cy="110" r="100" class="rbg"/><circle cx="110" cy="110" r="100" class="rfg" id="fmRing"/></svg><div class="fz-in"><span class="fz-ph" id="fmPhase"></span><div class="fz-time num" id="fmTime"></div><span class="fz-end num" id="fmEnd"></span></div></div>
+    <div class="fz-ctl"><button type="button" class="fz-c" id="fmStop">End</button><button type="button" class="fz-c go" id="fmGo">Start</button></div>
+    ${src?`<div class="fm-np"><button type="button" id="fmMus" aria-label="Play audio">${FI.play}</button><span class="fm-nt" id="fmNow">Audio deck</span><button type="button" class="sec" id="fmVid" aria-label="Show video">${FI.vid}</button></div>`:''}`;
   fm.classList.add('on');try{fm.requestFullscreen&&fm.requestFullscreen().catch(()=>{})}catch(e){}
   $('fmX').onclick=()=>{fm.classList.remove('on');try{document.fullscreenElement&&document.exitFullscreen()}catch(e){}};
-  $('fmGo').onclick=()=>$('tmGo')?$('tmGo').click():null;if($('fmMus'))$('fmMus').onclick=()=>ytToggle();if($('fmVid'))$('fmVid').onclick=()=>vidFull(true);drawTimer();ytNow();vizAttach($('fmViz'))}
+  $('fmGo').onclick=()=>$('tmGo')?$('tmGo').click():null;$('fmStop').onclick=()=>$('tmReset')?$('tmReset').click():null;
+  if($('fmMus'))$('fmMus').onclick=()=>ytToggle();if($('fmVid'))$('fmVid').onclick=()=>vidFull(true);drawTimer();ytNow();vizAttach($('fmViz'))}
 
 /* music deck: lofi / private picks (audio + visualiser) · jvscholz (random livestream, video) · mine (other playlists) */
 const SCHOLZ='UULVMwo6hT5hI3R56rO2HYP-wQ'; /* James Scholz — live streams uploads list */
@@ -102,15 +151,15 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&$('mVidBox')&&$('mVidBox').c
 function openMode(d){return (MUSIC.open||{})[d]||(d==='scholz'?'random':'resume')}
 function musicHTML(){const d=deckNow(),D=DECKS[d],src=deckSrc();
   const seg=`<div class="seg deckseg" id="deckSeg">${Object.keys(DECKS).map(k=>`<button type="button" data-deck="${k}" aria-pressed="${k===d}">${DECKS[k].label}</button>`).join('')}</div>`;
-  if(!src&&d!=='mine')return seg+`<div class="dsetup"><div class="dim">Paste your ${D.label} playlist link. It has to be <b>Public</b> or <b>Unlisted</b> on YouTube — private playlists won't play outside YouTube. The link is saved to your account only, not the app's code.</div><div class="row" style="gap:6px;margin-top:8px"><input class="inp" id="dkUrl" placeholder="https://music.youtube.com/playlist?list=…" style="flex:1"><button class="btn p" type="button" id="dkSave">set</button></div></div>`;
-  const mine=d==='mine'?`<div class="mlist">${MUSIC.list.map(s=>`<div class="mstn${s.id===MUSIC.cur?' on':''}"><button type="button" data-ms="${esc(s.id)}"><span class="mthumb" style="background-image:url(${s.thumb?esc(s.thumb):''})"></span><span>${esc(s.name)}</span></button><button class="iconbtn" type="button" data-mdel="${esc(s.id)}" aria-label="Remove">✕</button></div>`).join('')}</div><button class="iconbtn" type="button" id="mAdd" style="margin-top:8px">+ add playlist</button>`:'';
+  if(!src&&d!=='mine')return seg+`<div class="dsetup"><div class="dim">Paste your ${D.label} playlist link. It has to be <b>Public</b> or <b>Unlisted</b> on YouTube — private playlists won't play outside YouTube. The link is saved to your account only, not the app's code.</div><div class="row" style="gap:6px;margin-top:8px"><input class="inp" id="dkUrl" placeholder="https://music.youtube.com/playlist?list=…" style="flex:1"><button class="btn p" type="button" id="dkSave">Save</button></div></div>`;
+  const mine=d==='mine'?`<div class="mlist">${MUSIC.list.map(s=>`<div class="mstn${s.id===MUSIC.cur?' on':''}"><button type="button" data-ms="${esc(s.id)}"><span class="mthumb" style="background-image:url(${s.thumb?esc(s.thumb):''})"></span><span>${esc(s.name)}</span></button><button class="iconbtn" type="button" data-mdel="${esc(s.id)}" aria-label="Remove">${FI.x}</button></div>`).join('')}</div><button class="dk-add" type="button" id="mAdd">${FI.plus}<span>Add playlist</span></button>`:'';
   if(!src)return seg+mine;
   const om=openMode(d);
   return seg+`<div class="deck ${D.audio?'aud':'vid'}"><div class="dscreen">${D.audio?`<canvas class="viz" id="vizC"></canvas><div class="dhud"><span id="dHudL">> ${esc(D.label)}.stream</span><span id="dHudR" class="num"></span></div>`:''}<div class="mvid${D.audio?' mini':''}" id="mVidBox"><div id="ytFrame"></div></div></div>
     <div class="mmeta"><b id="mTitle">loading…</b><span class="dim" id="mArtist"></span><div class="mprog seek" id="mSeek"><i id="mBar"></i><b id="mKnob"></b></div><div class="row" style="justify-content:space-between"><span class="dim num" id="mTime" style="font-size:10px"></span><span class="dim num" id="mIdx" style="font-size:10px"></span></div>
-    <div class="mctl"><button type="button" data-mc="prev" aria-label="Previous">⏮</button><button type="button" data-mc="play" class="mplay" id="mPlay" aria-label="Play">▶</button><button type="button" data-mc="next" aria-label="Next">⏭</button>${d==='mine'?`<button type="button" data-mc="shuf" aria-pressed="${MUSIC.shuffle}" aria-label="Shuffle">⤮</button>`:''}<input type="range" min="0" max="100" value="${MUSIC.vol}" id="mVol" class="vol" aria-label="Volume"></div>
+    <div class="mctl"><button type="button" data-mc="prev" aria-label="Previous">${FI.prev}</button><button type="button" data-mc="play" class="mplay" id="mPlay" aria-label="Play">${FI.play}</button><button type="button" data-mc="next" aria-label="Next">${FI.next}</button>${d==='mine'?`<button type="button" data-mc="shuf" class="mshuf" aria-pressed="${MUSIC.shuffle}" aria-label="Shuffle">${FI.shuf}</button>`:''}</div><div class="fz-vol">${FI.vlo}<input type="range" min="0" max="100" value="${MUSIC.vol}" id="mVol" class="fz-range" style="--v:${MUSIC.vol}%" aria-label="Volume">${FI.vhi}</div>
     <div class="mskip"><button type="button" data-sk="-10">−10s</button><button type="button" data-sk="30">+30s</button><button type="button" data-sk="120">+2m</button><button type="button" data-sk="300">+5m</button></div>
-    ${d!=='mine'?`<div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap"><span class="dim" style="font-size:10px">on open:</span><div class="seg mini" id="dkOpen"><button type="button" data-om="resume" aria-pressed="${om==='resume'}">resume</button><button type="button" data-om="random" aria-pressed="${om==='random'}">random</button></div>${D.audio?`<button class="iconbtn" type="button" id="dkVid">${showVidNow()?'hide':'show'} video</button>`:''}<button class="iconbtn" type="button" id="dkFull">⛶ fullscreen</button>${d==='lofi'&&src.type!=='vids'?`<button class="iconbtn" type="button" id="dkEdit">change playlist</button>`:''}</div>`:''}</div></div>`+mine}
+    ${d!=='mine'?`<div class="dk-opts"><div class="dk-om"><span>When opened</span><div class="fz-seg sm" id="dkOpen"><button type="button" data-om="resume" aria-pressed="${om==='resume'}">Resume</button><button type="button" data-om="random" aria-pressed="${om==='random'}">Random</button></div></div><div class="dk-btns">${D.audio?`<button type="button" id="dkVid">${FI.vid}<span>${showVidNow()?'Hide':'Show'} video</span></button>`:''}<button type="button" id="dkFull">${FI.full}<span>Full screen</span></button>${d==='lofi'&&src.type!=='vids'?`<button type="button" id="dkEdit">${FI.link}<span>Change playlist</span></button>`:''}</div></div>`:''}</div></div>`+mine}
 function addStation(){openEditor({title:'add playlist',fields:[{k:'url',label:'YouTube Music / YouTube link'},{k:'name',label:'name (optional)'}],values:{url:'',name:''},isNew:true,
   hint:'Open the playlist in YouTube Music → Share → Copy link, and paste it here.',onSave:v=>{const p=parseYT(v.url||'');if(!p){flash('not_a_youtube_link');return}
     const s={id:rid(),name:(v.name||'').trim()||(p.type==='list'?'playlist':'track'),...p,thumb:p.v||p.type==='video'?`https://i.ytimg.com/vi/${p.v||p.key}/hqdefault.jpg`:''};MUSIC.list.push(s);MUSIC.cur=s.id;MUSIC.deck='mine';save('tools/music',MUSIC);renderFocus()}})}
@@ -122,12 +171,12 @@ function musicClick(e){const b=e.target.closest('button');if(!b)return;
   if(b.id==='mAdd')return addStation();
   if(b.id==='dkSave'){const p=parseYT($('dkUrl').value||'');if(!p||p.type!=='list'){flash('paste_a_playlist_link');return}MUSIC.decks={...(MUSIC.decks||{}),[deckNow()]:p.key};delete DPOS[deckNow()];LS.set('deckpos',DPOS);save('tools/music',MUSIC);musicRender(false);return}
   if(b.id==='dkEdit'){const d=deckNow();const old=(MUSIC.decks||{})[d];MUSIC.decks={...MUSIC.decks};delete MUSIC.decks[d];musicRender(false);if(old)$('dkUrl').value='https://music.youtube.com/playlist?list='+old;MUSIC.decks[d]=old;return}
-  if(b.id==='dkVid'){const nv=!showVidNow();if(PHONE)LS.set('phonevid',nv);else{MUSIC.showVid=nv;save('tools/music',MUSIC)}$('mBox').classList.toggle('showvid',nv);b.textContent=(nv?'hide':'show')+' video';return}
+  if(b.id==='dkVid'){const nv=!showVidNow();if(PHONE)LS.set('phonevid',nv);else{MUSIC.showVid=nv;save('tools/music',MUSIC)}$('mBox').classList.toggle('showvid',nv);b.querySelector('span').textContent=(nv?'Hide':'Show')+' video';return}
   if(b.id==='dkFull'){vidFull(true);return}
   if(b.id==='vfX')return;
   if(b.dataset.om){MUSIC.open={...(MUSIC.open||{}),[deckNow()]:b.dataset.om};$('dkOpen').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));save('tools/music',MUSIC);return}
   if(b.dataset.ms){MUSIC.cur=b.dataset.ms;save('tools/music',MUSIC);musicRender(true);return}
-  if(b.dataset.mdel){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='?';return}MUSIC.list=MUSIC.list.filter(x=>x.id!==b.dataset.mdel);if(MUSIC.cur===b.dataset.mdel)MUSIC.cur=null;save('tools/music',MUSIC);musicRender(false);return}
+  if(b.dataset.mdel){if(!b.dataset.arm){b.dataset.arm=1;b.classList.add('arm');b.textContent='Delete';return}MUSIC.list=MUSIC.list.filter(x=>x.id!==b.dataset.mdel);if(MUSIC.cur===b.dataset.mdel)MUSIC.cur=null;save('tools/music',MUSIC);musicRender(false);return}
   const c=b.dataset.mc;if(!c||!YTP)return;
   if(c==='play')ytToggle();
   if(c==='next'){if(DECKS[deckNow()].random)ytRandom();else if(ytVids())vidStep(1);else YTP.nextVideo&&YTP.nextVideo()}
@@ -142,7 +191,7 @@ function bindSeek(){const el=$('mSeek');if(!el)return;const frac=e=>{const r=el.
   el.onpointerup=el.onpointercancel=e=>{if(!mSeekDrag)return;mSeekDrag=false;try{YTP.seekTo(frac(e)*YTP.getDuration(),true)}catch(x){}}}
 function ytToggle(){if(!YTP||!YTP.getPlayerState)return;const st=YTP.getPlayerState();if(st===1||st===3){YTP.pauseVideo();ytBtn(false);return}YTP.playVideo();ytBtn(true);ytKick()}
 /* the play button follows the player itself, not just its change events — those get dropped */
-function ytBtn(on){if($('mPlay')){$('mPlay').textContent=on?'⏸':'▶';$('mPlay').setAttribute('aria-label',on?'Pause':'Play')}if($('fmMus'))$('fmMus').textContent=on?'⏸ audio':'▶ audio'}
+function ytBtn(on){['mPlay','fmMus'].forEach(id=>{const b=$(id);if(b&&b.dataset.on!==String(on)){b.dataset.on=on;b.innerHTML=on?FI.pause:FI.play;b.setAttribute('aria-label',on?'Pause':'Play')}})}
 /* iOS sometimes needs one tap on the actual video before the API can start it: reveal it if play didn't take */
 function ytKick(){clearTimeout(ytKick.t);ytKick.t=setTimeout(()=>{try{const st=YTP.getPlayerState();if(st!==1&&st!==3&&$('mBox')&&!$('mBox').classList.contains('showvid')){$('mBox').classList.add('showvid');flash('tap_the_video_once')}}catch(e){}},2500)}
 function ensureYT(play,mode){const s=deckSrc();if(!s||!$('ytFrame'))return;
@@ -169,7 +218,7 @@ function fmtT(x){x=Math.floor(x||0);const h=Math.floor(x/3600),m=Math.floor(x%36
 function ytNow(){if(!YTP||!YTP.getVideoData)return;let d={};try{d=YTP.getVideoData()||{}}catch(e){}const st=YTP.getPlayerState?YTP.getPlayerState():-1;VIZ.on=st===1;
   if($('mTitle'))$('mTitle').textContent=d.title||(st===-1||st===5?'ready':'loading…');if($('mArtist'))$('mArtist').textContent=d.author||'';ytBtn(st===1||st===3);
   try{const ids=ytVids();if(ids&&$('mIdx')){const i=ids.indexOf(d.video_id);$('mIdx').textContent=(i>=0?'#'+(i+1)+' / ':'')+ids.length}const pl=YTP.getPlaylist&&YTP.getPlaylist();if(pl&&pl.length&&$('mIdx'))$('mIdx').textContent='#'+(YTP.getPlaylistIndex()+1)+' / '+pl.length}catch(e){}
-  if($('fmNow'))$('fmNow').textContent=d.title?'♪ '+d.title+(d.author?' — '+d.author:''):'';
+  if($('fmNow'))$('fmNow').textContent=d.title?d.title+(d.author?' — '+d.author:''):'Audio deck';
   const s=deckSrc();if(s&&s.deck==='mine'&&d.video_id){const m=MUSIC.list.find(x=>x.id===s.id);if(m&&!m.thumb){m.thumb=`https://i.ytimg.com/vi/${d.video_id}/hqdefault.jpg`;save('tools/music',MUSIC)}}}
 setInterval(()=>{if(!YTP||!YTP.getCurrentTime||!ytReady)return;try{const t=YTP.getCurrentTime(),du=YTP.getDuration();if($('mBar')&&!mSeekDrag){$('mBar').style.width=(du?t/du*100:0)+'%';$('mKnob').style.left=(du?t/du*100:0)+'%'}if($('mTime'))$('mTime').textContent=fmtT(t)+' / '+fmtT(du);const ps=YTP.getPlayerState();ytBtn(ps===1||ps===3);VIZ.on=ps===1;if($('dHudR'))$('dHudR').textContent=(ps===1?'▶ ':'❚❚ ')+fmtT(t);
   const s=deckSrc();if(s&&s.deck!=='mine'&&YTP.getPlayerState()===1&&t>5&&!mSeekDrag){const v=(YTP.getVideoData()||{}).video_id;if(v){DPOS[s.deck]={key:s.key,v,t};DPOS.n=(DPOS.n||0)+1;if(DPOS.n%5===0)LS.set('deckpos',DPOS)}}}catch(e){}},1000);
