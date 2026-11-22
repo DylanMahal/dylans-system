@@ -34,7 +34,7 @@ watch('money/actuals',d=>{if(d){ACT={months:{},...d};if(!document.activeElement|
 function avShift(n){const [y,m]=AVM.split('-').map(Number);const d=new Date(y,m-1+n,1);AVM=d.getFullYear()+'-'+pad(d.getMonth()+1);renderActuals()}
 function renderActuals(){const el=$('avBody');if(!el||!M.cats)return;
   $('avMon').textContent=new Date(AVM+'-01T12:00').toLocaleDateString('en-GB',{month:'short',year:'numeric'});
-  const cats=Object.entries(M.cats).filter(([c])=>c!=='Investment & Savings').sort((a,b)=>b[1]-a[1]);const mon=ACT.months[AVM]||{};
+  const cats=Object.entries(M.cats).filter(([c])=>c!=='Investment & Savings'&&c!=='Stack').sort((a,b)=>b[1]-a[1]);const mon=ACT.months[AVM]||{};
   const tb=cats.reduce((a,[,b])=>a+b,0),ta=cats.reduce((a,[c])=>a+(+mon[c]||0),0),logged=cats.some(([c])=>mon[c]!=null&&mon[c]!=='');
   const hist=[...Array(6)].map((_,i)=>{const [y,m]=AVM.split('-').map(Number);const d=new Date(y,m-6+i,1);const k=d.getFullYear()+'-'+pad(d.getMonth()+1);const mm=ACT.months[k]||{};return {k,a:cats.reduce((s,[c])=>s+(+mm[c]||0),0)}});const hmx=Math.max(tb,...hist.map(h=>h.a))||1;
   el.innerHTML=`<div class="av">${cats.map(([c,b])=>{const a=mon[c];const has=a!=null&&a!=='';const pct=has?Math.min(150,(+a)/(b||1)*100):0;const over=has&&+a>b;
