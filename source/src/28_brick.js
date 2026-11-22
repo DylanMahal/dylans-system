@@ -29,55 +29,68 @@ function bLeft(){return BRICK.on&&BRICK.until?Math.max(0,Math.round((BRICK.until
 const bToday=()=>BRICK.sessions.filter(s=>s.d===DAYK).reduce((a,s)=>a+s.min,0)+(BRICK.on&&BRICK.since?bMin(BRICK.since,Date.now()):0);
 function bStreak(){let n=0;for(let i=0;;i++){const d=addDays(DAYK,-i);const m=BRICK.sessions.filter(s=>s.d===d).reduce((a,s)=>a+s.min,0)+(i===0&&BRICK.on&&BRICK.since?bMin(BRICK.since,Date.now()):0);
   if(m>=25)n++;else if(i>0)break;else if(!n&&i===0)break}return n}
+function bHMS(s){return (s>=3600?Math.floor(s/3600)+':':'')+pad(Math.floor(s/60)%60)+':'+pad(s%60)}
+const bHM=m=>m>=60?Math.floor(m/60)+'h '+pad(m%60)+'m':m+'m';
+function bLife(){const st=+BRICK.st,age=+BRICK.age,goal=BRICK.goalH==null?2:+BRICK.goalH;
+  if(!(st>0)||!(age>0))return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span></div>
+    <p class="bk-p">Two numbers and you'll see how much of the rest of your life your phone is on track to take.</p>
+    <div class="bk-form"><label class="bk-frow"><span>Daily screen time<small>Settings → Screen Time → daily average</small></span><span class="bk-in"><input class="inp num" id="bkST" inputmode="decimal" placeholder="4.5"><em>h</em></span></label>
+    <label class="bk-frow"><span>Your age</span><span class="bk-in"><input class="inp num" id="bkAge" inputmode="numeric" placeholder="22" value="${BRICK.age||''}"><em>yrs</em></span></label></div>
+    <button class="btn p bk-wide" type="button" id="bkLifeGo">Show me</button></div>`;
+  const left=Math.max(1,80-age),yrs=left*st/24,goalY=left*Math.min(st,goal)/24,back=Math.max(0,yrs-goalY),waking=Math.round(st/16*100);
+  const sl=left*8/24,free=left-sl-yrs;const W=x=>(x/left*100).toFixed(2)+'%';
+  return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span><button class="bk-link" type="button" id="bkLifeEd">Edit</button></div>
+    <div class="bk-big num">${yrs.toFixed(1)}<small> years</small></div>
+    <p class="bk-p">of the rest of your life will be spent looking at your phone, at <b>${String(st).replace(/\.0$/,'')}h a day</b> from ${age} to 80. That's <b>${waking}%</b> of every waking hour.</p>
+    <div class="bk-lifebar"><i style="width:${W(yrs)};background:var(--pink)"></i><i style="width:${W(sl)};background:#5e5ce6"></i><i style="width:${W(Math.max(0,free))};background:rgba(255,255,255,.14)"></i></div>
+    <div class="bk-keys"><span><i style="background:var(--pink)"></i>phone ${yrs.toFixed(1)}y</span><span><i style="background:#5e5ce6"></i>sleep ${sl.toFixed(0)}y</span><span><i style="background:rgba(255,255,255,.3)"></i>everything else ${Math.max(0,free).toFixed(1)}y</span></div>
+    <div class="bk-goal"><div><span>Cut it to</span><div class="bk-step"><button type="button" data-gh="-0.5" aria-label="Less">−</button><b class="num">${String(goal).replace(/\.0$/,'')}h</b><button type="button" data-gh="0.5" aria-label="More">+</button></div><span>a day</span></div>
+      <div class="bk-back"><b class="num">+${back.toFixed(1)} years</b><span>of your life back</span></div></div></div>`}
 function renderBrick(){const el=$('t-brick');if(!el)return;if(!brickLoaded){loadBrick();return}
-  const l=bLeft(),today=bToday();
+  const l=bLeft(),today=bToday(),streak=bStreak();
   const days=[...Array(7)].map((_,i)=>addDays(DAYK,i-6));
   const per=days.map(d=>BRICK.sessions.filter(s=>s.d===d).reduce((a,s)=>a+s.min,0)+(d===DAYK&&BRICK.on&&BRICK.since?bMin(BRICK.since,Date.now()):0));
-  const mx=Math.max(60,...per);const log=BRICK.sessions.filter(s=>s.d===DAYK).slice(0,8);
-  const ready=BRICK.sOn&&BRICK.sOff;
-  el.innerHTML=`<div class="focusgrid">
-    <div class="panel bkcard${BRICK.on?' on':''}"><div class="ph"><span class="tag">${BRICK.on?'bricked':'unbricked'}</span><span class="dim">${esc(BRICK.sOn||'no shortcut set')}</span></div><div class="pb">
-      <div class="bkslab">
-        <svg viewBox="0 0 120 150" class="bkico" aria-hidden="true"><rect x="18" y="34" width="84" height="104" rx="12" fill="none" stroke="currentColor" stroke-width="5"/><path d="M38 34V22a22 22 0 0 1 44 0v12" fill="none" stroke="currentColor" stroke-width="5" ${BRICK.on?'':'transform="rotate(26 82 34)"'}/><circle cx="60" cy="80" r="8" fill="currentColor"/><rect x="56" y="86" width="8" height="22" rx="4" fill="currentColor"/></svg>
-        <div class="bkstate"><b>${BRICK.on?(l!=null?pad(Math.floor(l/3600))+':'+pad(Math.floor(l/60)%60)+':'+pad(l%60):'locked'):'phone is open'}</b>
-          <span class="dim">${BRICK.on?(l!=null?'until '+new Date(BRICK.until).toTimeString().slice(0,5):'open-ended · end it when you’re done'):(today?Math.floor(today/60)+'h '+pad(today%60)+'m bricked today':'nothing bricked today')}</span></div>
-      </div>
-      ${BRICK.on?`<div class="bigbtns" style="justify-content:center;margin-top:4px"><button class="btn${BRICK.strict&&l?'':' p'} fbig" type="button" id="bkOff">${BRICK.strict&&l?'break the brick':'unbrick'}</button></div>`
-        :`<div class="seg fpresets" id="bkPre">${[25,50,90,180].map(m=>`<button type="button" data-m="${m}">${m>=60?m/60+'h':m+'m'}</button>`).join('')}<button type="button" data-m="0">open</button><button type="button" data-m="custom">…</button></div>
-          <div class="bigbtns" style="justify-content:center;margin-top:14px"><button class="btn p fbig" type="button" id="bkOn"${ready?'':' disabled'}>brick my phone</button></div>
-          ${ready?'':'<div class="dim bkwarn">set up the shortcut first — see the panel on the right</div>'}`}
-      <div class="bkrow"><label class="bkchk"><input type="checkbox" id="bkAuto" ${BRICK.auto?'checked':''}> brick when a focus timer starts</label>
-        <label class="bkchk"><input type="checkbox" id="bkStrict" ${BRICK.strict?'checked':''}> strict · confirm before ending early</label></div>
-      <div style="margin-top:14px"><div class="dim" style="font-size:11px;margin-bottom:4px">bricked today · ${Math.floor(today/60)}h ${pad(today%60)}m${bStreak()?` · ${bStreak()} day streak`:''}</div><div class="meter"><span style="width:${Math.min(100,today/120*100)}%"></span></div></div>
-    </div></div>
-    <div class="fside">
-      <div class="panel"><div class="ph"><span class="tag">last 7 days</span><span class="dim">${log.length} session${log.length===1?'':'s'} today</span></div><div class="pb">
-        <div class="wkbars" style="grid-template-columns:repeat(7,1fr);height:100px">${per.map((v,i)=>`<div class="d"><span class="p num">${v?Math.round(v/6)/10+'h':''}</span><div class="b" style="height:${v/mx*100}%"></div><span class="l">${new Date(days[i]+'T12:00').toLocaleDateString('en-GB',{weekday:'short'}).toLowerCase()}</span></div>`).join('')}</div>
-        <div class="flog">${log.map(s=>`<div><span class="num">${new Date(s.at).toTimeString().slice(0,5)}</span><span>${s.broke?'ended early':'full session'}</span><b class="num">${s.min}m</b></div>`).join('')||'<div class="dim" style="font-size:11px">no sessions yet today</div>'}</div>
-      </div></div>
-      <div class="panel"><div class="ph"><span class="tag">shortcuts</span><span class="dim">iphone</span></div><div class="pb">
-        <div class="fl"><span>shortcut that locks the phone</span><input class="inp" id="bkSOn" value="${esc(BRICK.sOn||'')}" placeholder="Brick On"></div>
-        <div class="fl"><span>shortcut that unlocks it</span><input class="inp" id="bkSOff" value="${esc(BRICK.sOff||'')}" placeholder="Brick Off"></div>
-        <div class="chips" style="margin-top:8px"><button class="chip" type="button" id="bkTestOn">test lock</button><button class="chip" type="button" id="bkTestOff">test unlock</button></div>
-        <div class="dim bknote">The name must match the Shortcut on your iPhone exactly. If you own the real Brick, use its own shortcuts here.</div>
-      </div></div>
-      <div class="panel"><div class="ph"><span class="tag">how to set it up</span></div><div class="pb">
-        <ol class="bksteps">
-          <li><b>Make a Focus.</b> Settings → Focus → + → Custom, call it <b>Brick</b>. Allow no apps and no people to notify you.</li>
-          <li><b>Hide the apps.</b> In that Focus, under Home Screen, turn on Custom Pages and pick a page with only what you need (phone, maps, this app). Everything else disappears while it's on.</li>
-          <li><b>Lock the escape hatch.</b> Settings → Screen Time → turn on a passcode you don't know by heart (or have someone else set it), then App Limits for the apps you lose hours to.</li>
-          <li><b>Two shortcuts.</b> In the Shortcuts app make <b>Brick On</b> = "Set Focus → Brick → On", and <b>Brick Off</b> = "Set Focus → Brick → Off".</li>
-          <li><b>Come back here</b> and tap test lock. Your phone should go quiet and the apps should vanish.</li>
-        </ol>
-        <div class="dim bknote">Honest limit: this app can't block apps by itself — only Apple's Screen Time can, and that's native-app territory. The Focus above hides and silences them, Screen Time enforces the hard limits, and this screen is the switch and the record.</div>
-      </div></div>
-    </div></div>`;
-  bindBrick();if(typeof toolCardSubs==='function')toolCardSubs();clearInterval(brickTick);if(BRICK.on)brickTick=setInterval(()=>{if(cur==='tools'&&TOOLV==='brick'&&!document.hidden){const x=bLeft();if(x===0)bEnd(true);else renderBrick()}},1000)}
+  const week=per.reduce((a,b)=>a+b,0),mx=Math.max(60,...per),log=BRICK.sessions.filter(s=>s.d===DAYK).slice(0,8);
+  const all=BRICK.sessions.reduce((a,s)=>a+s.min,0)+(BRICK.on&&BRICK.since?bMin(BRICK.since,Date.now()):0);
+  const ready=BRICK.sOn&&BRICK.sOff,pre=BRICK.pre==null?25:BRICK.pre;
+  const tot=BRICK.on&&BRICK.until?(BRICK.until-BRICK.since)/1000:0,pct=tot?Math.max(0,Math.min(100,(1-l/tot)*100)):0;
+  const sw=(id,on,t,s)=>`<label class="bk-frow"><span>${t}<small>${s}</small></span><input type="checkbox" class="sl-sw" id="${id}" ${on?'checked':''}></label>`;
+  const hero=BRICK.on?`<div class="bk-card bk-hero on">
+      <div class="bk-ringw"><div class="sl-ring" style="width:210px;height:210px"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" class="tr" stroke-width="5"/><circle id="bkRing" cx="50" cy="50" r="46" class="fl" stroke="var(--pink)" stroke-width="5" pathLength="100" stroke-dasharray="${(l!=null?pct:100).toFixed(2)} 100"/></svg>
+        <div class="in"><svg viewBox="0 0 24 24" width="22" height="22" class="bk-lk"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="currentColor"/><path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" fill="none" stroke="currentColor" stroke-width="2"/></svg><b class="num" id="bkLeft">${l!=null?bHMS(l):bHM(bMin(BRICK.since,Date.now()))}</b><span>${l!=null?'until '+new Date(BRICK.until).toTimeString().slice(0,5):'bricked · open-ended'}</span></div></div></div>
+      <div class="bk-title">Phone bricked</div><p class="bk-p c">Stay with it. Everything you blocked will be there when the time's up.</p>
+      <button class="btn ${BRICK.strict&&l?'d':'p'} bk-wide" type="button" id="bkOff">${BRICK.strict&&l?'Break the brick':'Unbrick'}</button></div>`
+    :`<div class="bk-card bk-hero">
+      <div class="bk-lock"><svg viewBox="0 0 24 24" width="40" height="40"><rect x="5" y="10.5" width="14" height="10" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M8 10.5V8a4 4 0 0 1 7.6-1.7" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/></svg></div>
+      <div class="bk-title">Phone is open</div><p class="bk-p c">${today?bHM(today)+' bricked today':'Nothing bricked yet today'}</p>
+      <div class="bk-lab">Duration</div>
+      <div class="seg bk-pre" id="bkPre">${[25,50,90,180].map(m=>`<button type="button" data-m="${m}" aria-pressed="${pre===m}">${m>=60?(m/60+'h').replace('.5h','½h'):m+'m'}</button>`).join('')}<button type="button" data-m="0" aria-pressed="${pre===0}">Open</button><button type="button" data-m="custom" aria-pressed="${![0,25,50,90,180].includes(pre)}">${![0,25,50,90,180].includes(pre)?pre+'m':'Custom'}</button></div>
+      <button class="btn p bk-wide bk-go" type="button" id="bkOn"${ready?'':' disabled'}>Brick my phone</button>
+      ${ready?'':'<div class="bk-warn">Set up the shortcuts first, see Setup below.</div>'}
+      <div class="bk-form bk-opts">${sw('bkStrict',BRICK.strict,'Strict mode','Ending early needs confirming and is logged')}${sw('bkAuto',BRICK.auto,'Brick with focus timer','Locks when a focus timer starts')}</div></div>`;
+  const tile=(lab,v,s)=>`<div class="sl-tile"><span>${lab}</span><b class="num">${v}</b><em>${s}</em></div>`;
+  el.innerHTML=`<div class="bk-grid"><div class="bk-col">${hero}
+    <div class="sl-tiles bk-tiles">${tile('Today',bHM(today),log.length+' session'+(log.length===1?'':'s'))}${tile('Streak',streak+'<small> day'+(streak===1?'':'s')+'</small>','25 min+ a day')}${tile('This week',bHM(week),'last 7 days')}${tile('Reclaimed',(all/60).toFixed(all<600?1:0)+'<small> h</small>','≈ '+(all/1440).toFixed(1)+' days, all time')}</div></div>
+    <div class="bk-col">${bLife()}
+    <div class="bk-card"><div class="bk-h"><span>Last 7 days</span><em>${bHM(week)}</em></div>
+      <div class="bk-bars">${per.map((v,i)=>`<div><em class="num">${v?(v/60).toFixed(1)+'h':''}</em><span style="height:${(v/mx*100).toFixed(1)}%"${days[i]===DAYK?' class="t"':''}></span><small>${new Date(days[i]+'T12:00').toLocaleDateString('en-GB',{weekday:'narrow'})}</small></div>`).join('')}</div>
+      ${log.length?`<div class="sl-rows bk-log">${log.map(s=>`<div><span><i class="dot" style="background:${s.broke?'#ff453a':'#30d158'}"></i>${new Date(s.at).toTimeString().slice(0,5)}<small>${s.broke?'ended early':'completed'}</small></span><b class="num">${bHM(s.min)}</b></div>`).join('')}</div>`:''}</div>
+    <div class="bk-card"><details class="sl-det bk-setup"${ready?'':' open'}><summary>Setup</summary>
+      <ol class="sl-steps">
+        <li><b>Jomo</b> (free): Rules → Start blocking → pick the apps to block, turn on <b>Strict Mode</b>, save it as <b>Brick</b>.</li>
+        <li><b>Focus</b> (optional, for silence): Settings → Focus → + → Custom, call it <b>Brick</b>, allow no people or apps.</li>
+        <li>Shortcuts app → <b>Brick On</b> = Set Focus Brick On + Jomo <i>Start Session</i> (Brick). <b>Brick Off</b> = Set Focus Off + Jomo <i>Stop Session</i>.</li>
+        <li>Tap <b>Test lock</b> below. Your blocked apps should grey out and refuse to open.</li></ol>
+      <div class="bk-form" style="margin-top:12px"><label class="bk-frow"><span>Lock shortcut</span><input class="inp" id="bkSOn" value="${esc(BRICK.sOn||'')}" placeholder="Brick On"></label><label class="bk-frow"><span>Unlock shortcut</span><input class="inp" id="bkSOff" value="${esc(BRICK.sOff||'')}" placeholder="Brick Off"></label></div>
+      <div class="sl-btns"><button class="btn" type="button" id="bkTestOn">Test lock</button><button class="btn" type="button" id="bkTestOff">Test unlock</button></div>
+      <div class="sl-note">Names must match your Shortcuts exactly. The blocking itself is done by Jomo through Apple's Screen Time. This app is the switch and the record.</div></details></div>
+  </div></div>`;
+  bindBrick();if(typeof toolCardSubs==='function')toolCardSubs();clearInterval(brickTick);if(BRICK.on)brickTick=setInterval(()=>{if(cur==='tools'&&TOOLV==='brick'&&!document.hidden){const x=bLeft();if(x===0){bEnd(true);return}const t=$('bkLeft');if(!t)return;if(x!=null){t.textContent=bHMS(x);const r=$('bkRing'),T=(BRICK.until-BRICK.since)/1000;if(r)r.setAttribute('stroke-dasharray',Math.max(0,Math.min(100,(1-x/T)*100)).toFixed(2)+' 100')}else t.textContent=bHM(bMin(BRICK.since,Date.now()))}},1000)}
 function bindBrick(){
   if($('bkOn'))$('bkOn').onclick=()=>{bStart(BRICK.pre==null?25:BRICK.pre)};
   if($('bkPre'))$('bkPre').onclick=e=>{const b=e.target.closest('button');if(!b)return;let m=b.dataset.m;
     if(m==='custom'){m=parseInt(prompt('Brick for how many minutes?','60')||'');if(!(m>0))return}
-    BRICK.pre=+m;$('bkPre').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.m===String(m)));bStart(+m)};
+    BRICK.pre=+m;bSave();renderBrick()};
   if($('bkOff'))$('bkOff').onclick=()=>{const l=bLeft();
     if(BRICK.strict&&l){openSheet('end early?',`<div class="gc-det"><p>${Math.ceil(l/60)} minutes left. Ending now goes in the log as a broken session.</p><div class="bigbtns"><button class="btn" type="button" id="bkYes">end it anyway</button><button class="btn p" type="button" id="bkNo">keep going</button></div></div>`);
       $('sheetBody').onclick=e=>{if(e.target.id==='bkYes'){closeSheet();bEnd(false)}if(e.target.id==='bkNo')closeSheet()};return}
@@ -87,7 +100,10 @@ function bindBrick(){
   const nm=(id,k)=>{const n=$(id);if(n)n.oninput=e=>{BRICK[k]=e.target.value.trim();clearTimeout(bindBrick['t'+k]);bindBrick['t'+k]=setTimeout(bSave,700)}};
   nm('bkSOn','sOn');nm('bkSOff','sOff');
   if($('bkTestOn'))$('bkTestOn').onclick=()=>bRun($('bkSOn').value.trim());
-  if($('bkTestOff'))$('bkTestOff').onclick=()=>bRun($('bkSOff').value.trim());}
+  if($('bkTestOff'))$('bkTestOff').onclick=()=>bRun($('bkSOff').value.trim());
+  if($('bkLifeGo'))$('bkLifeGo').onclick=()=>{const st=parseFloat(($('bkST').value||'').replace(',','.')),age=parseInt($('bkAge').value);if(!(st>0&&st<24)||!(age>0&&age<100)){bToast('Enter your daily hours and age');return}BRICK.st=st;BRICK.age=age;bSave();renderBrick()};
+  if($('bkLifeEd'))$('bkLifeEd').onclick=()=>{BRICK.st=null;renderBrick()};
+  document.querySelectorAll('#t-brick [data-gh]').forEach(b=>b.onclick=()=>{BRICK.goalH=Math.max(0,Math.min(+BRICK.st||12,(BRICK.goalH==null?2:+BRICK.goalH)+ +b.dataset.gh));bSave();renderBrick()});}
 /* called by the focus timer */
 function brickAuto(on,mins){if(!BRICK.auto||!BRICK.sOn)return;
   if(on){if(!BRICK.on)bStart(mins||null)}else if(BRICK.on)bEnd(true)}
