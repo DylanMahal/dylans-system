@@ -127,4 +127,8 @@ function hEdit(h){const isNew=!h;h=h?clone(h):{id:rid(),n:'',ic:'💪',col:HCOLS
     if(b.id==='heDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='tap again';return}HAB.list=HAB.list.filter(x=>x.id!==h.id);hSave();closeSheet();renderHabits();return}
     if(b.id==='heOk'){read();if(!h.n){$('heN').focus();return}const i=HAB.list.findIndex(x=>x.id===h.id);if(i>=0)HAB.list[i]=h;else HAB.list.push(h);hSave();hWidget();closeSheet();renderHabits();if(typeof pushSync==='function')pushSync()}}}
 /* widget feed: a small summary doc any future widget can read */
-function hWidget(){const L=hAll();save('widget/streaks',{at:new Date().toISOString(),day:DAYK,items:L.map(h=>({n:hName(h),ic:h.ic,col:h.col,streak:hStreak(h).n,unit:hStreak(h).unit,done:hDone(h,DAYK),due:hDue(h,DAYK),c:hCnt(h,DAYK),t:hTarget(h)}))})}
+let hWLast='';function hWidget(){if(!habLoaded)return;const L=hAll(),s0=hAdd(hWeekStart(DAYK),-77);
+  /* g: 84 days from a Monday 11 weeks back — 1 done, 0 missed, . not due, f future */
+  const g=h=>{let o='';for(let i=0;i<84;i++){const k=hAdd(s0,i);o+=k>DAYK?'f':(h.created&&k<h.created)||!hDue(h,k)?'.':hDone(h,k)?'1':'0'}return o};
+  const w={day:DAYK,from:s0,items:L.map(h=>{const st=hStreak(h);return {n:hName(h),ic:h.ic,col:h.col,streak:st.n,unit:st.unit,done:hDone(h,DAYK),due:hDue(h,DAYK),c:hCnt(h,DAYK),t:hTarget(h),g:g(h)}})};
+  const sig=JSON.stringify(w);if(sig===hWLast)return;hWLast=sig;save('widget/streaks',{at:new Date().toISOString(),...w},true)}

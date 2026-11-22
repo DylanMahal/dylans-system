@@ -34,3 +34,8 @@ for f in os.listdir('static'):shutil.copy(os.path.join('static',f),os.path.join(
 os.makedirs(os.path.join(dist,'vendor'),exist_ok=True)
 _z=os.path.join(os.path.dirname(os.path.abspath(__file__)),'vendor_keep','zxing.min.js')
 shutil.copy(_z,os.path.join(dist,'vendor','zxing.min.js')) if os.path.exists(_z) else None
+# home-screen widgets (Scriptable): the code the loader fetches, and the loader itself
+_app='https://dylanmahal.github.io/dylans-system/'
+for _src,_out in (('widget/system-widget.js','widget.js'),('widget/loader.js','widget-loader.js')):
+    _w=open(_src).read().replace('__URL__',cfg.get('supabaseUrl','')).replace('__KEY__',cfg.get('supabaseKey','')).replace('__APP__',_app)
+    open(os.path.join(dist,_out),'w').write(_w)

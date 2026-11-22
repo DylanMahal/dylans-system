@@ -67,6 +67,7 @@ function publishWidget(){if(!R||!booted||!M.plans)return;
     items:vis.map(i=>({t:fmtM(i.t),n:i.item,d:!!DAY.ticks[i.tk],c:!!i.cmp})),water:DAY.water||0,waterTarget:(SET&&SET.water)||8,dw:DAY.dw||0,lc:typeof leetWeek==='function'?leetWeek():0,
     habits:habLoaded?hAll().filter(h=>hDue(h,DAYK)).slice(0,12).map(h=>({l:h.n,d:hDone(h,DAYK)})):[]};
   /* only write when something on it changed (stamp the time at most hourly, so the widget can tell it's fresh) */
+  if(habLoaded)try{hWidget()}catch(e){}
   const sig=JSON.stringify({...w,at:0}),fresh=Date.now()-(+new Date(widgetAt||0))<36e5;if(sig===widgetLast&&fresh)return;widgetLast=sig;widgetAt=w.at;save('widget/today',w,true)}
 let widgetAt=null;
 
