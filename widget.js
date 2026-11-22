@@ -391,7 +391,8 @@ function wHabits(s) {
 async function dWeek() {
   const C = (await docs(['cal/week']))['cal/week'] || {}, k = dayK(), mon = monOf(k), ex = C.ex || {};
   const mn = t => { const [h, m] = String(t || '0:0').split(':'); return +h * 60 + +m };
-  const days = [...Array(7)].map((_, i) => addD(mon, i)).map(key => {
+  const span = Math.max(7, Math.round((new Date(addD(k, 2) + 'T12:00') - new Date(mon + 'T12:00')) / 864e5) + 1);
+  const days = [...Array(span)].map((_, i) => addD(mon, i)).map(key => {
     const dow = String((new Date(key + 'T12:00').getDay() + 6) % 7 + 1), out = [];
     const mk = x => { const m = x[7] && typeof x[7] === 'object' ? x[7] : {}; return { t: x[0], c: x[1], ad: !!m.ad, s: m.ad ? 0 : mn(x[3]), e: m.ad ? 1440 : (mn(x[4]) || 1440) } };
     (C.ev || []).forEach(x => { const m = x[7] && typeof x[7] === 'object' ? x[7] : {}; if (String(x[2]).includes(dow) && (!m.from || key >= m.from) && (!m.until || key <= m.until) && !(ex[x[6]] || []).includes(key)) out.push(mk(x)) });
@@ -700,33 +701,31 @@ function cvWeek(d, f) {
     });
     return c;
   }
-  /* large: the week as a time grid */
-  const timed = d.days.flatMap(x => x.ev.filter(e => !e.ad));
-  const h0 = Math.min(8, ...timed.map(e => Math.floor(e.s / 60))), h1 = Math.max(22, ...timed.map(e => Math.ceil(Math.min(e.e, 1440) / 60)));
-  const lx = P + 18, top = P + 42, colW = (W - P - lx) / 7, ph = (H - P - top) / ((h1 - h0) * 60), N = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-  d.days.forEach((x, i) => {
-    const cx = lx + i * colW + colW / 2, isT = i === ti;
-    T(c, N[i], cx, P, 10, 's', isT ? new Color('#ff453a') : K.t3, 'c');
-    if (isT) { c.setFillColor(new Color('#ff453a')); c.fillEllipse(new Rect(cx - 11, P + 14, 22, 22)) }
-    T(c, new Date(x.k + 'T12:00').getDate(), cx, P + 17, 13, 'b', isT ? K.t1 : K.t2, 'c');
-  });
-  for (let h = h0; h <= h1; h += 2) { const y = top + (h - h0) * 60 * ph; c.setFillColor(K.trk2); c.fillRect(new Rect(lx, y, W - P - lx, 1)); if (h < 24) T(c, h, lx - 5, y - 6, 9, 'm', K.t3, 'r') }
-  const xl = f === 'extraLarge', fsz = xl ? 10 : 8.5;
-  d.days.forEach((x, i) => {
-    /* lay out clashes side by side, like the app's calendar */
+  /* large / extra-large: three days from today, with room to read each event */
+  const D3 = d.days.slice(ti, ti + 3), timed = D3.flatMap(x => x.ev.filter(e => !e.ad)), xl = f === 'extraLarge';
+  const h0 = Math.min(8, ...timed.map(e => Math.floor(e.s / 60))), h1 = Math.min(24, Math.max(22, ...timed.map(e => Math.ceil(Math.min(e.e, 1440) / 60))));
+  const lx = P + 22, top = P + 34, colW = (W - P - lx) / 3, ph = (H - P - top) / ((h1 - h0) * 60), red = new Color('#ff453a');
+  /* hour lines (faint every hour, labelled every two) */
+  for (let h = h0; h <= h1; h++) { const y = top + (h - h0) * 60 * ph; c.setFillColor(h % 2 ? new Color('#ffffff', .035) : K.trk2); c.fillRect(new Rect(lx, y, W - P - lx, 1)); if (h % 2 === 0 && h < 24) T(c, h, lx - 6, y - 6, 9.5, 'm', K.t3, 'r') }
+  D3.forEach((x, i) => {
+    const X0 = lx + i * colW, dt = new Date(x.k + 'T12:00');
+    if (i) { c.setFillColor(K.trk2); c.fillRect(new Rect(X0, top - 4, 1, H - P - top + 4)) }
+    const short = dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
+    if (xl) { T(c, i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dt.toLocaleDateString('en-GB', { weekday: 'long' }), X0 + 6, P, 14, 'b', i === 0 ? red : K.t1); T(c, short, X0 + colW - 6, P + 2, 11, 'm', K.t2, 'r') }
+    else T(c, i === 0 ? 'Today' : short, X0 + 6, P + 1, 13, 'b', i === 0 ? red : K.t1);
     const ev = x.ev.filter(e => !e.ad).map(e => ({ ...e })).sort((a, b) => a.s - b.s || b.e - a.e); let grp = [], end = -1;
     const flush = () => { const cols = []; grp.forEach(e => { let k = cols.findIndex(t => t <= e.s); if (k < 0) { k = cols.length; cols.push(0) } cols[k] = e.e; e.col = k }); grp.forEach(e => e.n = cols.length); grp = [] };
     ev.forEach(e => { if (e.s >= end) { flush(); end = -1 } grp.push(e); end = Math.max(end, e.e) }); flush();
     ev.forEach(e => {
-      const y = top + (Math.max(e.s, h0 * 60) - h0 * 60) * ph, hh = Math.max(9, (Math.min(e.e, h1 * 60) - Math.max(e.s, h0 * 60)) * ph - 1.5);
-      const sub = (colW - 3) / e.n, X = lx + i * colW + 1.5 + e.col * sub, cw2 = sub - (e.n > 1 ? 1.5 : 0);
-      rr(c, X, y, cw2, hh, 4, new Color('#ffffff', .16 + (CALK[e.c] || .32) * .2)); rr(c, X, y, 2.5, hh, 1.25, new Color('#ffffff', .85));
-      if (hh >= fsz + 4 && cw2 > 16) T(c, fit(e.t, fsz, cw2 - 10, 's'), X + 5, y + 2, fsz, 's');
-      if (xl && hh >= 2 * fsz + 8 && cw2 > 40) T(c, `${pad(Math.floor(e.s / 60) % 24)}:${pad(e.s % 60)}`, X + 5, y + 3 + fsz * 1.2, fsz - 1, 'm', K.t2);
+      const y = top + (Math.max(e.s, h0 * 60) - h0 * 60) * ph + .75, hh = Math.max(8, (Math.min(e.e, h1 * 60) - Math.max(e.s, h0 * 60)) * ph - 1.5);
+      const sub = (colW - 8) / e.n, X = X0 + 4 + e.col * sub, cw2 = sub - (e.n > 1 ? 2 : 0), tx = X + 8, tw2 = cw2 - 12, t = tm(e.s);
+      rr(c, X, y, cw2, hh, 5, new Color('#ffffff', .13 + (CALK[e.c] || .32) * .16)); rr(c, X, y, 3, hh, 1.5, new Color('#ffffff', .85));
+      const fs = xl ? 11.5 : 10.5;
+      if (hh >= fs * 2.6) { T(c, fit(e.t, fs, tw2, 's'), tx, y + 3, fs, 's'); T(c, fit(tws(`${t}–${tm(e.e)}`, fs - 1.5, 'm') <= tw2 ? `${t}–${tm(e.e)}` : t, fs - 1.5, tw2, 'm'), tx, y + 4 + fs * 1.25, fs - 1.5, 'm', K.t2) }
+      else if (hh >= fs + 3) { const tl = tws('  ' + t, fs - 1.5, 'm'), nm = fit(e.t, fs, tw2 - (tw2 > 110 ? tl : 0), 's'); T(c, nm, tx, y + (hh - fs * 1.25) / 2, fs, 's'); if (tw2 > 110) T(c, t, X + cw2 - 6, y + (hh - fs * 1.1) / 2, fs - 1.5, 'm', K.t2, 'r') }
     });
   });
-
-  if (nm >= h0 * 60 && nm <= h1 * 60) { const y = top + (nm - h0 * 60) * ph; c.setFillColor(new Color('#ff453a')); c.fillRect(new Rect(lx + ti * colW, y - .75, colW, 1.5)); c.fillEllipse(new Rect(lx + ti * colW - 3, y - 3, 6, 6)) }
+  if (nm >= h0 * 60 && nm <= h1 * 60) { const y = top + (nm - h0 * 60) * ph; c.setFillColor(red); c.fillRect(new Rect(lx, y - .75, colW, 1.5)); c.fillEllipse(new Rect(lx - 3.5, y - 3.5, 7, 7)) }
   return c;
 }
 
