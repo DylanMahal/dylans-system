@@ -197,7 +197,7 @@ function sRecovery(){const el=$('sleepBody');const k=DAYK;const R=sRec(k)||sRec(
   el.innerHTML=`<div class="sl-card sl-hero" style="--z:${z[0]}">
     <div class="sl-heroL">${sRing(R?R.v:0,z[0],168,9,`<span>Recovery</span><b class="num" style="color:${z[0]}">${R?R.v+'<small>%</small>':'—'}</b><span>${kk!==k?'yesterday':R&&R.est?'estimated':'today'}</span>`)}<div class="sl-zone"><i></i>${esc(z[2])}</div></div>
     <div class="sl-tiles">${tile('HRV',R&&R.h.hrv?Math.round(R.h.hrv)+'<small> ms</small>':'—',R&&R.bH&&R.h.hrv?`${R.h.hrv>=R.bH.m?'↑':'↓'} avg ${Math.round(R.bH.m)}`:'',R&&R.bH&&R.h.hrv?R.h.hrv>=R.bH.m:null)}${tile('Resting HR',R&&R.h.rhr?Math.round(R.h.rhr)+'<small> bpm</small>':'—',R&&R.bR&&R.h.rhr?`${R.h.rhr<=R.bR.m?'↓':'↑'} avg ${Math.round(R.bR.m)}`:'',R&&R.bR&&R.h.rhr?R.h.rhr<=R.bR.m:null)}${tile('Sleep',R&&R.perf!=null?R.perf+'<small>%</small>':'—',n&&R?fmtHM(n.asleep)+' of '+fmtHM(R.need):'')}${tile('Resp. rate',R&&R.h.rr?R.h.rr.toFixed(1)+'<small> /min</small>':'—','')}</div></div>
-  <div class="sl-grid2"><div class="sl-card"><div class="sl-h"><span>Strain</span><em>0 – 21</em></div>
+  <div class="sl-grid2"><div class="sl-card"><div class="sl-h"><span>Strain</span></div>
     <div class="sl-strain"><div><span>Yesterday</span><b class="num">${yS!=null?yS.toFixed(1):'—'}</b></div><div><span>Today's target</span><b class="num" style="color:${z[0]}">${R?z[3]:'—'}</b></div></div>
     <div class="sl-gauge"><i style="width:${Math.min(100,(yS||0)/21*100).toFixed(1)}%"></i>${R?`<em style="left:${(parseInt(z[3])/21*100).toFixed(1)}%;width:${((parseInt(z[3].split('–')[1])-parseInt(z[3]))/21*100).toFixed(1)}%;--z:${z[0]}"></em>`:''}</div>
     <div class="sl-note">From active energy, steps and logged gym sessions.</div></div>

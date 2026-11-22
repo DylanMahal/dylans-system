@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1795315989">
+<link rel="stylesheet" href="app.css?v=1795316185">
 </head>
 <body class="fx">
 <style>
@@ -354,7 +354,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
     <div id="blocks"></div>
     <div id="todayExtra"></div>
     <div class="two" id="bodyCheck" style="margin-top:14px">
-      <div class="panel"><div class="ph"><span class="tag">bp check</span><span>seated · 5 min rest · same arm</span></div><div class="pb">
+      <div class="panel"><div class="ph"><span class="tag">bp check</span></div><div class="pb">
         <form class="bpgrid" id="bpForm">
           <label>sys<input class="inp num" id="bpS" type="number" inputmode="numeric" min="60" max="250" required></label>
           <label>dia<input class="inp num" id="bpD" type="number" inputmode="numeric" min="30" max="160" required></label>
@@ -365,7 +365,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
         <div id="bpChart"></div>
         <div class="rlist" id="bpList"></div>
       </div></div>
-      <div class="panel"><div class="ph"><span class="tag">bodyweight</span><span>kg</span></div><div class="pb">
+      <div class="panel"><div class="ph"><span class="tag">bodyweight</span></div><div class="pb">
         <form class="bpgrid" id="wtForm" style="grid-template-columns:1fr auto">
           <label>kg<input class="inp num" id="wtIn" type="number" inputmode="decimal" step="0.1" min="30" max="250" required></label>
           <button class="btn p" type="submit" style="height:46px">log</button>
@@ -457,11 +457,11 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
     <div class="banner"><div class="art"></div><div class="bover"><h2 class="glitch" data-text="/week"><span class="slash">/</span>week</h2><span class="sub" id="weekSub">review Sundays 19:00</span></div></div>
     <div class="gcal" id="gcal"></div>
     <div class="two" style="margin-top:12px">
-      <div class="panel"><div class="ph"><span class="tag">adherence · last 7 days</span><span>target 80%</span></div><div class="pb"><div class="days" id="days"></div><div class="dim" id="daysNote" style="font-size:12px;margin-top:10px"></div></div></div>
-      <div class="panel"><div class="ph"><span class="tag">top streaks</span><span>same as /streaks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
+      <div class="panel"><div class="ph"><span class="tag">adherence · last 7 days</span></div><div class="pb"><div class="days" id="days"></div><div class="dim" id="daysNote" style="font-size:12px;margin-top:10px"></div></div></div>
+      <div class="panel"><div class="ph"><span class="tag">top streaks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
     </div>
     <div class="two" style="margin-top:12px">
-      <div class="panel"><div class="ph"><span class="tag">weekly targets</span><span>auto ones fill themselves</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ add target</button></div></div>
+      <div class="panel"><div class="ph"><span class="tag">weekly targets</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ add target</button></div></div>
       <div class="panel"><div class="ph"><span class="tag">weekly review notes</span><span id="notesSaved" class="dim"></span></div><div class="pb"><textarea class="notes" id="weekNotes" placeholder="What worked, what slipped, what to change next week…"></textarea></div></div>
     </div>
   </section>
@@ -486,7 +486,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
     <div class="kv" id="moneyKv"></div>
     <div class="money-grid">
       <div class="grid">
-        <div class="panel"><div class="ph"><span class="tag">outgoings by category</span><span>click to list</span></div><div class="pb" id="cats"></div></div>
+        <div class="panel"><div class="ph"><span class="tag">outgoings by category</span></div><div class="pb" id="cats"></div></div>
         <div class="panel"><div class="ph"><span class="tag" id="billsTitle">every bill</span><span id="billsTot"></span></div><div class="pb"><div id="bills"></div><button class="addrow" type="button" id="addBill">+ add bill</button></div></div>
       </div>
       <div class="grid" style="align-content:start">
@@ -526,9 +526,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1795315989"</script>
-<script src="config.js?v=1795315989"></script>
+<script>window.APP_V="1795316185"</script>
+<script src="config.js?v=1795316185"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1795315989"></script>
+<script src="app.js?v=1795316185"></script>
 </body>
 </html>
