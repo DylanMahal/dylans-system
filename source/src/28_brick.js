@@ -2,10 +2,13 @@
    A web app can't block iPhone apps itself (only Apple's Screen Time API can, and that needs a native app).
    What this does instead: it drives an iOS Shortcut, which CAN turn on a Focus that hides and silences your apps —
    and if you own the real Brick, it runs that app's shortcut too. The app tracks the state, time and streaks. */
+let BST={};/* daily screen time from the morning Shortcut, health/d-<day>.screentime */
+const bSTh=v=>v<=0||isNaN(v)?null:v<=24?v:v<=1440?v/60:v/3600;   // accepts hours, minutes or seconds
 let BRICK={on:false,since:null,until:null,sessions:[],strict:false,auto:false,sOn:'Brick On',sOff:'Brick Off'},brickLoaded=false,brickTick=null;
 const bMin=(a,b)=>Math.max(0,Math.round((b-a)/60000));
 async function loadBrick(){if(brickLoaded){renderBrick();return}
   try{const d=await load('tools/brick');if(d)BRICK={...BRICK,...d}}catch(e){}
+  try{(await listDocs('health/d-')).forEach(r=>{const v=r.data&&(r.data.screentime??r.data.screen);if(v!=null)BST[r.path.slice(9)]=+v})}catch(e){}
   brickLoaded=true;
   if(BRICK.on&&BRICK.until&&Date.now()>BRICK.until)bEnd(true);   // ran out while the app was closed
   renderBrick()}
@@ -31,17 +34,19 @@ function bStreak(){let n=0;for(let i=0;;i++){const d=addDays(DAYK,-i);const m=BR
   if(m>=25)n++;else if(i>0)break;else if(!n&&i===0)break}return n}
 function bHMS(s){return (s>=3600?Math.floor(s/3600)+':':'')+pad(Math.floor(s/60)%60)+':'+pad(s%60)}
 const bHM=m=>m>=60?Math.floor(m/60)+'h '+pad(m%60)+'m':m+'m';
-function bLife(){const st=+BRICK.st,age=+BRICK.age,goal=BRICK.goalH==null?2:+BRICK.goalH;
-  if(!(st>0)||!(age>0))return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span></div>
-    <p class="bk-p">Two numbers and you'll see how much of the rest of your life your phone is on track to take.</p>
-    <div class="bk-form"><label class="bk-frow"><span>Daily screen time<small>Settings → Screen Time → daily average</small></span><span class="bk-in"><input class="inp num" id="bkST" inputmode="decimal" placeholder="4.5"><em>h</em></span></label>
-    <label class="bk-frow"><span>Your age</span><span class="bk-in"><input class="inp num" id="bkAge" inputmode="numeric" placeholder="22" value="${BRICK.age||''}"><em>yrs</em></span></label></div>
-    <button class="btn p bk-wide" type="button" id="bkLifeGo">Show me</button></div>`;
+function bLife(){const ks=Object.keys(BST).sort().slice(-7),vals=ks.map(k=>bSTh(BST[k])).filter(x=>x!=null);
+  const st=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:null,age=+BRICK.age||null,goal=BRICK.goalH==null?2:+BRICK.goalH;
+  if(st==null)return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span></div>
+    <p class="bk-p">Waiting for your screen time. Add one line to your morning sleep Shortcut and this fills in by itself:</p>
+    <ol class="sl-steps"><li>In the sleep Shortcut, before the last Text block, add Jomo's <b>screen time</b> action for <i>yesterday</i>.</li><li>In the last Text block add a new line: <code>Screen Time|</code> then insert that result.</li></ol></div>`;
+  if(!age)return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span></div><div class="bk-big num">${st}<small> h a day</small></div>
+    <p class="bk-p">Your average over the last ${vals.length} day${vals.length===1?'':'s'}. One last thing — how old are you?</p>
+    <div class="bk-goal" style="background:rgba(255,255,255,.04)"><div><span>Age</span><div class="bk-step"><button type="button" data-age="-1" aria-label="Younger">−</button><b class="num">${BRICK.ageTmp||21}</b><button type="button" data-age="1" aria-label="Older">+</button></div></div><button class="btn p sm" type="button" id="bkAgeOk">Done</button></div></div>`;
   const left=Math.max(1,80-age),yrs=left*st/24,goalY=left*Math.min(st,goal)/24,back=Math.max(0,yrs-goalY),waking=Math.round(st/16*100);
   const sl=left*8/24,free=left-sl-yrs;const W=x=>(x/left*100).toFixed(2)+'%';
-  return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span><button class="bk-link" type="button" id="bkLifeEd">Edit</button></div>
+  return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span><em>${vals.length}-day average</em></div>
     <div class="bk-big num">${yrs.toFixed(1)}<small> years</small></div>
-    <p class="bk-p">of the rest of your life will be spent looking at your phone, at <b>${String(st).replace(/\.0$/,'')}h a day</b> from ${age} to 80. That's <b>${waking}%</b> of every waking hour.</p>
+    <p class="bk-p">of the rest of your life will be spent looking at your phone, at <b>${st}h a day</b> from ${age} to 80. That's <b>${waking}%</b> of every waking hour.</p>
     <div class="bk-lifebar"><i style="width:${W(yrs)};background:var(--pink)"></i><i style="width:${W(sl)};background:#5e5ce6"></i><i style="width:${W(Math.max(0,free))};background:rgba(255,255,255,.14)"></i></div>
     <div class="bk-keys"><span><i style="background:var(--pink)"></i>phone ${yrs.toFixed(1)}y</span><span><i style="background:#5e5ce6"></i>sleep ${sl.toFixed(0)}y</span><span><i style="background:rgba(255,255,255,.3)"></i>everything else ${Math.max(0,free).toFixed(1)}y</span></div>
     <div class="bk-goal"><div><span>Cut it to</span><div class="bk-step"><button type="button" data-gh="-0.5" aria-label="Less">−</button><b class="num">${String(goal).replace(/\.0$/,'')}h</b><button type="button" data-gh="0.5" aria-label="More">+</button></div><span>a day</span></div>
@@ -101,9 +106,9 @@ function bindBrick(){
   nm('bkSOn','sOn');nm('bkSOff','sOff');
   if($('bkTestOn'))$('bkTestOn').onclick=()=>{const e=new Date(Date.now()+12e4);bRun($('bkSOn').value.trim(),ymd(e)+' '+pad(e.getHours())+':'+pad(e.getMinutes()))};
   if($('bkTestOff'))$('bkTestOff').onclick=()=>bRun($('bkSOff').value.trim());
-  if($('bkLifeGo'))$('bkLifeGo').onclick=()=>{const st=parseFloat(($('bkST').value||'').replace(',','.')),age=parseInt($('bkAge').value);if(!(st>0&&st<24)||!(age>0&&age<100)){bToast('Enter your daily hours and age');return}BRICK.st=st;BRICK.age=age;bSave();renderBrick()};
-  if($('bkLifeEd'))$('bkLifeEd').onclick=()=>{BRICK.st=null;renderBrick()};
-  document.querySelectorAll('#t-brick [data-gh]').forEach(b=>b.onclick=()=>{BRICK.goalH=Math.max(0,Math.min(+BRICK.st||12,(BRICK.goalH==null?2:+BRICK.goalH)+ +b.dataset.gh));bSave();renderBrick()});}
+  document.querySelectorAll('#t-brick [data-age]').forEach(b=>b.onclick=()=>{BRICK.ageTmp=Math.max(10,Math.min(90,(BRICK.ageTmp||21)+ +b.dataset.age));renderBrick()});
+  if($('bkAgeOk'))$('bkAgeOk').onclick=()=>{BRICK.age=BRICK.ageTmp||21;delete BRICK.ageTmp;bSave();renderBrick()};
+  document.querySelectorAll('#t-brick [data-gh]').forEach(b=>b.onclick=()=>{BRICK.goalH=Math.max(0,Math.min(12,(BRICK.goalH==null?2:+BRICK.goalH)+ +b.dataset.gh));bSave();renderBrick()});}
 /* called by the focus timer */
 function brickAuto(on,mins){if(!BRICK.auto||!BRICK.sOn)return;
   if(on){if(!BRICK.on&&mins>0)bStart(mins)}else if(BRICK.on)bEnd(true)}
