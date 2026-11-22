@@ -133,16 +133,19 @@ function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.
   const P=TASKS.projects.find(x=>x.id===JB.p);const name=JB.p==='all'?'All work':JB.p==='inbox'?'Inbox':P.n;
   const openN=vis.filter(t=>!t.done).length;
   let body='';
-  if(JB.v==='board')body=`<div class="jboard">${JST.map(([k,l])=>{const r=by(k);return `<section class="jcol" data-col="${k}"><header class="jcol-h"><span>${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length}</span></header><div class="jcol-b">${r.map(jCard).join('')}${k==='todo'?`<button type="button" class="jcreate" id="jColAdd">${TSV(TIC.plus)}Create</button>`:''}</div></section>`}).join('')}</div>`;
+  if(JB.v==='board')body=`<div class="jboard">${JST.map(([k,l])=>{const r=by(k);return `<section class="jcol" data-col="${k}"><header class="jcol-h"><span>${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length}</span></header><div class="jcol-b">${k==='todo'?'<!--ADD-->':''}${r.map(jCard).join('')}</div></section>`}).join('')}</div>`;
   else body=JST.map(([k,l])=>{const r=by(k);return `<div class="jlg"><div class="jlg-h"><span class="jst ${JSC[k]}">${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length} task${vis.filter(t=>tSt(t)===k).length===1?'':'s'}</span></div>${r.length?`<div class="jlist">${r.map(jRow).join('')}</div>`:'<div class="jlg-e">Nothing here</div>'}</div>`}).join('');
   const chip=(k,l,dot)=>`<button type="button" class="jchip${JB.p===k?' on':''}" data-jp="${esc(k)}">${dot?`<i class="tkdot" style="background:${dot}"></i>`:''}${esc(l)}</button>`;
   const fchip=(k,l)=>`<button type="button" class="jfch${JB.f===k?' on':''}" data-jf="${k}">${l}</button>`;
+  const addF=`<form class="jadd" id="tAddF"><span class="tkplus">${TSV(TIC.plus)}</span><input id="tAdd" placeholder="Create a task" autocomplete="off" enterkeyhint="done"><button class="jaddgo" type="submit" aria-label="Create">${TSV('<path d="M5 12h14M13 6l6 6-6 6"/>')}</button></form><div class="tprev tkprev" id="tPrev"></div>`;
+  if(JB.v==='board')body=body.replace('<!--ADD-->',addF);else body=`<div class="jlistadd">${addF}</div>`+body;
+  const tab=(k,l,dot)=>`<button type="button" class="jtab${JB.p===k?' on':''}" data-jp="${esc(k)}">${dot?`<i class="tkdot" style="background:${dot}"></i>`:''}${esc(l)}</button>`;
   el.innerHTML=`<div class="jw panel">
-    <div class="jtop"><div><div class="jcrumb">${esc(name)} <span>/</span> ${JB.v==='board'?'Board':'List'}</div><h3 class="jtitle">Week ${+wk.slice(-2)}</h3><div class="jsub">${(()=>{const m=new Date(DAYK+'T12:00');m.setDate(m.getDate()-((m.getDay()+6)%7));const e=new Date(m);e.setDate(m.getDate()+6);const f=x=>x.toLocaleDateString('en-GB',{day:'numeric',month:'short'});return f(m)+' – '+f(e)})()} · ${openN} open · ${vis.filter(t=>t.done).length} done</div></div>
-      <div class="jvt" role="tablist"><button type="button" data-jv="board" aria-pressed="${JB.v==='board'}">${TSV(TIC.board)}<span>Board</span></button><button type="button" data-jv="list" aria-pressed="${JB.v==='list'}">${TSV(TIC.list)}<span>List</span></button></div></div>
-    <div class="jprojs">${chip('all','All work')}${chip('inbox','Inbox')}${TASKS.projects.map(P=>chip(P.id,P.n,P.col)).join('')}<button type="button" class="jchip jnewp" id="tNewP">${TSV(TIC.plus)}Project</button></div>
-    <div class="jbar"><label class="jsearch">${TSV(TIC.search)}<input id="jQ" type="search" placeholder="Search tasks" value="${esc(JB.q)}" autocomplete="off"></label>${fchip('due','Due now')}${fchip('hi','High priority')}</div>
-    <form class="jadd" id="tAddF"><span class="tkplus">${TSV(TIC.plus)}</span><input id="tAdd" placeholder="What needs to be done?" autocomplete="off" enterkeyhint="done"><button class="tkgo" type="submit">Create</button></form><div class="tprev tkprev" id="tPrev"></div>
+    <div class="jhd"><h3 class="jtitle">Sprint ${+wk.slice(-2)}</h3><span class="jlive"><i></i>Active</span></div>
+    <nav class="jtabs">${tab('all','All work')}${tab('inbox','Inbox')}${TASKS.projects.map(P=>tab(P.id,P.n,P.col)).join('')}<button type="button" class="jtab jtabadd" id="tNewP" aria-label="New project">${TSV(TIC.plus)}</button></nav>
+    <div class="jtool"><label class="jsearch">${TSV(TIC.search)}<input id="jQ" type="search" placeholder="Search" value="${esc(JB.q)}" autocomplete="off"></label>
+      <div class="jfil">${fchip('due','Due now')}${fchip('hi','High priority')}</div><span class="jgrow"></span>
+      <div class="jvt" role="tablist"><button type="button" data-jv="board" aria-pressed="${JB.v==='board'}" aria-label="Board">${TSV(TIC.board)}<span>Board</span></button><button type="button" data-jv="list" aria-pressed="${JB.v==='list'}" aria-label="List">${TSV(TIC.list)}<span>List</span></button></div></div>
     <div class="jbody">${body}</div></div>`;
   tBind()}
 /* hold to open: the editor appears while the finger is still down */
