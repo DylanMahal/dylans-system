@@ -1,6 +1,7 @@
 /* ================= COMPETITIVE RANKS (Rocket League ladder) =================
    Score 0–21+: 3 divisions per tier, Bronze I … Grand Champion III, then Supersonic Legend.
-   Exercise rank = your best set vs bodyweight-scaled strength standards.
+   Exercise rank = your best set vs bodyweight-scaled strength standards. Only free-weight and bodyweight lifts with real
+   standards are ranked — machine and cable loads differ by brand, so those stay unranked rather than guessed.
    Session rank = working sets + records + volume vs your recent sessions + how strong the sets were. */
 /* bodyweight for scoring: the ranks keep their own copy of the weigh-ins (loaded once, kept live), so every screen
    scores with the same numbers whatever page loaded first; each set is judged at the weight you were that day */
@@ -52,29 +53,24 @@ function rlBadge(score,sz=26){rlDefs();const r=rlOf(score),t=r.t;const [,c1,c2]=
 const rlChip=(score,sz=20)=>{const r=rlOf(score);return `<span class="rlchip" style="--rc:${RL[r.t][1]}">${rlBadge(score,sz)}<span>${r.name}</span></span>`};
 /* strength standards as multiples of bodyweight: beginner, novice, intermediate, advanced, elite */
 const RL_STD=[
-  [/romanian|rdl|stiff.?leg/i,null,[.6,1,1.4,1.9,2.4]],[/hack squat/i,null,[.6,1.1,1.7,2.4,3.1]],[/bulgarian|split squat/i,'dumbbell',[.15,.3,.5,.75,1]],
-  [/lunge/i,'barbell',[.4,.7,1,1.4,1.8]],[/lunge/i,'dumbbell',[.15,.25,.4,.55,.75]],[/lateral raise|side raise/i,null,[.05,.1,.17,.26,.36]],
-  [/pushdown|push-?down/i,null,[.2,.35,.55,.8,1.05]],[/skull|lying.*extension|tricep.*extension/i,null,[.15,.3,.5,.75,1]],
-  [/seated.*row|cable row/i,null,[.4,.6,.9,1.25,1.6]],[/row/i,'dumbbell',[.2,.35,.55,.8,1.05]],[/leg extension/i,null,[.4,.7,1.05,1.5,2]],
-  [/leg curl|hamstring curl/i,null,[.3,.5,.8,1.15,1.5]],[/pec deck|butterfly/i,null,[.3,.55,.9,1.3,1.7]],[/fly|flye/i,'dumbbell',[.08,.15,.26,.4,.55]],
-  [/fly|flye/i,'cable',[.1,.2,.35,.55,.75]],[/calf raise/i,null,[.6,1,1.6,2.3,3]],[/shrug/i,'barbell',[.6,1,1.5,2.1,2.7]],[/shrug/i,'dumbbell',[.25,.4,.6,.85,1.1]],
-  [/chest press/i,'machine',[.4,.7,1.05,1.5,1.95]],[/shoulder press/i,'machine',[.25,.45,.7,1,1.35]],
+  [/romanian|rdl|stiff.?leg/i,'barbell',[.6,1,1.4,1.9,2.4]],[/romanian|rdl|stiff.?leg/i,'dumbbell',[.25,.4,.6,.85,1.1]],[/bulgarian|split squat/i,'dumbbell',[.15,.3,.5,.75,1]],
+  [/lunge/i,'barbell',[.4,.7,1,1.4,1.8]],[/lunge/i,'dumbbell',[.15,.25,.4,.55,.75]],[/lateral raise|side raise/i,'dumbbell',[.05,.1,.17,.26,.36]],
+  [/skull|lying.*extension|tricep.*extension/i,'ez bar',[.15,.3,.5,.75,1]],[/skull|lying.*extension|tricep.*extension/i,'barbell',[.15,.3,.5,.75,1]],
+  [/row/i,'dumbbell',[.2,.35,.55,.8,1.05]],[/fly|flye/i,'dumbbell',[.08,.15,.26,.4,.55]],[/shrug/i,'barbell',[.6,1,1.5,2.1,2.7]],[/shrug/i,'dumbbell',[.25,.4,.6,.85,1.1]],
   [/front squat/i,'barbell',[.6,1,1.25,1.75,2.2]],[/incline.*bench|incline.*press/i,'barbell',[.4,.65,1,1.4,1.7]],
   [/bench press/i,'barbell',[.5,.75,1.25,1.75,2]],[/squat/i,'barbell',[.75,1.25,1.5,2.25,2.75]],[/deadlift/i,'barbell',[1,1.5,2,2.5,3]],
-  [/overhead press|shoulder press|military press/i,'barbell',[.4,.55,.8,1.05,1.35]],[/row/i,'barbell',[.5,.75,1,1.5,1.75]],[/hip thrust/i,null,[.75,1.25,1.75,2.5,3.25]],
+  [/overhead press|shoulder press|military press/i,'barbell',[.4,.55,.8,1.05,1.35]],[/row/i,'barbell',[.5,.75,1,1.5,1.75]],[/hip thrust/i,'barbell',[.75,1.25,1.75,2.5,3.25]],
   [/bench press|chest press/i,'dumbbell',[.2,.3,.5,.7,.85]],[/shoulder press|overhead press/i,'dumbbell',[.12,.2,.32,.45,.6]],[/curl/i,'dumbbell',[.1,.18,.3,.42,.55]],
-  [/curl/i,'barbell',[.2,.35,.55,.75,.95]],[/curl/i,'ez bar',[.2,.35,.55,.75,.95]],[/pulldown/i,null,[.5,.75,1,1.3,1.6]],[/leg press/i,null,[1,1.75,2.5,3.5,4.5]],
+  [/curl/i,'barbell',[.2,.35,.55,.75,.95]],[/curl/i,'ez bar',[.2,.35,.55,.75,.95]],
 ];
-const RL_BW=[[/pull-?up|chin-?up/i,[1,5,10,18,25]],[/push-?up/i,[5,15,30,45,60]],[/dip/i,[2,8,15,25,35]],[/.*/,[5,12,25,40,55]]];
-const RL_WBW=[[/pull-?up|chin-?up/i,[1,1.12,1.3,1.55,1.8]],[/dip/i,[1.05,1.25,1.5,1.8,2.15]],[/.*/,[1,1.15,1.35,1.6,1.9]]];
+const RL_BW=[[/pull-?up|chin-?up/i,[1,5,10,18,25]],[/push-?up/i,[5,15,30,45,60]],[/dip/i,[2,8,15,25,35]]];
+const RL_WBW=[[/pull-?up|chin-?up/i,[1,1.12,1.3,1.55,1.8]],[/dip/i,[1.05,1.25,1.5,1.8,2.15]]];
 const rlComp=e=>/press|squat|deadlift|row|pull|chin|lunge|dip|clean|snatch|thrust|push|jerk|step.?up|good morning/i.test(e.n)&&!/curl|raise|fly|flye|extension|kickback|shrug|crunch/i.test(e.n);
 function rlStd(e){if(!e||e.cat&&!/strength|powerlifting|olympic|strongman/.test(e.cat))return null;
   if(e.ty==='bw')return {k:'bw',s:(RL_BW.find(([re])=>re.test(e.n))||[])[1]};
   if(e.ty==='wbw')return {k:'wbw',s:(RL_WBW.find(([re])=>re.test(e.n))||[])[1]};
   if(e.ty!=='wr')return null;const eq=e.eq||'other';
-  const hit=RL_STD.find(([re,q])=>re.test(e.n)&&(!q||q===eq));if(hit)return {k:'wr',s:hit[2]};
-  const comp=rlComp(e);const el={barbell:comp?1.6:.7,'smith machine':1.8,dumbbell:comp?.55:.3,machine:comp?2.2:1,cable:comp?1.2:.55,kettlebell:.5,'ez bar':.7,plate:.6,band:.4,other:.8}[eq]||.8;
-  return {k:'wr',s:[.25,.4,.6,.85,1].map(f=>f*el)}}
+  const hit=RL_STD.find(([re,q])=>re.test(e.n)&&(!q||q===eq));return hit?{k:'wr',s:hit[2]}:null}
 function rlScoreRatio(v,s){const P=[[0,0],[s[0],3],[s[1],6],[s[2],9],[s[3],12],[s[4],15],[s[4]*1.15,18],[s[4]*1.3,21]];
   for(let i=1;i<P.length;i++)if(v<=P[i][0]){const [a,x]=P[i-1],[b,y]=P[i];return x+(v-a)/(b-a||1)*(y-x)}return 21}
 const rlE1=(kg,r)=>r<=1?kg:kg*(1+Math.min(10,r)/30);   /* Epley, trusted up to 10 reps */

@@ -900,33 +900,62 @@ async function dGym() {
   return { k, mon, week: [...Array(7)].map((_, i) => ({ k: addD(mon, i), on: set.has(addD(mon, i)) })), n: [...Array(7)].filter((_, i) => set.has(addD(mon, i))).length, last, weeks, lifts };
 }
 const tonnes = v => v >= 1000 ? (v / 1000).toFixed(1) + 't' : Math.round(v) + 'kg';
-function weekDots(c, d, x, y, w) { const D = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], s = Math.min(22, (w - 6 * 6) / 7), g = (w - 7 * s) / 6; d.week.forEach((x0, i) => { const cx = x + i * (s + g); if (x0.on) { c.setFillColor(K.t1); c.fillEllipse(new Rect(cx, y, s, s)) } else { c.setFillColor(K.trk2); c.fillEllipse(new Rect(cx, y, s, s)) } if (x0.k === d.k) circle(c, cx - 2.5, y - 2.5, s + 5, K.t2, 1.4); T(c, D[i], cx + s / 2, y + s / 2 - 5.5, 9, 'b', x0.on ? new Color('#1c1c1e') : K.t3, 'c') }) }
-function gyHead(c, d, x, y, w, h, sz) {
-  cap(c, 'Gym', x, y); T(c, 'This week', x + w, y, 11, 'm', K.t2, 'r');
-  T(c, d.n, x - 1, y + 18, 34, 'rh', K.t1, 'l', 1); T(c, d.n === 1 ? 'session' : 'sessions', x + tws(String(d.n), 34, 'rh') + 6, y + 36, 12, 's', K.t2);
-  weekDots(c, d, x, y + (sz === 'm' ? h - 22 : 70), Math.min(w, 220));
+/* week strip: one block per day across the full width; trained days filled, today outlined */
+function gymStrip(c, d, x, y, w, h) {
+  const D = ['M', 'T', 'W', 'T', 'F', 'S', 'S'], g = Math.min(8, w * .02), bw = (w - g * 6) / 7, r = Math.min(9, h / 2.6);
+  d.week.forEach((z, i) => {
+    const bx = x + i * (bw + g), fut = z.k > d.k;
+    rr(c, bx, y, bw, h, r, z.on ? K.t1 : fut ? new Color('#ffffff', .04) : K.trk2);
+    if (z.k === d.k && !z.on) { c.setStrokeColor(K.t2); c.setLineWidth(1.4); const p = new Path(); p.addRoundedRect(new Rect(bx + .7, y + .7, bw - 1.4, h - 1.4), r, r); c.addPath(p); c.strokePath() }
+    T(c, D[i], bx + bw / 2, y + h / 2 - 6.5, 10.5, 'b', z.on ? new Color('#1c1c1e') : z.k === d.k ? K.t1 : K.t3, 'c');
+  });
 }
-function gyLast(c, d, x, y, w, h, sz) {
-  cap(c, 'Last workout', x, y); if (!d.last) { T(c, 'No workouts logged yet', x, y + 22, 14, 'm', K.t2); return }
-  const L = d.last; T(c, ago(L.date), x + w, y, 11, 'm', K.t2, 'r');
-  T(c, fit(L.name, 17, w, 'b'), x, y + 18, 17, 'b'); T(c, [new Date(L.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }), L.min ? hmS(L.min) : ''].filter(Boolean).join('  ·  '), x, y + 40, 11, 'm', K.t2);
-  const yy = y + h - 36, sw = w / 3; stat(c, tonnes(L.vol), 'Volume', x, yy, 18); stat(c, L.sets, 'Sets', x + sw, yy, 18);
-  if (L.top) { T(c, `${L.top.kg}×${L.top.r}`, x + sw * 2, yy, 18, 'rh', K.t1, 'l', 1); T(c, fit(L.top.n, 10, sw, 'm'), x + sw * 2, yy + 23, 10, 'm', K.t2) }
+const gymWhen = L => [new Date(L.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }), L.min ? hmS(L.min) : '', ago(L.date)].filter(Boolean).join('  ·  ');
+function gymHeader(c, d, x, y, w) { cap(c, 'Gym', x, y); T(c, `${d.n} session${d.n === 1 ? '' : 's'} this week`, x + w, y, 11, 's', K.t2, 'r') }
+function gymLast(c, d, x, y, w, big) {
+  if (!d.last) { T(c, 'No workouts logged yet', x, y, big ? 20 : 18, 'b', K.t2); return }
+  const L = d.last, fs = big ? 24 : 21;
+  T(c, fit(L.name, fs, w, 'b'), x, y, fs, 'b');
+  T(c, fit(gymWhen(L), 12, w, 'm'), x, y + fs * 1.3, 12, 'm', K.t2);
 }
-function gyMore(c, d, x, y, w, h, sz) {
-  if (sz === 'x') {
-    cap(c, 'Top lifts · est. 1RM', x, y); d.lifts.slice(0, Math.floor((h - 20) / 26)).forEach((l, i) => { const yy = y + 22 + i * 26; T(c, fit(l.n, 13, w - 70, 's'), x, yy, 13, 's'); T(c, Math.round(l.e) + 'kg', x + w, yy, 13, 'rh', K.t1, 'r', 1) }); return
-  }
+function gymStats(c, d, x, y, w) {
+  const L = d.last; if (!L) return; const sw = w / 3;
+  stat(c, tonnes(L.vol), 'Volume', x, y); stat(c, L.sets, 'Sets', x + sw, y); stat(c, L.min ? hmS(L.min) : '–', 'Duration', x + sw * 2, y);
+}
+function gymTop(c, d, x, y, w) {
+  const t = d.last && d.last.top; if (!t) return;
+  cap(c, 'Top set', x, y); const v = `${t.kg} kg × ${t.r}`; T(c, v, x + w, y - 1, 13, 'rh', K.t1, 'r', 1);
+  T(c, fit(t.n, 14, w, 's'), x, y + 18, 14, 's');
+}
+function gymVolume(c, d, x, y, w, h) {
   cap(c, 'Weekly volume', x, y); T(c, tonnes(d.weeks[7].v) + ' this week', x + w, y, 11, 'm', K.t2, 'r');
   bars(c, d.weeks.map(z => z.v), d.weeks.map((z, i) => i === 7 ? 'Now' : new Date(z.ws + 'T12:00').getDate() + ''), x, y + 20, w, h - 20, { today: 7, colOf: (v, i) => i === 7 ? K.t1 : new Color('#ffffff', .45) });
 }
-function gySmall(c, d, x, y, w, h) {
-  cap(c, 'Gym', x, y); T(c, d.n, x - 1, y + 16, 30, 'rh', K.t1, 'l', 1); T(c, 'this week', x + tws(String(d.n), 30, 'rh') + 5, y + 32, 11, 's', K.t2);
-  weekDots(c, d, x, y + 60, w);
-  if (d.last) { T(c, fit(d.last.name, 13, w, 's'), x, y + h - 30, 13, 's'); T(c, ago(d.last.date), x, y + h - 13, 10.5, 'm', K.t2) }
+function gymLifts(c, d, x, y, w, h) {
+  cap(c, 'Best lifts · est. 1RM', x, y); const n = Math.max(1, Math.floor((h - 20) / 26));
+  if (!d.lifts.length) { T(c, 'Nothing logged yet', x, y + 22, 13, 'm', K.t2); return }
+  d.lifts.slice(0, n).forEach((l, i) => { const yy = y + 22 + i * 26, v = Math.round(l.e) + ' kg'; T(c, v, x + w, yy, 13, 'rh', K.t1, 'r', 1); T(c, fit(l.n, 13, w - tws(v, 13, 'rh') - 14, 's'), x, yy, 13, 's') });
 }
-const cvGym = (d, f) => f === 'large' ? (() => { const { c, W, H, P } = frame(f); gyHead(c, d, P, P, W - 2 * P, 96, 'l'); c.setFillColor(K.trk2); c.fillRect(new Rect(P, P + 104, W - 2 * P, 1)); gyLast(c, d, P, P + 116, W - 2 * P, 104); c.setFillColor(K.trk2); c.fillRect(new Rect(P, P + 232, W - 2 * P, 1)); gyMore(c, d, P, P + 244, W - 2 * P, H - 2 * P - 244, 'l'); return c })() : f === 'extraLarge' ? (() => { const { c, W, H, P } = frame(f), lw = 300; gyHead(c, d, P, P, lw, 120, 'l'); gyMore(c, d, P, P + 130, lw, H - 2 * P - 130, 'x'); c.setFillColor(K.trk2); c.fillRect(new Rect(P + lw + 16, P, 1, H - 2 * P)); const rx = P + lw + 32, rw = W - P - rx; gyLast(c, d, rx, P, rw, 120); gyMore(c, d, rx, P + 150, rw, H - 2 * P - 150, 'l'); return c })()
-  : layout(f, d, gyHead, gyLast, gyMore, gySmall);
+const cvGym = (d, f) => {
+  const { c, W, H, P } = frame(f), w = W - 2 * P;
+  if (f === 'small') {
+    cap(c, 'Gym', P, P); T(c, `${d.n} this week`, W - P, P, 11, 's', K.t2, 'r');
+    if (d.last) { T(c, fit(d.last.name, 17, w, 'b'), P, P + 26, 17, 'b'); T(c, ago(d.last.date), P, P + 48, 11, 'm', K.t2) } else T(c, 'No workouts yet', P, P + 26, 14, 'b', K.t2);
+    gymStrip(c, d, P, H - P - 26, w, 26); return c;
+  }
+  if (f === 'medium') { gymHeader(c, d, P, P, w); gymLast(c, d, P, P + 24, w); gymStrip(c, d, P, H - P - 34, w, 34); return c }
+  if (f === 'extraLarge') {
+    const lw = 330, rx = P + lw + 32, rw = W - P - rx;
+    gymHeader(c, d, P, P, lw); gymLast(c, d, P, P + 26, lw, 1); gymStrip(c, d, P, P + 92, lw, 36); gymStats(c, d, P, P + 150, lw);
+    c.setFillColor(K.trk2); c.fillRect(new Rect(P, P + 206, lw, 1)); gymTop(c, d, P, P + 220, lw);
+    c.setFillColor(K.trk2); c.fillRect(new Rect(P + lw + 16, P, 1, H - 2 * P));
+    gymVolume(c, d, rx, P, rw, 150); gymLifts(c, d, rx, P + 172, rw, H - 2 * P - 172); return c;
+  }
+  /* large */
+  gymHeader(c, d, P, P, w); gymLast(c, d, P, P + 26, w, 1); gymStrip(c, d, P, P + 90, w, 36);
+  gymStats(c, d, P, P + 146, w); c.setFillColor(K.trk2); c.fillRect(new Rect(P, P + 198, w, 1));
+  gymVolume(c, d, P, P + 212, w, H - 2 * P - 212); return c;
+};
 
 /* ---------- MONEY: the monthly plan from the Money page (take-home, planned outgoings, savings, left over) ---------- */
 async function dMoney() {
