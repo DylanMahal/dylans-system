@@ -117,7 +117,7 @@ const PI={check:FZSV('<path d="M5 12.5l4.2 4.2L19 7"/>'),calc:FZSV('<rect x="4" 
   warn:FZSV('<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/>')};
 function renderProto(){const el=$('t-protocols');if(!el)return;
   const due=dueToday(),left=due.filter(x=>!x.done).length,n=due.length,pct=n?Math.round((n-left)/n*100):0;
-  const act=PROTO.list.filter(c=>c.active),sugg=stackSuggestions(),hasSpots=PROTO.list.some(c=>isSpot(c.route));
+  const act=PROTO.list.filter(c=>c.active),hasSpots=PROTO.list.some(c=>isSpot(c.route));
   const low=act.map(c=>({c,i:invInfo(c)})).filter(o=>o.i.daysLeft!=null&&o.i.daysLeft<=7);
   const nextUp=due.find(x=>!x.done);const week=[...Array(7)].map((_,i)=>addDays(DAYK,i));
   const phases=act.map(c=>({c,ph:cyclePhase(c)})).filter(o=>o.ph);
@@ -136,7 +136,6 @@ function renderProto(){const el=$('t-protocols');if(!el)return;
   </div><div class="pr-col">
     <div class="pr-sec"><span>${esc(PT('items','Items'))}</span><button class="pr-link" type="button" id="cNew">${FI.plus}Add</button></div>
     <div class="pr-list">${PROTO.list.map(c=>{const i=invInfo(c),a=adherence(c),ph=cyclePhase(c);return `<button type="button" class="pr-row tap${c.active?'':' off'}" data-cid="${esc(c.id)}" style="--c:${c.color}"><span class="pr-dot"></span><span class="pr-t"><b>${esc(c.name)}</b><small>${esc([fmtAmt(c.dose,c.unit),schedText(c),c.active?(ph?ph.txt:''):'paused'].filter(Boolean).join(' · '))}</small></span><span class="pr-meta"><b class="num">${a==null?'—':a+'%'}</b><small>${i.daysLeft!=null?i.daysLeft+'d supply':'adherence'}</small></span><span class="fz-chev">${FI.chev}</span></button>`}).join('')||`<div class="pr-empty">Nothing added yet</div>`}</div>
-    ${sugg.length?`<div class="pr-sugg"><span>Add from your stack</span><div>${sugg.map((s,i)=>`<button type="button" data-sg="${i}">${FI.plus}${esc(s.name)}</button>`).join('')}</div></div>`:''}
     <div class="pr-sec"><span>Tools</span></div>
     <div class="pr-list">
       <button type="button" class="pr-row tap" id="prCalc"><span class="fz-ic b">${PI.calc}</span><span class="pr-t"><b>${esc(PT('calct','Calculator'))}</b><small>${esc(PT('calcs','')||'How much to draw')}</small></span><span class="fz-chev">${FI.chev}</span></button>
@@ -147,7 +146,6 @@ function renderProto(){const el=$('t-protocols');if(!el)return;
   el.onclick=e=>{const t=e.target;
     const b=t.closest('[data-dlog]');if(b){const [cid,i]=b.dataset.dlog.split(':');const c=PROTO.list.find(x=>x.id===cid);const x=dueToday().find(y=>y.c.id===cid&&y.i===+i);if(x&&x.done)undoLog(x.log);else logDose(c,b);return}
     const r=t.closest('[data-cid]');if(r)return protoDetail(r.dataset.cid);
-    const s=t.closest('[data-sg]');if(s){const g=sugg[+s.dataset.sg];const c=protoNew(g.name);Object.assign(c,g.patch);return protoEdit(c,true)}
     const id=(t.closest('button')||{}).id;
     if(id==='cNew')return protoEdit(null);if(id==='pLogExtra')return protoPick(c=>logDose(c,null,true));
     if(id==='prCalc')return protoCalc();if(id==='prSpots')return protoSpots();if(id==='prHist')return protoHistory()};
