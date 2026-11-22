@@ -3,7 +3,7 @@
    What this does instead: it drives an iOS Shortcut, which CAN turn on a Focus that hides and silences your apps —
    and if you own the real Brick, it runs that app's shortcut too. The app tracks the state, time and streaks. */
 let BST={};/* daily screen time from the morning Shortcut, health/d-<day>.screentime */
-const bSTh=v=>v<=0||isNaN(v)?null:v<=24?v:v<=1440?v/60:v/3600;   // accepts hours, minutes or seconds
+const bSTh=v=>v<=0||isNaN(v)?null:v/3600;   // Jomo sends seconds
 let BRICK={on:false,since:null,until:null,sessions:[],strict:false,auto:false,sOn:'Brick On',sOff:'Brick Off'},brickLoaded=false,brickTick=null;
 const bMin=(a,b)=>Math.max(0,Math.round((b-a)/60000));
 async function loadBrick(){if(brickLoaded){renderBrick();return}
@@ -38,7 +38,7 @@ function bLife(){const ks=Object.keys(BST).sort().slice(-7),vals=ks.map(k=>bSTh(
   const st=vals.length?Math.round(vals.reduce((a,b)=>a+b,0)/vals.length*10)/10:null,age=+BRICK.age||null,goal=BRICK.goalH==null?2:+BRICK.goalH;
   if(st==null)return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span></div>
     <p class="bk-p">Waiting for your screen time. Add one line to your morning sleep Shortcut and this fills in by itself:</p>
-    <ol class="sl-steps"><li>In the sleep Shortcut, before the last Text block, add Jomo's <b>screen time</b> action for <i>yesterday</i>.</li><li>In the last Text block add a new line: <code>Screen Time|</code> then insert that result.</li></ol></div>`;
+    <ol class="sl-steps"><li>Shortcut <b>Send screen time</b>: Jomo <i>Get Today's Screen Time</i> → Text <code>Screen Time|</code> + that result → Get Contents of URL (your sleep upload link, POST, File = Text).</li><li>Automation → Time of Day <b>23:55</b> daily → Run Immediately → Send screen time.</li></ol></div>`;
   if(!age)return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span></div><div class="bk-big num">${st}<small> h a day</small></div>
     <p class="bk-p">Your average over the last ${vals.length} day${vals.length===1?'':'s'}. One last thing — how old are you?</p>
     <div class="bk-goal" style="background:rgba(255,255,255,.04)"><div><span>Age</span><div class="bk-step"><button type="button" data-age="-1" aria-label="Younger">−</button><b class="num">${BRICK.ageTmp||21}</b><button type="button" data-age="1" aria-label="Older">+</button></div></div><button class="btn p sm" type="button" id="bkAgeOk">Done</button></div></div>`;
