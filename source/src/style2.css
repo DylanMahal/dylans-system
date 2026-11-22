@@ -1736,16 +1736,15 @@ button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
 .sl-qb{display:grid;gap:7px;margin-top:14px}.sl-qb>div{display:grid;grid-template-columns:84px 1fr 28px;align-items:center;gap:10px;font-size:12px}.sl-qb span{opacity:.7}.sl-qb i{display:block;height:5px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden}.sl-qb i b{display:block;height:100%;border-radius:3px}.sl-qb em{font-style:normal;text-align:right;opacity:.8}
 .sl-qb>div{grid-template-columns:128px 1fr 28px}.sl-qb span small{display:block;font-size:10px;opacity:.6;margin-top:1px}
 
-/* bottom quote ticker */
-.ticker{height:36px;border-top:0;background:linear-gradient(180deg,rgba(10,10,12,.96),rgba(4,4,5,.98));backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-.ticker::before{content:"";position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,#ff2a6d,rgba(255,42,109,.35) 30%,rgba(255,255,255,.08) 60%,transparent);z-index:2}
-.ticker .lab{position:relative;gap:8px;padding:0 14px 0 14px;background:#0b0b0d;color:#ff2a6d;font-size:9px;letter-spacing:.18em;border-right:1px solid rgba(255,42,109,.25);box-shadow:8px 0 18px rgba(0,0,0,.8)}
-.ticker .lab i{width:6px;height:6px;border-radius:50%;background:#ff2a6d;box-shadow:0 0 8px #ff2a6d;animation:tkpulse 2.4s ease-in-out infinite}
-@keyframes tkpulse{0%,100%{opacity:1}50%{opacity:.25}}
-.ticker .trk{flex:1;min-width:0;height:100%;display:flex;align-items:center;overflow:hidden;-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 64px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 64px),transparent)}
-.ticker .run span{display:inline-flex;align-items:center;gap:12px;padding:0;margin:0;color:inherit}
-.ticker .run em{font-style:normal;font-size:12.5px;color:rgba(255,255,255,.82);letter-spacing:.005em}
-.ticker .run b{font-family:var(--pix);font-weight:400;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:#ff2a6d;opacity:.85}
-.ticker .run s{display:block;width:4px;height:4px;margin:0 30px 0 18px;background:rgba(255,255,255,.22);transform:rotate(45deg);text-decoration:none}
-.ticker:hover .run{animation-play-state:paused}
-.nofx .ticker .lab i{animation:none}
+/* bottom quote bar: one quote at a time, crossfading */
+.ticker{height:40px;border-top:1px solid rgba(255,255,255,.07);background:rgba(8,8,10,.82);backdrop-filter:saturate(1.6) blur(20px);-webkit-backdrop-filter:saturate(1.6) blur(20px);justify-content:center}
+.ticker .tkbar{position:absolute;left:0;top:-1px;height:1px;width:100%;background:linear-gradient(90deg,rgba(255,42,109,.15),#ff2a6d);box-shadow:0 0 8px rgba(255,42,109,.55);transform:scaleX(0);transform-origin:left}
+.ticker .tkq{position:relative;width:min(92%,1040px);height:100%}
+.ticker .tki{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:14px;opacity:0;transform:translateY(6px);filter:blur(3px);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.8,.2,1),filter .6s ease;white-space:nowrap;overflow:hidden}
+.ticker .tki.in{opacity:1;transform:none;filter:none}
+.ticker .tki.out{opacity:0;transform:translateY(-6px);filter:blur(3px)}
+.ticker .tki span{font:400 13px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;letter-spacing:-.005em;color:rgba(255,255,255,.88);overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ticker .tki b{flex:none;font:500 10.5px/1 -apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:rgba(255,255,255,.38);padding-left:14px;border-left:1px solid rgba(255,255,255,.14)}
+.ticker .tki.sm span{font-size:11.5px}
+.nofx .ticker .tki{transition:opacity .4s ease;transform:none;filter:none}
+@media (prefers-reduced-motion:reduce){.ticker .tki{transition:opacity .3s;transform:none;filter:none}.ticker .tkbar{display:none}}
