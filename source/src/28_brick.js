@@ -13,13 +13,13 @@ const bSave=()=>save('tools/brick',BRICK,true);
 /* fire a Shortcut by name. Needs a real tap, so only call this from a click handler.
    An <a> click is used rather than location.href so a missing handler can't blank the page. */
 const bIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-function bRun(name){if(!name)return false;
+function bRun(name,input){if(!name)return false;
   if(!bIOS()){bToast('Shortcuts only run on your iPhone — the timer still counts here.');return false}
-  const a=document.createElement('a');a.href='shortcuts://run-shortcut?name='+encodeURIComponent(name);a.style.display='none';
+  const a=document.createElement('a');a.href='shortcuts://run-shortcut?name='+encodeURIComponent(name)+(input?'&input=text&text='+encodeURIComponent(input):'');a.style.display='none';
   document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),0);return true}
 function bToast(msg){const t=document.createElement('div');t.className='bktoast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
 function bStart(mins){const now=Date.now();BRICK.on=true;BRICK.since=now;BRICK.until=mins?now+mins*60000:null;bSave();
-  bRun(BRICK.sOn);renderBrick();try{navigator.vibrate&&navigator.vibrate([25,60,25])}catch(e){}}
+  const e=new Date(BRICK.until||now+864e5);bRun(BRICK.sOn,ymd(e)+' '+pad(e.getHours())+':'+pad(e.getMinutes()));renderBrick();try{navigator.vibrate&&navigator.vibrate([25,60,25])}catch(e){}}
 function bEnd(auto){const now=Date.now();const min=BRICK.since?bMin(BRICK.since,Math.min(now,BRICK.until||now)):0;
   const broke=!auto&&BRICK.until&&now<BRICK.until;
   if(min>0)BRICK.sessions.unshift({d:DAYK,at:new Date(BRICK.since).toISOString(),min,broke:!!broke});
@@ -99,7 +99,7 @@ function bindBrick(){
   if($('bkStrict'))$('bkStrict').onchange=e=>{BRICK.strict=e.target.checked;bSave()};
   const nm=(id,k)=>{const n=$(id);if(n)n.oninput=e=>{BRICK[k]=e.target.value.trim();clearTimeout(bindBrick['t'+k]);bindBrick['t'+k]=setTimeout(bSave,700)}};
   nm('bkSOn','sOn');nm('bkSOff','sOff');
-  if($('bkTestOn'))$('bkTestOn').onclick=()=>bRun($('bkSOn').value.trim());
+  if($('bkTestOn'))$('bkTestOn').onclick=()=>{const e=new Date(Date.now()+12e4);bRun($('bkSOn').value.trim(),ymd(e)+' '+pad(e.getHours())+':'+pad(e.getMinutes()))};
   if($('bkTestOff'))$('bkTestOff').onclick=()=>bRun($('bkSOff').value.trim());
   if($('bkLifeGo'))$('bkLifeGo').onclick=()=>{const st=parseFloat(($('bkST').value||'').replace(',','.')),age=parseInt($('bkAge').value);if(!(st>0&&st<24)||!(age>0&&age<100)){bToast('Enter your daily hours and age');return}BRICK.st=st;BRICK.age=age;bSave();renderBrick()};
   if($('bkLifeEd'))$('bkLifeEd').onclick=()=>{BRICK.st=null;renderBrick()};
