@@ -123,6 +123,7 @@ async function wToday() {
   const m = nowMin(), up = d.items.filter(i => toMin(i.t) > m && !i.d), nxt = up[0];
   const mins = nxt ? toMin(nxt.t) - m : null, eta = mins == null ? '' : mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
   if (acc(fam)) return lock({ p: d.pct / 100, v: `${d.pct}%`, l: 'day', lines: [`${d.pct}% · ${d.done}/${d.total}`, ...(nxt ? [`${nxt.t} ${nxt.n}`, `in ${eta}`] : [])], inline: nxt ? `${d.pct}% · ${nxt.t} ${nxt.n}` : `${d.pct}% today` });
+  return done(base('today'), cvToday(d, fam));
   const w = base('today'), pc = d.pct >= 80 ? GOOD : T1;
   const day = new Date(d.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' }).toUpperCase();
   if (fam === 'small') {
@@ -170,6 +171,7 @@ function circ(done, od) {
 function wTasks(d) {
   const f = FAM();
   if (acc(f)) return lock({ p: null, v: String(d.open), l: 'tasks', lines: [`${d.open} task${d.open === 1 ? '' : 's'} left`, ...d.items.filter(i => !i.done).slice(0, 2).map(i => i.n)], inline: d.open ? `${d.open} left · ${d.items[0].n}` : 'tasks clear' });
+  return done(base('journal'), cvTasks(d, f));
   const w = base('journal'), max = { small: 4, medium: 4, large: 8 }[f] || 4, fs = f === 'small' ? 13 : f === 'large' ? 17 : 15;
   w.setPadding(f === 'large' ? 24 : 16, f === 'small' ? 16 : 22, 14, 18);
   if (!d.items.length) { w.addSpacer(); sf(w, 'All clear', Font.semiboldSystemFont(17)); sf(w, 'nothing due today', Font.systemFont(12), GREY); w.addSpacer(); return w }
@@ -214,8 +216,8 @@ function calGauge(c, d, cx, cy, R, sw, numSize) {
   const n = new Date(), pace = Math.max(0, Math.min(1, (n.getHours() + n.getMinutes() / 60) / 24)), a = a0 + span * pace, p = new Path();
   p.move(new Point(cx + (R - sw * .82) * Math.cos(a), cy + (R - sw * .82) * Math.sin(a))); p.addLine(new Point(cx + (R + sw / 2) * Math.cos(a), cy + (R + sw / 2) * Math.sin(a)));
   c.addPath(p); c.setStrokeColor(C_LINE); c.setLineWidth(sw * .13); c.strokePath();
-  ctr(c, Math.abs(d.left), cx, cy - numSize * .28, numSize, Font.heavyRoundedSystemFont(numSize), d.left < 0 ? RED : C_TXT);
-  ctr(c, d.left < 0 ? 'OVER' : 'UNDER', cx, cy + numSize * .45, numSize * .4, Font.mediumSystemFont(numSize * .4), C_SUB);
+  [0, .4, -.4].forEach(dx => ctr(c, Math.abs(d.left), cx + dx, cy - numSize * .3, numSize, Font.heavyRoundedSystemFont(numSize), d.left < 0 ? RED : C_TXT));
+  ctr(c, d.left < 0 ? 'OVER' : 'UNDER', cx, cy + numSize * .42, numSize * .36, Font.semiboldSystemFont(numSize * .36), C_SUB);
 }
 function calBar(c, x, top, w, h, day) {
   rr(c, x, top, w, h, w * .22, C_TRK);
@@ -228,7 +230,7 @@ function calBar(c, x, top, w, h, day) {
 }
 function calsMedium(d) {
   const H = 157, W = Device.isPad() ? 355 : 336, c = ctx(W, H), u = H / 314;   /* u: one Lose It unit */
-  calGauge(c, d, 138 * u, 137 * u, 105 * u, 24 * u, 48 * u);
+  calGauge(c, d, 138 * u, 137 * u, 103 * u, 30 * u, 56 * u);
   pair(c, d.eat, 'CALS', 138 * u, 285 * u, 21 * u);
   const right = W - 47 * u, bw0 = 35 * u, pitch0 = 56 * u, room = right - 262 * u;
   const k = Math.min(1, room / (pitch0 * 6 + bw0)), bw = bw0 * k, pitch = pitch0 * k, x0 = right - (pitch * 6 + bw), N = ['M', 'Tu', 'W', 'Th', 'F', 'Sa', 'Su'];
@@ -241,7 +243,7 @@ function calsMedium(d) {
 }
 function calsSmall(d) {
   const S = 158, c = ctx(S, S), u = S / 314;
-  calGauge(c, d, S / 2, 140 * u, 118 * u, 27 * u, 56 * u);
+  calGauge(c, d, S / 2, 140 * u, 116 * u, 33 * u, 64 * u);
   pair(c, d.eat, 'CALS', S / 2, 284 * u, 24 * u);
   return c.getImage();
 }
@@ -280,11 +282,12 @@ async function dSleep() {
   const t = ymd(new Date()), y = addD(t, -1), o = await docs(['sleep/settings', 'sleep/w-' + t, 'sleep/w-' + y]);
   const S = { wake: '07:30', goal: 8, ...(o['sleep/settings'] || {}) }, n = o['sleep/w-' + t] || o['sleep/w-' + y];
   if (!n || !n.asleep) return { none: 1 };
-  return { score: sScore(n, S), asleep: n.asleep, goal: S.goal * 60, start: n.start, end: n.end, deep: n.deep || 0, rem: n.rem || 0, core: n.core || 0, awake: n.awake || 0, old: !o['sleep/w-' + t] };
+  return { score: sScore(n, S), asleep: n.asleep, goal: S.goal * 60, start: n.start, end: n.end, deep: n.deep || 0, rem: n.rem || 0, core: n.core || 0, awake: n.awake || 0, segs: sNorm(n.segs), old: !o['sleep/w-' + t] };
 }
 const sCol = s => new Color(s >= 80 ? '#57f5a8' : s >= 60 ? '#ffb000' : '#ff453a');
 function wSleep(d) {
   const f = FAM();
+  if (!acc(f)) return done(base('sleep'), cvSleep(d, f));
   if (d.none) { if (acc(f)) return lock({ p: null, v: '–', l: 'sleep', lines: ['No sleep data yet'], inline: 'no sleep data' }); const w = base('sleep'); lbl(w, 'SLEEP', 11, 's', T2); w.addSpacer(); lbl(w, 'No data for last night yet', 14, 's', T2, 2); return w }
   if (acc(f)) return lock({ p: d.score / 100, v: String(d.score), l: 'sleep', lines: [`Sleep ${d.score}% · ${hm(d.asleep)}`, d.start ? `${clock(d.start)} → ${clock(d.end)}` : '', `deep ${hm(d.deep)} · rem ${hm(d.rem)}`], inline: `sleep ${d.score}% · ${hm(d.asleep)}` });
   const w = base('sleep');
@@ -322,6 +325,7 @@ function wHabit(s, q, mode) {
   const h = pickHabit(s, q), f = FAM();
   if (!h) { const w = base('streaks'); sf(w, 'No habits yet', Font.systemFont(13), GREY); return w }
   if (acc(f)) return lock({ p: h.t ? Math.min(1, h.c / h.t) : 0, v: String(h.streak), l: h.ic || unitW(h), lines: [`${h.ic || ''} ${h.n}`, `${h.streak} ${unitW(h)} streak`, h.done ? 'done today' : h.due ? `${h.c}/${h.t} today` : 'rest day'], inline: `${h.ic || ''} ${h.n} · ${h.streak}${h.unit === 'wk' ? 'w' : 'd'}${h.done ? ' ✓' : ''}` });
+  return done(base('streaks'), cvHabit(s, q, mode, f));
   const w = base('streaks');
   if (mode === 'streak') {
     w.setPadding(14, 16, 14, 16);
@@ -360,16 +364,17 @@ function habitRow(st, h, W) {
   return r;
 }
 function wHabits(s) {
-  const f = FAM(), L = s.items.filter(h => h.due), done = L.filter(h => h.done).length;
-  if (acc(f)) return lock({ p: L.length ? done / L.length : 0, v: `${done}/${L.length}`, l: 'habits', lines: [`Habits ${done}/${L.length}`, L.filter(h => !h.done).slice(0, 2).map(h => `${h.ic || ''} ${h.n}`).join('  ')], inline: `habits ${done}/${L.length}` });
+  const f = FAM(), L = s.items.filter(h => h.due), nDone = L.filter(h => h.done).length;
+  if (acc(f)) return lock({ p: L.length ? nDone / L.length : 0, v: `${nDone}/${L.length}`, l: 'habits', lines: [`Habits ${nDone}/${L.length}`, L.filter(h => !h.done).slice(0, 2).map(h => `${h.ic || ''} ${h.n}`).join('  ')], inline: `habits ${nDone}/${L.length}` });
+  return done(base('streaks'), cvHabits(s, f));
   const w = base('streaks'), left = L.filter(h => !h.done), order = [...left, ...L.filter(h => h.done)];
   if (f === 'small') {
     const h = w.addStack(); lbl(h, 'HABITS', 11, 's', T2); h.addSpacer();
-    w.addSpacer(); const b = centred(w, x => { const rb = ringBox(x, 84, L.length ? done / L.length : 0, GOOD, 8); centred(rb, y => lbl(y, done, 22, 'rb')); centred(rb, y => lbl(y, `of ${L.length}`, 10, 'm', T2)) });
+    w.addSpacer(); const b = centred(w, x => { const rb = ringBox(x, 84, L.length ? nDone / L.length : 0, GOOD, 8); centred(rb, y => lbl(y, done, 22, 'rb')); centred(rb, y => lbl(y, `of ${L.length}`, 10, 'm', T2)) });
     w.addSpacer(); if (left[0]) lbl(w, `Next: ${left[0].n}`, 12, 's', T2); return w;
   }
   const h = w.addStack(); h.centerAlignContent(); lbl(h, 'Habits', 15, 's'); h.addSpacer(); lbl(h, `${done} of ${L.length}`, 13, 's', T2);
-  w.addSpacer(6); const pb = w.addStack(); hbar(pb, L.length ? done / L.length : 0, GOOD);
+  w.addSpacer(6); const pb = w.addStack(); hbar(pb, L.length ? nDone / L.length : 0, GOOD);
   w.addSpacer(10);
   if (!L.length) { lbl(w, 'Nothing due today', 13, 'm', T2); w.addSpacer(); return w }
   const W = cw(), cell = Math.floor((W - 14) / 2), rowsN = f === 'large' ? 7 : 2, show = order.slice(0, rowsN * 2);
@@ -400,6 +405,7 @@ function wWeek(d) {
   const t2 = d.days[d.days.indexOf(today) + 1];
   const up = [...today.ev.filter(e => !e.ad && e.e > nm).map(e => ({ ...e, day: 'Today' })), ...((t2 && t2.ev.filter(e => !e.ad).map(e => ({ ...e, day: 'Tomorrow' }))) || [])];
   const tm = m => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
+  if (!acc(f)) return done(base('week'), cvWeek(d, f));
   if (acc(f)) { const n = up[0]; return lock({ p: null, v: n ? tm(n.s) : '–', l: 'next', lines: n ? [n.t, `${n.day} ${tm(n.s)}–${tm(n.e)}`] : ['Nothing coming up'], inline: n ? `${tm(n.s)} ${n.t}` : 'calendar clear' }) }
   const w = base('week');
   if (f !== 'large' && f !== 'extraLarge') {
@@ -456,6 +462,7 @@ async function dGoal(q, target, by) {
 function wGoal(d) {
   const f = FAM(), name = d.q.replace(/\b\w/g, c => c.toUpperCase());
   if (acc(f)) return lock({ p: d.pct / 100, v: `${d.pct}%`, l: name.slice(0, 6), lines: [`${d.target}kg ${name}`, `${d.pct}% · best ${d.bestKg}×${d.bestR}`, d.left != null ? `${d.left} days left` : ''], inline: `${d.target}kg ${name} · ${d.pct}%` });
+  { const w = base('gym'); const g = new LinearGradient(); g.colors = [new Color('#0a0a0a'), new Color('#0d0605'), new Color('#3a1209'), new Color('#7a2a14')]; g.locations = [0, .45, .78, 1]; w.backgroundGradient = g; return done(w, cvGoal(d, f)) }
   const w = base('gym'); w.setPadding(f === 'small' ? 20 : 18, 15, f === 'small' ? 13 : 14, 15);
   const g = new LinearGradient(); g.colors = [new Color('#0a0a0a'), new Color('#0d0605'), new Color('#3a1209'), new Color('#7a2a14')]; g.locations = [0, .45, .78, 1]; w.backgroundGradient = g;
   sf(w, 'Next Goal', new Font('Baskerville-Italic', f === 'small' ? 16 : 19), new Color('#bdbdbd'));
@@ -467,6 +474,243 @@ function wGoal(d) {
   const b = w.addStack(); b.centerAlignContent(); sf(b, `${d.pct}%`, Font.semiboldSystemFont(f === 'small' ? 12 : 14), WHITE); b.addSpacer();
   if (d.left != null) sf(b, d.left >= 0 ? `${d.left} DAYS LEFT` : `${-d.left} DAYS OVER`, Font.semiboldSystemFont(f === 'small' ? 8.5 : 10), new Color('#9a9a9a'));
   return w;
+}
+
+/* =====================================================================================
+   DESIGNS — every widget is drawn as one canvas at the widget's exact shape, so spacing is
+   exact on any device. Built to read in tinted/greyscale home screens: hierarchy comes from
+   brightness and weight, not colour.
+   ===================================================================================== */
+const K = { t1: new Color('#ffffff'), t2: new Color('#ebebf5', .62), t3: new Color('#ebebf5', .32), trk: new Color('#ffffff', .13), trk2: new Color('#ffffff', .08), card: new Color('#ffffff', .07) };
+const FW = { r: Font.systemFont, m: Font.mediumSystemFont, s: Font.semiboldSystemFont, b: Font.boldSystemFont, h: Font.heavySystemFont, rb: Font.boldRoundedSystemFont, rh: Font.heavyRoundedSystemFont, rs: Font.semiboldRoundedSystemFont, mono: Font.mediumMonospacedSystemFont, serif: z => new Font('Baskerville-Italic', z) };
+function dims(f) { const pad = Device.isPad(); if (f === 'small') return [158, 158]; if (f === 'large' || f === 'extraLarge') return pad ? [357, 357] : [338, 354]; return pad ? [357, 158] : [338, 158] }
+function canvas(f) { const [W, H] = dims(f), c = ctx(W, H); return { c, W, H } }
+function done(w, c) { w.setPadding(0, 0, 0, 0); const i = w.addImage(c.getImage()); i.resizable = true; i.centerAlignImage(); return w }
+/* text: y is the top of the line box; align l/c/r with x as left edge / centre / right edge */
+function T(c, s, x, y, size, wt, color, align, faux) {
+  s = String(s); const W = 1200, f = (FW[wt] || FW.r)(size); const rx = align === 'c' ? x - W / 2 : align === 'r' ? x - W : x;
+  const draw = dx => text(c, s, rx + dx, y, W, size * 1.35, f, color || K.t1, align === 'c' ? 'c' : align === 'r' ? 'r' : 'l');
+  draw(0); if (faux) { draw(.35); draw(-.35) }
+}
+const tws = (s, size, wt) => tw(s, size, /^(b|h|rb|rh)$/.test(wt)) * (/^(rh|h)$/.test(wt) ? 1.1 : /^(b|s)$/.test(wt) ? 1.04 : 1);
+function fit(s, size, maxW, wt) { s = String(s); if (tws(s, size, wt) <= maxW) return s; while (s.length > 1 && tws(s + '…', size, wt) > maxW) s = s.slice(0, -1); return s.trimEnd() + '…' }
+function ringAt(c, cx, cy, r, sw, frac, color, track) { arc(c, cx, cy, r, 0, Math.PI * 2, sw, track || K.trk); if (frac > .001) arc(c, cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, frac), sw, color || K.t1) }
+function cap(c, s, x, y, color, align) { T(c, String(s).toUpperCase(), x, y, 11, 's', color || K.t2, align) }
+function check(c, x, y, s, fill, ink) { c.setFillColor(fill); c.fillEllipse(new Rect(x, y, s, s)); const p = new Path(); p.move(new Point(x + s * .29, y + s * .52)); p.addLine(new Point(x + s * .44, y + s * .67)); p.addLine(new Point(x + s * .72, y + s * .35)); c.addPath(p); c.setStrokeColor(ink); c.setLineWidth(s * .11); c.strokePath() }
+function circle(c, x, y, s, color, lw) { c.setStrokeColor(color); c.setLineWidth(lw); c.strokeEllipse(new Rect(x + lw / 2, y + lw / 2, s - lw, s - lw)) }
+function dur(c, mins, x, y, big, align) {
+  /* "7h 32m" with heavy numbers and small units, measured so it can sit left or right aligned */
+  const h = Math.floor(mins / 60), m = Math.round(mins % 60), sm = big * .5;
+  const parts = [[h, big, 'rh', K.t1], ['h ', sm, 's', K.t2], [pad(m), big, 'rh', K.t1], ['m', sm, 's', K.t2]];
+  const wsum = parts.reduce((t, p) => t + tws(p[0], p[1], p[2]), 0); let cx = align === 'r' ? x - wsum : x;
+  parts.forEach(([s, sz, wt, col]) => { T(c, s, cx, y + (big - sz) * 1.02, sz, wt, col, 'l', wt === 'rh'); cx += tws(s, sz, wt) + (wt === 'rh' ? 1.5 : 0) });
+  return wsum;
+}
+
+/* ---------- TODAY ---------- */
+function cvToday(d, f) {
+  const { c, W, H } = canvas(f), P = 16, m = nowMin(), up = d.items.filter(i => toMin(i.t) > m && !i.d), nx = up[0];
+  const mins = nx ? toMin(nx.t) - m : 0, eta = !nx ? '' : mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+  const day = new Date(d.date + 'T12:00').toLocaleDateString('en-GB', { weekday: 'long' });
+  if (f === 'small') {
+    cap(c, 'Today', P, P); T(c, `${d.done}/${d.total}`, W - P, P, 11, 's', K.t2, 'r');
+    ringAt(c, P + 29, 66, 25, 7, d.pct / 100); T(c, d.pct + '%', P + 29, 58, 14, 'rh', K.t1, 'c', 1);
+    T(c, d.done, P + 66, 44, 28, 'rh', K.t1, 'l', 1); T(c, `of ${d.total} done`, P + 67, 76, 11, 'm', K.t2);
+    if (nx) { cap(c, `Next · ${eta}`, P, 106, K.t2); T(c, fit(nx.n, 15, W - 2 * P, 's'), P, 122, 15, 's') } else T(c, 'All done today', P, 116, 15, 's', K.t2);
+    return c;
+  }
+  const R = 46, cx = P + R + 2, cy = 79;
+  ringAt(c, cx, cy, R, 10, d.pct / 100); T(c, d.pct + '%', cx, cy - 15, 22, 'rh', K.t1, 'c', 1); T(c, `${d.done} of ${d.total}`, cx, cy + 9, 10, 'm', K.t2, 'c');
+  const x = cx + R + 22, rw = W - P - x;
+  cap(c, day, x, P + 2);
+  if (nx) {
+    T(c, fit(nx.n, 18, rw, 'b'), x, P + 20, 18, 'b');
+    T(c, `${nx.t}  ·  in ${eta}`, x, P + 44, 12, 'm', K.t2);
+  } else T(c, 'All done today', x, P + 20, 18, 'b', K.t2);
+  const rows = up.slice(1, f === 'large' ? 1 : 3); c.setFillColor(K.trk2); c.fillRect(new Rect(x, P + 68, rw, 1));
+  rows.forEach((i, k) => { const y = P + 80 + k * 24; T(c, i.t, x, y, 12, 'mono', K.t2); T(c, fit(i.n, 13, rw - 52, 'm'), x + 50, y, 13, 'm', K.t1) });
+  if (f === 'large') {
+    const y0 = 156; c.setFillColor(K.trk2); c.fillRect(new Rect(P, y0 - 12, W - 2 * P, 1)); cap(c, 'Up next', P, y0);
+    const list = up.slice(1, 9); if (!list.length) T(c, 'Nothing else today', P, y0 + 22, 14, 'm', K.t2);
+    list.forEach((i, k) => { const y = y0 + 22 + k * 22; T(c, i.t, P, y, 13, 'mono', K.t2); T(c, fit(i.n, 14, W - 2 * P - 58, 'm'), P + 56, y, 14, 'm') });
+  }
+  return c;
+}
+
+/* ---------- TASKS ---------- */
+function cvTasks(d, f) {
+  const { c, W, H } = canvas(f), P = 16, open = d.items.filter(i => !i.done).length;
+  const small = f === 'small', fs = small ? 13 : 15, rowH = small ? 27 : f === 'large' ? 34 : 29, max = small ? 4 : f === 'large' ? 8 : 3;
+  let y = P;
+  cap(c, 'Tasks', P, y); T(c, open ? `${open} left` : 'Clear', W - P, y, 11, 's', K.t2, 'r');
+  y += small ? 22 : 24;
+  if (!d.items.length) { T(c, 'Nothing due today', P, y + 6, 15, 's', K.t2); return c }
+  const cols = 1, colW = (W - 2 * P - (cols - 1) * 14) / cols, per = f === 'medium' ? 3 : max;
+  d.items.slice(0, per * cols).forEach((t, i) => {
+    const col = Math.floor(i / per), r = i % per, x = P + col * (colW + 14), yy = y + r * rowH, s = small ? 15 : 17;
+    if (t.done) check(c, x, yy + 1, s, K.t3, new Color('#1c1c1e')); else circle(c, x, yy + 1, s, t.od ? new Color('#ff453a') : K.t2, 1.8);
+    const tx = x + s + 10, right = t.tm && !small && cols === 1 ? 58 : 0;
+    T(c, fit(t.n, fs, colW - (tx - x) - right, 'm'), tx, yy + (s - fs * 1.2) / 2 + 1, fs, 'm', t.done ? K.t3 : K.t1);
+    if (right) T(c, t.tm, P + colW, yy + 3, 12, 'mono', K.t2, 'r');
+  });
+  const more = d.items.length - per * cols; if (more > 0 && !small) T(c, `+${more} more`, W - P, H - P - 13, 11, 'm', K.t3, 'r');
+  return c;
+}
+
+/* ---------- SLEEP ---------- */
+const ST = { awake: [0, new Color('#ffffff', .9)], rem: [1, new Color('#ffffff', .66)], core: [2, new Color('#ffffff', .42)], deep: [3, new Color('#ffffff', .24)] };
+function hypno(c, segs, x, y, w, h, labels) {
+  if (!segs || !segs.length) { T(c, 'No stage data', x, y + h / 2 - 7, 11, 'm', K.t3); return }
+  const t0 = segs[0][0], t1 = segs[segs.length - 1][1], lane = h / 4, bh = lane * .62;
+  for (let i = 0; i < 4; i++) { c.setFillColor(K.trk2); c.fillRect(new Rect(x, y + lane * i + lane / 2 - .5, w, 1)) }
+  /* vertical joins first, then blocks over them */
+  c.setFillColor(K.trk); for (let i = 1; i < segs.length; i++) { const a = ST[segs[i - 1][2]], b = ST[segs[i][2]]; if (!a || !b) continue; const xx = x + w * (segs[i][0] - t0) / (t1 - t0); const ya = y + lane * Math.min(a[0], b[0]) + lane / 2, yb = y + lane * Math.max(a[0], b[0]) + lane / 2; c.fillRect(new Rect(xx - .6, ya, 1.2, yb - ya)) }
+  segs.forEach(([a, b, st]) => { const s = ST[st]; if (!s) return; const xa = x + w * (a - t0) / (t1 - t0), xb = x + w * (b - t0) / (t1 - t0); rr(c, xa, y + lane * s[0] + (lane - bh) / 2, Math.max(2, xb - xa), bh, Math.min(bh / 2, 3), s[1]) });
+  if (labels) ['Awake', 'REM', 'Core', 'Deep'].forEach((l, i) => T(c, l, x - 8, y + lane * i + lane / 2 - 6, 9, 'm', K.t3, 'r'));
+}
+function cvSleep(d, f) {
+  const { c, W, H } = canvas(f), P = 16;
+  if (d.none) { cap(c, 'Sleep', P, P); T(c, 'No data for', P, H / 2 - 18, 15, 's', K.t2); T(c, 'last night yet', P, H / 2, 15, 's', K.t2); return c }
+  const bed = d.start ? clock(d.start) : '', wake = d.end ? clock(d.end) : '';
+  if (f === 'small') {
+    cap(c, d.old ? 'Night before' : 'Last night', P, P);
+    ringAt(c, W - P - 17, P + 17, 15, 4.5, d.score / 100); T(c, d.score, W - P - 17, P + 10, 11, 'rh', K.t1, 'c', 1);
+    dur(c, d.asleep, P, 38, 28);
+    T(c, `of ${d.goal / 60}h goal`, P, 72, 11, 'm', K.t2);
+    hypno(c, d.segs, P, 92, W - 2 * P, 34);
+    T(c, bed, P, H - P - 13, 11, 's', K.t2); T(c, wake, W - P, H - P - 13, 11, 's', K.t2, 'r');
+    return c;
+  }
+  /* medium / large: summary on the left, hypnogram on the right */
+  cap(c, d.old ? 'Night before' : 'Last night', P, P);
+  dur(c, d.asleep, P, 36, 30);
+  T(c, `of ${d.goal / 60}h goal`, P, 72, 11, 'm', K.t2);
+  ringAt(c, P + 22, H - P - 30 - (f === 'large' ? 196 : 0), 20, 5.5, d.score / 100); T(c, d.score, P + 22, H - P - 39 - (f === 'large' ? 196 : 0), 14, 'rh', K.t1, 'c', 1);
+  T(c, 'SCORE', P + 50, H - P - 40 - (f === 'large' ? 196 : 0), 9, 's', K.t3); T(c, d.score >= 80 ? 'Great' : d.score >= 60 ? 'Okay' : 'Poor', P + 50, H - P - 28 - (f === 'large' ? 196 : 0), 13, 's');
+  const hx = 172, hw = W - P - hx, hy = P + 4, hh = (f === 'large' ? 160 : 108) - 22;
+  hypno(c, d.segs, hx, hy, hw, hh, true);
+  T(c, bed, hx, hy + hh + 8, 11, 's', K.t2); T(c, wake, hx + hw, hy + hh + 8, 11, 's', K.t2, 'r');
+  if (f === 'large') {
+    const y0 = 196, tot = d.deep + d.rem + d.core + d.awake || 1; c.setFillColor(K.trk2); c.fillRect(new Rect(P, y0 - 12, W - 2 * P, 1));
+    [['Deep', d.deep, 'deep'], ['Core', d.core, 'core'], ['REM', d.rem, 'rem'], ['Awake', d.awake, 'awake']].forEach(([l, v, k], i) => {
+      const y = y0 + i * 32; T(c, l, P, y, 13, 's'); T(c, `${Math.floor(v / 60) ? Math.floor(v / 60) + 'h ' : ''}${Math.round(v % 60)}m`, W - P, y, 13, 's', K.t2, 'r');
+      rr(c, P, y + 19, W - 2 * P, 5, 2.5, K.trk2); rr(c, P, y + 19, Math.max(5, (W - 2 * P) * v / tot), 5, 2.5, ST[k][1]);
+    });
+  }
+  return c;
+}
+
+/* ---------- HABITS ---------- */
+function hIcon(c, h, x, y, s) { c.setFillColor(K.card); c.fillEllipse(new Rect(x, y, s, s)); T(c, h.ic || '•', x + s / 2, y + s * .2, s * .46, 'r', K.t1, 'c') }
+function cvHabits(s, f) {
+  const { c, W, H } = canvas(f), P = 16, L = s.items.filter(h => h.due), n = L.filter(h => h.done).length, order = [...L.filter(h => !h.done), ...L.filter(h => h.done)];
+  if (f === 'small') {
+    cap(c, 'Habits', P, P);
+    ringAt(c, W / 2, 84, 40, 9, L.length ? n / L.length : 0); T(c, n, W / 2, 66, 26, 'rh', K.t1, 'c', 1); T(c, `of ${L.length}`, W / 2, 96, 11, 'm', K.t2, 'c');
+    if (order[0] && !order[0].done) T(c, fit(order[0].n, 12, W - 2 * P, 's'), W / 2, H - P - 14, 12, 's', K.t2, 'c');
+    return c;
+  }
+  T(c, 'Habits', P, P - 2, 17, 'b'); T(c, `${n}/${L.length}`, W - P, P - 2, 17, 'rh', K.t2, 'r', 1);
+  rr(c, P, P + 26, W - 2 * P, 5, 2.5, K.trk); if (n) rr(c, P, P + 26, Math.max(5, (W - 2 * P) * n / L.length), 5, 2.5, K.t1);
+  const rowsN = f === 'large' ? 7 : 2, colW = (W - 2 * P - 16) / 2, y0 = P + 46, rh = f === 'large' ? 40 : 38;
+  if (!L.length) { T(c, 'Nothing due today', P, y0, 14, 'm', K.t2); return c }
+  order.slice(0, rowsN * 2).forEach((h, i) => {
+    const x = P + (i % 2) * (colW + 16), y = y0 + Math.floor(i / 2) * rh;
+    hIcon(c, h, x, y, 28);
+    T(c, fit(h.n, 13, colW - 60, 's'), x + 36, y - 1, 13, 's', h.done ? K.t3 : K.t1);
+    T(c, h.done ? 'Done' : h.t > 1 ? `${h.c} of ${h.t}` : h.streak ? `${h.streak}${h.unit === 'wk' ? 'w' : 'd'} streak` : 'Not yet', x + 36, y + 16, 10, 'm', K.t3);
+    if (h.done) check(c, x + colW - 18, y + 5, 18, K.t1, new Color('#1c1c1e')); else ringAt(c, x + colW - 9, y + 14, 8, 2.2, h.t ? h.c / h.t : 0);
+  });
+  const left = order.length - rowsN * 2; if (left > 0 && f === 'large') T(c, `+${left} more`, P, H - P - 12, 11, 'm', K.t3);
+  return c;
+}
+function cvGrid(c, g, x, y, weeks, cell, gap) {
+  g = (g || '').slice(-(weeks * 7));
+  for (let i = 0; i < weeks * 7; i++) { const ch = g[i] || 'f', X = x + Math.floor(i / 7) * (cell + gap), Y = y + (i % 7) * (cell + gap); rr(c, X, Y, cell, cell, cell * .26, ch === '1' ? K.t1 : ch === '0' ? K.trk : ch === 'f' ? new Color('#ffffff', .03) : K.trk2) }
+}
+function cvHabit(s, q, mode, f) {
+  const h = pickHabit(s, q), { c, W, H } = canvas(f), P = 16;
+  if (!h) { T(c, 'No habits yet', P, P, 14, 'm', K.t2); return c }
+  const unit = h.unit === 'wk' ? 'week' : 'day', sub = h.done ? 'Done today' : h.due ? (h.t > 1 ? `${h.c} of ${h.t} today` : 'Not done yet') : 'Rest day';
+  if (mode === 'streak') {
+    hIcon(c, h, P, P, 34); ringAt(c, W - P - 13, P + 17, 11, 3.5, h.done ? 1 : h.t ? h.c / h.t : 0);
+    T(c, h.streak, P - 1, 62, 46, 'rh', K.t1, 'l', 1); T(c, `${unit} streak`, P, 114, 12, 's', K.t2); T(c, fit(h.n, 12, W - 2 * P, 'm'), P, 130, 12, 'm', K.t3);
+    return c;
+  }
+  if (f === 'small') {
+    c.setFillColor(K.card); rr(c, P, P - 3, 34, 34, 9, K.card); T(c, h.ic || '•', P + 17, P + 4, 16, 'r', K.t1, 'c');
+    T(c, fit(h.n, 16, W - 2 * P - 44, 'r'), P + 44, P + 5, 16, 'r', K.t2);
+    const cell = 8.2, gap = 3.4, gw = 11 * cell + 10 * gap; cvGrid(c, h.g, (W - gw) / 2, H - P - (7 * cell + 6 * gap), 11, cell, gap);
+    return c;
+  }
+  const weeks = f === 'large' ? 12 : 15, cell = f === 'large' ? 21 : 11.6, gap = f === 'large' ? 4.6 : 3.4, gw = weeks * cell + (weeks - 1) * gap, gh = 7 * cell + 6 * gap;
+  if (f === 'large') {
+    hIcon(c, h, P, P, 36); T(c, fit(h.n, 17, W - 2 * P - 120, 'b'), P + 46, P + 1, 17, 'b'); T(c, sub, P + 46, P + 21, 11, 'm', K.t2);
+    T(c, h.streak, W - P, P - 2, 28, 'rh', K.t1, 'r', 1); T(c, `${unit} streak`, W - P, P + 31, 10, 'm', K.t2, 'r');
+    const gy = P + 58; cvGrid(c, h.g, (W - gw) / 2, gy, weeks, cell, gap);
+    const g = (h.g || ''), due = [...g].filter(x => x === '1' || x === '0'), pc = due.length ? Math.round(due.filter(x => x === '1').length / due.length * 100) : 0;
+    const wk = [...g.slice(-7)].filter(x => x === '1').length, sy = gy + gh + 22, sw = (W - 2 * P) / 3;
+    c.setFillColor(K.trk2); c.fillRect(new Rect(P, sy - 10, W - 2 * P, 1));
+    [[`${wk}/7`, 'This week'], [`${pc}%`, 'Last 12 weeks'], [h.done ? 'Done' : h.due ? 'To do' : 'Rest', 'Today']].forEach(([v, l], i) => { T(c, v, P + sw * i, sy, 22, 'rh', K.t1, 'l', 1); T(c, l, P + sw * i, sy + 28, 10, 'm', K.t2) });
+    return c;
+  }
+  const gx = W - P - gw; cvGrid(c, h.g, gx, (H - gh) / 2, weeks, cell, gap);
+  hIcon(c, h, P, P, 30); T(c, fit(h.n, 14, gx - P - 12, 's'), P, P + 40, 14, 's');
+  T(c, h.streak, P - 1, H - P - 46, 30, 'rh', K.t1, 'l', 1); T(c, `${unit} streak`, P, H - P - 12, 10, 'm', K.t2);
+  return c;
+}
+
+/* ---------- WEEK ---------- */
+const CALK = { job: .9, study: .7, gym: .55, fun: .42, other: .32 };
+function cvWeek(d, f) {
+  const { c, W, H } = canvas(f), P = 16, now = new Date(), nm = now.getHours() * 60 + now.getMinutes(), ti = Math.max(0, d.days.findIndex(x => x.k === d.k));
+  const today = d.days[ti], t2 = d.days[ti + 1], tm = m => `${pad(Math.floor(m / 60) % 24)}:${pad(m % 60)}`;
+  const up = [...today.ev.filter(e => !e.ad && e.e > nm).map(e => ({ ...e, tm: 0 })), ...((t2 && t2.ev.filter(e => !e.ad).map(e => ({ ...e, tm: 1 }))) || [])];
+  const wd = now.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase();
+  if (f !== 'large' && f !== 'extraLarge') {
+    const lw = f === 'small' ? 0 : 74;
+    if (f === 'small') { T(c, wd, P, P, 11, 'b', new Color('#ff453a')); T(c, now.getDate(), W - P, P - 4, 20, 'rh', K.t1, 'r', 1) }
+    else { T(c, wd, P, P, 12, 'b', new Color('#ff453a')); T(c, now.getDate(), P - 1, P + 14, 34, 'rh', K.t1, 'l', 1); T(c, up.length ? `${today.ev.filter(e => !e.ad && e.e > nm).length} today` : 'Free', P, H - P - 13, 11, 'm', K.t2) }
+    const x = P + lw, cwid = W - P - x, n = f === 'small' ? 3 : 3, ch = f === 'small' ? 34 : 38, gp = 5, y0 = f === 'small' ? P + 24 : P;
+    const show = up.slice(0, n); if (!show.length) T(c, 'Nothing coming up', x, y0 + 8, 13, 'm', K.t2);
+    show.forEach((e, i) => {
+      const y = y0 + i * (ch + gp); rr(c, x, y, cwid, ch, 8, K.card); rr(c, x, y, 3.5, ch, 1.75, new Color('#ffffff', CALK[e.c] || .32));
+      T(c, fit(e.t, f === 'small' ? 12 : 13, cwid - 18, 's'), x + 11, y + (f === 'small' ? 4 : 5), f === 'small' ? 12 : 13, 's');
+      T(c, `${e.tm ? 'Tomorrow ' : ''}${tm(e.s)}–${tm(e.e)}`, x + 11, y + (f === 'small' ? 19 : 21), 10, 'm', K.t2);
+    });
+    return c;
+  }
+  /* large: the week as a time grid */
+  const timed = d.days.flatMap(x => x.ev.filter(e => !e.ad));
+  const h0 = Math.min(8, ...timed.map(e => Math.floor(e.s / 60))), h1 = Math.max(22, ...timed.map(e => Math.ceil(Math.min(e.e, 1440) / 60)));
+  const lx = P + 16, top = P + 40, colW = (W - P - lx) / 7, ph = (H - P - top) / ((h1 - h0) * 60), N = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  d.days.forEach((x, i) => {
+    const cx = lx + i * colW + colW / 2, isT = i === ti;
+    T(c, N[i], cx, P, 10, 's', isT ? new Color('#ff453a') : K.t3, 'c');
+    if (isT) { c.setFillColor(new Color('#ff453a')); c.fillEllipse(new Rect(cx - 11, P + 14, 22, 22)) }
+    T(c, new Date(x.k + 'T12:00').getDate(), cx, P + 17, 13, 'b', isT ? K.t1 : K.t2, 'c');
+  });
+  for (let h = h0; h <= h1; h += 2) { const y = top + (h - h0) * 60 * ph; c.setFillColor(K.trk2); c.fillRect(new Rect(lx, y, W - P - lx, 1)); T(c, h % 24, lx - 5, y - 6, 9, 'm', K.t3, 'r') }
+  d.days.forEach((x, i) => x.ev.filter(e => !e.ad).forEach(e => {
+    const y = top + (Math.max(e.s, h0 * 60) - h0 * 60) * ph, hh = Math.max(10, (Math.min(e.e, h1 * 60) - Math.max(e.s, h0 * 60)) * ph - 1.5), X = lx + i * colW + 1.5, cw2 = colW - 3;
+    rr(c, X, y, cw2, hh, 4, new Color('#ffffff', .16 + (CALK[e.c] || .32) * .2)); rr(c, X, y, 2.5, hh, 1.25, new Color('#ffffff', .85));
+    if (hh >= 14) T(c, fit(e.t, 8.5, cw2 - 6, 's'), X + 5, y + 2, 8.5, 's');
+  }));
+  if (nm >= h0 * 60 && nm <= h1 * 60) { const y = top + (nm - h0 * 60) * ph; c.setFillColor(new Color('#ff453a')); c.fillRect(new Rect(lx + ti * colW, y - .75, colW, 1.5)); c.fillEllipse(new Rect(lx + ti * colW - 3, y - 3, 6, 6)) }
+  return c;
+}
+
+/* ---------- GOAL ---------- */
+function cvGoal(d, f) {
+  const { c, W, H } = canvas(f), P = 18, name = d.q.replace(/\b\w/g, x => x.toUpperCase()), sm = f === 'small';
+  T(c, 'Next Goal', P, P + 2, sm ? 18 : 21, 'serif', new Color('#ffffff', .72));
+  T(c, `${d.target}kg ${name}`, P, P + (sm ? 30 : 34), sm ? 19 : 24, 'b', K.t1);
+  if (!sm) T(c, d.best ? `Best ${d.bestKg}kg × ${d.bestR}  ·  e1RM ${d.best}kg` : 'No sets logged yet', P, P + 66, 12, 'm', K.t2);
+  if (f === 'large') { T(c, d.pct + '%', P - 2, H / 2 - 30, 72, 'rh', K.t1, 'l', 1); T(c, d.best ? `${Math.max(0, Math.round((d.target - d.best) * 10) / 10)}kg to go` : '', P, H / 2 + 52, 15, 's', K.t2) }
+  const by = H - P - 32; rr(c, P, by, W - 2 * P, 5, 2.5, new Color('#ffffff', .14)); if (d.pct) rr(c, P, by, Math.max(5, (W - 2 * P) * d.pct / 100), 5, 2.5, K.t1);
+  if (f !== 'large') T(c, d.pct + '%', P, by + 13, sm ? 15 : 17, 'rh', K.t1, 'l', 1); else T(c, 'Progress', P, by + 15, 10, 's', K.t2);
+  if (d.left != null) T(c, d.left >= 0 ? `${d.left} DAYS LEFT` : `${-d.left} DAYS OVER`, W - P, by + (sm ? 16 : 18), 10, 's', K.t2, 'r');
+  return c;
 }
 
 /* =============================== router =============================== */
