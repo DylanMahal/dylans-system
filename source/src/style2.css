@@ -1646,3 +1646,6 @@ input[type=date].inp,input[type=time].inp{color-scheme:dark}
 /* gym quick start */
 .bigstart{border:1px solid rgba(255,42,109,.25)!important;background:linear-gradient(120deg,rgba(255,42,109,.14),rgba(255,255,255,.03))!important;border-radius:20px}
 .streak .dots i{border-radius:3px}
+.tga .tgs .pbar{flex:1;height:8px}.tga .tgs .pbar em{display:none}
+.tgauto{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;background:rgba(5,217,232,.12);color:var(--cyan);font-size:9.5px;font-weight:600;vertical-align:2px;letter-spacing:.02em}
+.tga .tgv{width:auto!important;min-width:44px}
