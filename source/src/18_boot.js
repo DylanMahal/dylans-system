@@ -70,6 +70,7 @@ function publishWidget(){if(!R||!booted||!M.plans)return;
   const kn=x=>norm(x).replace(/[^a-z0-9]/g,''),SN=(M.stack||[]).filter(x=>x.status!=='paused'&&x.status!=='notinplan'&&kn(x.name).length>=3).map(x=>({k:kn(x.name),dose:x.dose||''}));
   w.doses=vis.map(i=>{const k=kn(i.item),m=SN.find(x=>k.includes(x.k)||(k.length>=4&&x.k.includes(k)));return m?{t:fmtM(i.t),n:i.item,d:!!DAY.ticks[i.tk],dose:String(m.dose||'')}:null}).filter(Boolean);
   w.cats=Object.fromEntries(Object.entries(M.cats||{}).filter(([c])=>c!=='Investment & Savings'));
+  w.money={take:+(M.inc&&M.inc.take)||0,out:+M.out||0,left:+M.left||0,spend:+M.spend||0,save:+M.save||0,cats:M.cats||{}};
   /* only write when something on it changed (stamp the time at most hourly, so the widget can tell it's fresh) */
   if(habLoaded)try{hWidget()}catch(e){}
   const sig=JSON.stringify({...w,at:0}),fresh=Date.now()-(+new Date(widgetAt||0))<36e5;if(sig===widgetLast&&fresh)return;widgetLast=sig;widgetAt=w.at;save('widget/today',w,true)}
