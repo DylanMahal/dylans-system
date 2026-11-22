@@ -108,8 +108,11 @@ const JST=[['todo','To Do'],['prog','In Progress'],['done','Done']];
 const JPR={1:['Highest','jp-1','<path d="M6 12.5l6-5.5 6 5.5M6 18l6-5.5 6 5.5" stroke-width="2.4"/>'],2:['High','jp-2','<path d="M6 15l6-6 6 6" stroke-width="2.4"/>'],3:['Medium','jp-3','<path d="M5.5 9.5h13M5.5 14.5h13" stroke-width="2.4"/>'],4:['Low','jp-4','<path d="M6 9l6 6 6-6" stroke-width="2.4"/>']};
 const tSt=tk=>tk.done?'done':(tk.st==='prog'?'prog':'todo');
 const jIc=(a,cls)=>`<span class="ji ${a[1]}${cls?' '+cls:''}" title="${a[0]}">${TSV(a[2])}</span>`;
-const jKey=tk=>tk.no?String(6740+tk.no):'—';
-function tKeys(){let ch=false;TASKS.seq=TASKS.seq||0;[...TASKS.list].sort((a,b)=>(a.created||'')<(b.created||'')?-1:1).forEach(t=>{if(!t.no){t.no=++TASKS.seq;ch=true}});TASKS.list.forEach(t=>{if(t.no>TASKS.seq)TASKS.seq=t.no});if(ch)setTimeout(tSave,0)}
+/* numbers = week + order: 4803 is the 3rd task created in week 48 */
+const jWk=d=>isoWeek(logical(new Date(d)));const jCurWk=()=>isoWeek(new Date(DAYK+'T12:00'));
+const jKey=tk=>tk.code?String(tk.code).padStart(4,'0'):'—';
+function tKeys(){let ch=false;const used={};TASKS.list.forEach(t=>{if(t.code&&t.cw)used[t.cw]=Math.max(used[t.cw]||0,t.code%100)});
+  [...TASKS.list].sort((a,b)=>(a.created||'')<(b.created||'')?-1:1).forEach(t=>{if(t.code)return;const w=jWk(t.created||Date.now());const n=(used[w]||0)+1;used[w]=n;t.cw=w;t.code=(+w.slice(-2))*100+n;ch=true});if(ch)setTimeout(tSave,0)}
 function tSetSt(tk,st){if(st==='done'){if(!tk.done){tToggle(tk.id);if(!tk.done)tk.st='todo'}}else{tk.done=null;tk.st=st}}
 let JB={v:'board',p:'all',q:'',f:'',...(LS.get('tjira')||{})};const jSaveV=()=>LS.set('tjira',{v:JB.v,p:JB.p,f:JB.f});
 function jDue(tk){if(!tk.d)return '';const late=tk.d<DAYK&&!tk.done,now=tk.d===DAYK;return `<span class="jdue${late?' late':now?' now':''}">${TSV(TIC.cal)}${esc(tCap(tWhen({d:tk.d})).replace(/ \d.*$/,''))}${tk.tm?' '+esc(tk.tm):''}</span>`}
@@ -124,9 +127,9 @@ function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.
   const inP=t=>JB.p==='all'||(JB.p==='inbox'?!t.proj:t.proj===JB.p);
   const inF=t=>!JB.f||(JB.f==='due'?t.d&&t.d<=DAYK:JB.f==='hi'?(t.p||3)<=2:true);
   const inQ=t=>!q||(t.t+' '+(t.note||'')+' '+(t.wo||'')+' '+jKey(t)).toLowerCase().includes(q);
-  const vis=L.filter(t=>inP(t)&&inF(t)&&inQ(t));
+  const wk=jCurWk();const vis=L.filter(t=>inP(t)&&inF(t)&&inQ(t)&&(!t.done||jWk(t.done)===wk));
   const sortT=a=>a.sort((x,y)=>((x.p||3)-(y.p||3))||((x.d||'9')<(y.d||'9')?-1:(x.d||'9')>(y.d||'9')?1:(x.no||0)-(y.no||0)));
-  const by=st=>{const r=vis.filter(t=>tSt(t)===st);return st==='done'?r.sort((a,b)=>b.done>a.done?1:-1).slice(0,15):sortT(r)};
+  const by=st=>{const r=vis.filter(t=>tSt(t)===st);return st==='done'?r.sort((a,b)=>b.done>a.done?1:-1):sortT(r)};
   const P=TASKS.projects.find(x=>x.id===JB.p);const name=JB.p==='all'?'All work':JB.p==='inbox'?'Inbox':P.n;
   const openN=vis.filter(t=>!t.done).length;
   let body='';
@@ -135,7 +138,7 @@ function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.
   const chip=(k,l,dot)=>`<button type="button" class="jchip${JB.p===k?' on':''}" data-jp="${esc(k)}">${dot?`<i class="tkdot" style="background:${dot}"></i>`:''}${esc(l)}</button>`;
   const fchip=(k,l)=>`<button type="button" class="jfch${JB.f===k?' on':''}" data-jf="${k}">${l}</button>`;
   el.innerHTML=`<div class="jw panel">
-    <div class="jtop"><div><div class="jcrumb">Projects <span>/</span> ${esc(name)}</div><h3 class="jtitle">${esc(name)} ${JB.v==='board'?'board':'list'}</h3><div class="jsub">${openN} open task${openN===1?'':'s'}</div></div>
+    <div class="jtop"><div><div class="jcrumb">${esc(name)} <span>/</span> ${JB.v==='board'?'Board':'List'}</div><h3 class="jtitle">Week ${+wk.slice(-2)}</h3><div class="jsub">${(()=>{const m=new Date(DAYK+'T12:00');m.setDate(m.getDate()-((m.getDay()+6)%7));const e=new Date(m);e.setDate(m.getDate()+6);const f=x=>x.toLocaleDateString('en-GB',{day:'numeric',month:'short'});return f(m)+' – '+f(e)})()} · ${openN} open · ${vis.filter(t=>t.done).length} done</div></div>
       <div class="jvt" role="tablist"><button type="button" data-jv="board" aria-pressed="${JB.v==='board'}">${TSV(TIC.board)}<span>Board</span></button><button type="button" data-jv="list" aria-pressed="${JB.v==='list'}">${TSV(TIC.list)}<span>List</span></button></div></div>
     <div class="jprojs">${chip('all','All work')}${chip('inbox','Inbox')}${TASKS.projects.map(P=>chip(P.id,P.n,P.col)).join('')}<button type="button" class="jchip jnewp" id="tNewP">${TSV(TIC.plus)}Project</button></div>
     <div class="jbar"><label class="jsearch">${TSV(TIC.search)}<input id="jQ" type="search" placeholder="Search tasks" value="${esc(JB.q)}" autocomplete="off"></label>${fchip('due','Due now')}${fchip('hi','High priority')}</div>
@@ -156,7 +159,7 @@ let jDrag=null;
 function tBind(){const el=$('jPaneT');
   if(!el.dataset.hold){el.dataset.hold=1;tHold(el,'[data-te]',c=>tEdit(c.dataset.te))}
   $('tAddF').onsubmit=e=>{e.preventDefault();const v=$('tAdd').value.trim();if(!v)return;const r=tParse(v);if(!r.t)return;if(!r.proj&&JB.p!=='all'&&JB.p!=='inbox')r.proj=JB.p;
-    TASKS.list.push({id:rid()+rid(),...r,st:'todo',no:(TASKS.seq=(TASKS.seq||0)+1),note:'',sub:[],done:null,created:new Date().toISOString()});tSave();renderTasks();$('tAdd').focus()};
+    TASKS.list.push({id:rid()+rid(),...r,st:'todo',note:'',sub:[],done:null,created:new Date().toISOString()});tSave();renderTasks();$('tAdd').focus()};
   $('tAdd').oninput=e=>{const v=e.target.value.trim();if(!v){$('tPrev').textContent='';return}const r=tParse(v);const P=TASKS.projects.find(x=>x.id===r.proj);$('tPrev').textContent=[r.d?tCap(tWhen(r)):'',r.rep?'Repeats '+r.rep:'',(JPR[r.p]||JPR[3])[0]+' priority',P?P.n:''].filter(Boolean).join('  ·  ')};
   $('jQ').oninput=e=>{JB.q=e.target.value;const p=e.target.selectionStart;renderTasks();const i=$('jQ');i.focus();try{i.setSelectionRange(p,p)}catch(x){}};
   el.onclick=e=>{const b=e.target.closest('button,[data-te]');if(!b)return;const d=b.dataset;
@@ -208,7 +211,7 @@ function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const dr
 /* ---- today's tasks, mirrored into the Today view ---- */
 function tToggle(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return false;
   if(tk.done){tk.done=null;tk.st='todo'}
-  else if(tk.rep&&tk.d){const nx=tNext(tk);TASKS.list.push({...clone(tk),id:rid()+rid(),done:new Date().toISOString(),rep:null,st:'done',no:(TASKS.seq=(TASKS.seq||0)+1)});tk.st='todo';tk.d=nx;(tk.sub||[]).forEach(s=>s.x=false)}
+  else if(tk.rep&&tk.d){const nx=tNext(tk);TASKS.list.push({...clone(tk),id:rid()+rid(),done:new Date().toISOString(),rep:null,st:'done',code:null,cw:null,created:new Date().toISOString()});tk.st='todo';tk.d=nx;(tk.sub||[]).forEach(s=>s.x=false)}
   else tk.done=new Date().toISOString();
   try{navigator.vibrate&&navigator.vibrate(12)}catch(x){}
   return true}
