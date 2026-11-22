@@ -35,7 +35,7 @@ function calEvents(d){const k=ymd(d),dow=String((d.getDay()+6)%7+1),out=[];
     (CAL.one||[]).forEach(x=>{if(x[2]===k)out.push(mk(x,1))})}
   return out}
 function calLay(evs){evs.sort((x,y)=>x.s-y.s||y.e-x.e);let grp=[],gEnd=-1;
-  const flush=()=>{const cols=[];grp.forEach(ev=>{let c=cols.findIndex(end=>End<=ev.s);if(c<0){c=cols.length;cols.push(0)}cols[c]=ev.e;ev.col=c});
+  const flush=()=>{const cols=[];grp.forEach(ev=>{let c=cols.findIndex(end=>end<=ev.s);if(c<0){c=cols.length;cols.push(0)}cols[c]=ev.e;ev.col=c});
     grp.forEach((ev,i)=>{const n=cols.length;const near=grp.some(o=>o!==ev&&o.s<ev.e&&o.e>ev.s&&Math.abs(o.s-ev.s)<45);
       if(near){ev.l=ev.col/n;ev.w=1/n}else if(ev.col>0){ev.l=Math.min(.5,ev.col*.12);ev.w=1-ev.l}else{ev.l=0;ev.w=1}ev.z=i+1});grp=[]};
   evs.forEach(ev=>{if(grp.length&&ev.s>=gEnd){flush();gEnd=-1}grp.push(ev);gEnd=Math.max(gEnd,ev.e)});if(grp.length)flush();return evs}

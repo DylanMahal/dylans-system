@@ -2306,3 +2306,10 @@ button:not(.pr-row):not(.fz-row)::first-letter,.sh .tag::first-letter{text-trans
 .sq-big{font:600 64px/1 var(--sf);text-align:center;color:#fff;margin:6px 0 8px;letter-spacing:-.03em}.sq-big small{font-size:.45em;color:var(--l2)}
 #sleepSeg{margin-bottom:18px}
 @media (max-width:899px){.sm{display:flex;flex-direction:column}.sm-l,.sm-r{display:contents}.sh-hero{order:1}.sw-card{order:2}.sm-stg{order:3}.sm-tiles{order:4}.sm-hint{order:5}.sm-cal{order:6}.sm-r>.sm-sec,.sm-r>.sl-card:not(.sw-card):not(.sm-stg){order:7}.sm-del{order:8}}
+/* desktop / iPad landscape top tabs: equal shares across the whole bar */
+@media (min-width:901px){
+  .tabs{flex:1 1 auto;display:flex}
+  .tabs button{flex:1 1 0;min-width:0;justify-content:center;padding:8px 4px}
+  .tabs button span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+}
+@media (min-width:901px) and (max-width:1480px){.tabs button[aria-current="page"] span{display:none}}
