@@ -510,7 +510,7 @@ function T(c, s, x, y, size, wt, color, align, faux) {
   draw(0); if (faux) { draw(.35); draw(-.35) }
 }
 const tws = (s, size, wt) => tw(s, size, /^(b|h|rb|rh)$/.test(wt)) * (/^(rh|h)$/.test(wt) ? 1.0 : /^(b|s)$/.test(wt) ? 1.04 : 1);
-function fit(s, size, maxW, wt) { s = String(s); if (tws(s, size, wt) <= maxW) return s; while (s.length > 1 && tws(s + '…', size, wt) > maxW) s = s.slice(0, -1); return s.trimEnd() + '…' }
+function fit(s, size, maxW, wt) { s = String(s); if (tws(s, size, wt) <= maxW * 1.06) return s; while (s.length > 1 && tws(s + '…', size, wt) > maxW) s = s.slice(0, -1); return s.trimEnd() + '…' }
 function ringAt(c, cx, cy, r, sw, frac, color, track) { arc(c, cx, cy, r, 0, Math.PI * 2, sw, track || K.trk); if (frac > .001) arc(c, cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.min(1, frac), sw, color || K.t1) }
 function cap(c, s, x, y, color, align) { T(c, String(s).toUpperCase(), x, y, 11, 's', color || K.t2, align) }
 function check(c, x, y, s, fill, ink) { c.setFillColor(fill); c.fillEllipse(new Rect(x, y, s, s)); const p = new Path(); p.move(new Point(x + s * .29, y + s * .52)); p.addLine(new Point(x + s * .44, y + s * .67)); p.addLine(new Point(x + s * .72, y + s * .35)); c.addPath(p); c.setStrokeColor(ink); c.setLineWidth(s * .11); c.strokePath() }
@@ -857,17 +857,17 @@ function layout(f, d, head, A, B, small) {
 /* ---------- SCREEN TIME ---------- */
 async function dScreen() {
   const k = dayK(), enc = encodeURIComponent, [rowsS, b] = await Promise.all([raw('select=path,a:data->screentime,b:data->screen&path=like.' + enc('health/d-*') + '&path=gte.' + enc('health/d-' + addD(k, -15))), docs(['tools/brick'])]);
-  const B = b['tools/brick'] || {}, m = {}; rowsS.forEach(r => { const v = +(r.a ?? r.b); if (v > 0) m[addD(r.path.slice(9), -1)] = v / 60 });   /* the morning Shortcut reports the day before */
-  const days = [...Array(7)].map((_, i) => addD(k, i - 7)), last = days[6], wk = monOf(k);
+  const B = b['tools/brick'] || {}, m = {}; rowsS.forEach(r => { const v = +(r.a ?? r.b); if (v > 0) m[r.path.slice(9)] = v / 60 });   /* sent at 23:55 for that same day, in seconds */
+  const today = ymd(new Date()), last = m[today] != null ? today : addD(today, -1), days = [...Array(7)].map((_, i) => addD(last, i - 6));
   const ss = (B.sessions || []).filter(s => s.d >= addD(k, -6));
-  return { k, days, m, goal: (B.goalH == null ? 2 : +B.goalH) * 60, last, y: m[last], on: !!B.on, until: B.until, since: B.since, bricks: ss.length, brickMin: ss.reduce((a, s) => a + (+s.min || 0), 0) };
+  return { k, days, m, lastLbl: last === today ? 'Today' : 'Yesterday', goal: (B.goalH == null ? 2 : +B.goalH) * 60, last, y: m[last], on: !!B.on, until: B.until, since: B.since, bricks: ss.length, brickMin: ss.reduce((a, s) => a + (+s.min || 0), 0) };
 }
 const stCol = (d) => (v) => v > d.goal ? BADC : GOODC;
 function stHead(c, d, x, y, w, h, sz) {
   cap(c, 'Screen time', x, y);
   if (sz === 'm') { if (d.on) { c.setFillColor(BADC); c.fillEllipse(new Rect(x + w - 8, y + 3, 8, 8)) } }
-  else if (d.on) pill(c, d.until ? `BRICKED · ${hmS(Math.max(0, (new Date(d.until) - Date.now()) / 6e4))}` : 'BRICKED', x + w, y - 1, BADC); else T(c, 'Yesterday', x + w, y, 11, 'm', K.t2, 'r');
-  if (d.y == null) { T(c, 'No data yet', x, y + 24, 20, 'b', K.t2); T(c, 'Add screen time to your morning Shortcut', x, y + 52, 11, 'm', K.t3); return }
+  else if (d.on) pill(c, d.until ? `BRICKED · ${hmS(Math.max(0, (new Date(d.until) - Date.now()) / 6e4))}` : 'BRICKED', x + w, y - 1, BADC); else T(c, d.lastLbl || 'Yesterday', x + w, y, 11, 'm', K.t2, 'r');
+  if (d.y == null) { T(c, 'No data yet', x, y + 24, 20, 'b', K.t2); T(c, 'Arrives nightly from the Jomo automation', x, y + 52, 11, 'm', K.t3); return }
   dur(c, d.y, x, y + 20, sz === 'm' ? 28 : 32);
   const df = d.y - d.goal; T(c, sz === 'm' ? `${df > 0 ? '+' : '−'}${hmS(Math.abs(df))} vs goal` : `${hmS(Math.abs(df))} ${df > 0 ? 'over' : 'under'} your ${hmS(d.goal)} goal`, x, y + (sz === 'm' ? 58 : 62), 11, 's', df > 0 ? BADC : GOODC);
   if (sz === 'm') { const v = d.days.map(k => d.m[k]).filter(Boolean); if (v.length) { T(c, hmS(v.reduce((a, b) => a + b, 0) / v.length), x, y + h - 30, 15, 'rh', K.t1, 'l', 1); T(c, '7-day average', x, y + h - 12, 10, 'm', K.t2) } }
@@ -958,7 +958,7 @@ function mnCats(c, d, x, y, w, h, sz) {
   const rh = sz === 'm' ? 31 : 34, y0 = sz === 'm' ? y : y + 20, n = Math.max(1, Math.floor((h - (y0 - y) + 6) / rh)), mx = d.take || 1;
   if (sz !== 'm') cap(c, 'Where it goes', x, y);
   d.list.slice(0, n).forEach((r, i) => {
-    const yy = y0 + i * rh; T(c, fit(r.c, 12, w - 110, 's'), x, yy, 12, 's'); T(c, `${gbp(r.v)}  ·  ${Math.round(r.v / mx * 100)}%`, x + w, yy, 11, 'm', K.t2, 'r');
+    const yy = y0 + i * rh; const amt = `${gbp(r.v)}  ·  ${Math.round(r.v / mx * 100)}%`; T(c, fit(r.c, 12, w - tws(amt, 11, 'm') - 12, 's'), x, yy, 12, 's'); T(c, amt, x + w, yy, 11, 'm', K.t2, 'r');
     rr(c, x, yy + 18, w, 5, 2.5, K.trk2); rr(c, x, yy + 18, Math.max(5, w * Math.min(1, r.v / mx)), 5, 2.5, r.sav ? MSAVE : K.t1);
   });
 }
@@ -1002,7 +1002,7 @@ function bgCats(c, d, x, y, w, h, sz) {
   if (sz !== 'm') cap(c, 'Categories', x, y);
   const y0 = sz === 'm' ? y : y + 20;
   rows.slice(0, Math.floor((h - (y0 - y) + 6) / rh)).forEach((r, i) => {
-    const yy = y0 + i * rh; T(c, fit(r.c, 12, w - 90, 's'), x, yy, 12, 's'); T(c, r.a == null ? `${gbp(r.b)}` : `${gbp(r.a)} / ${gbp(r.b)}`, x + w, yy, 11, 'm', r.a > r.b ? BADC : K.t2, 'r');
+    const yy = y0 + i * rh; const amt = r.a == null ? `${gbp(r.b)}` : `${gbp(r.a)} / ${gbp(r.b)}`; T(c, fit(r.c, 12, w - tws(amt, 11, 'm') - 12, 's'), x, yy, 12, 's'); T(c, amt, x + w, yy, 11, 'm', r.a > r.b ? BADC : K.t2, 'r');
     rr(c, x, yy + 18, w, 5, 2.5, K.trk2); if (r.a) rr(c, x, yy + 18, Math.max(5, w * Math.min(1, r.a / (r.b || 1))), 5, 2.5, r.a > r.b ? BADC : K.t1);
   });
 }
@@ -1050,7 +1050,7 @@ const cvDoses = (d, f) => f === 'extraLarge' ? (() => { const { c, W, H, P } = f
   : layout(f, d, dsHead, (c, d, x, y, w, h) => dsList(c, d, x, y + 2, w, h, 'm'), dsList, dsSmall);
 
 /* lock-screen content for the four new widgets */
-function wScreen(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nScreen(d) : done(base('tools'), cvScreen(d, f)); if (d.y == null) return lock({ p: null, v: '–', l: 'screen', lines: ['Screen time', 'No data yet'], inline: 'screen time: no data' }); const df = d.y - d.goal; return lock({ p: Math.min(1, d.y / (d.goal * 1.5)), v: d.y >= 60 ? Math.floor(d.y / 60) + 'h' : Math.round(d.y) + 'm', l: 'screen', lines: [`Screen ${hmS(d.y)}`, `${hmS(Math.abs(df))} ${df > 0 ? 'over' : 'under'} goal`, d.on ? 'Bricked now' : 'Yesterday'], inline: `📱 ${hmS(d.y)} yesterday` }) }
+function wScreen(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nScreen(d) : done(base('tools'), cvScreen(d, f)); if (d.y == null) return lock({ p: null, v: '–', l: 'screen', lines: ['Screen time', 'No data yet'], inline: 'screen time: no data' }); const df = d.y - d.goal; return lock({ p: Math.min(1, d.y / (d.goal * 1.5)), v: d.y >= 60 ? Math.floor(d.y / 60) + 'h' : Math.round(d.y) + 'm', l: 'screen', lines: [`Screen ${hmS(d.y)}`, `${hmS(Math.abs(df))} ${df > 0 ? 'over' : 'under'} goal`, d.on ? 'Bricked now' : (d.lastLbl || 'Yesterday')], inline: `📱 ${hmS(d.y)} ${(d.lastLbl || 'yesterday').toLowerCase()}` }) }
 function wGym(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nGym(d) : done(base('gym'), cvGym(d, f)); return lock({ p: Math.min(1, d.n / 5), v: String(d.n), l: 'gym', lines: [`${d.n} session${d.n === 1 ? '' : 's'}`, d.last ? d.last.name : 'No workouts yet', d.last ? ago(d.last.date) : ''], inline: `🏋 ${d.n} this week${d.last ? ' · ' + ago(d.last.date).toLowerCase() : ''}` }) }
 function wBudget(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nBudget(d) : done(base('money'), cvBudget(d, f)); if (!d.logged) return lock({ p: null, v: '£', l: 'budget', lines: [`${gbp(d.tb)} budget`, `Nothing logged for ${d.month}`], inline: `budget ${gbp(d.tb)} · nothing logged` }); const L = Math.abs(d.left), v = L >= 1000 ? '£' + (L / 1000).toFixed(1) + 'k' : '£' + Math.round(L); return lock({ p: d.tb ? Math.min(1, d.ta / d.tb) : 0, v, l: d.left < 0 ? 'over' : 'left', lines: [`${gbp(d.left)} ${d.left < 0 ? 'over' : 'left'}`, `${gbp(d.ta)} of ${gbp(d.tb)}`, d.month], inline: `£ ${gbp(d.left).slice(1)} ${d.left < 0 ? 'over' : 'left'} this month` }) }
 const nBudget = d => d.none ? nSmall('money', 'Budget', '', '–', '', 'Open the app once', '', null) : !d.logged ? nSmall('money', `Budget · ${d.month.slice(0, 3)}`, '', gbp(d.tb), '', 'monthly budget', 'Nothing logged yet', null) : nSmall('money', `Budget · ${d.month.slice(0, 3)}`, '', gbp(d.left), '', (d.left < 0 ? `over your ${gbp(d.tb)}` : `left of ${gbp(d.tb)}`), `${gbp(d.ta)} spent`, d.tb ? d.ta / d.tb : 0);
@@ -1068,8 +1068,8 @@ function nSmall(url, cap, capR, big, unit, line1, line2, frac) {
   if (line2) { sf(w, line2, Font.mediumSystemFont(11), GREY, 1); w.addSpacer(5) }
   if (frac != null) nBar(w, frac); return w;
 }
-const nScreen = d => d.y == null ? nSmall('tools', 'Screen time', '', '–', '', 'No data yet', 'Add it to your morning Shortcut', null)
-  : nSmall('tools', 'Screen time', d.on ? 'BRICKED' : '', hmS(d.y), '', `${d.y > d.goal ? '+' : '−'}${hmS(Math.abs(d.y - d.goal))} vs goal`, 'Yesterday', Math.min(1, d.y / (d.goal * 1.5)));
+const nScreen = d => d.y == null ? nSmall('tools', 'Screen time', '', '–', '', 'No data yet', 'Arrives nightly from Jomo', null)
+  : nSmall('tools', 'Screen time', d.on ? 'BRICKED' : '', hmS(d.y), '', `${d.y > d.goal ? '+' : '−'}${hmS(Math.abs(d.y - d.goal))} vs goal`, d.lastLbl || 'Yesterday', Math.min(1, d.y / (d.goal * 1.5)));
 const nGym = d => nSmall('gym', 'Gym', '', String(d.n), 'this week', d.last ? d.last.name : 'No workouts yet', d.last ? ago(d.last.date) : '', Math.min(1, d.n / 5));
 const nMoney = d => d.none ? nSmall('money', 'Money', '', '–', '', 'Open the app once', '', null) : nSmall('money', 'Money · monthly', '', gbp(d.left), '', d.left < 0 ? 'over each month' : 'left over / month', `${gbp(d.take)} take-home`, d.take ? d.out / d.take : 0);
 function nDoses(d) { const s = doseState(d), nx = s.next[0]; return nx ? nSmall('stack', 'Next dose', inT(nx.m - s.m), nx.t, '', nx.n, `${s.taken}/${s.L.length} taken${s.missed.length ? ` · ${s.missed.length} missed` : ''}`, s.L.length ? s.taken / s.L.length : 0) : nSmall('stack', 'Doses', '', '✓', '', d.items.length ? 'All taken' : 'No doses today', `${s.taken}/${s.L.length} taken`, 1) }
