@@ -5,10 +5,10 @@ async function renderWeek(){
   const L0=logical();const ds=[];for(let i=29;i>=0;i--){const d=new Date(L0);d.setDate(d.getDate()-i);ds.push(d)}
   const docs=await Promise.all(ds.map(d=>ymd(d)===DAYK?Promise.resolve(DAY):load('days/d-'+ymd(d))));
   const last7=ds.slice(-7),v7=docs.slice(-7);
-  $('days').innerHTML=`<div class="line80" style="bottom:${21+0.8*130}px"></div>`+last7.map((d,i)=>{const v=v7[i];const p=v&&v.total?Math.round(v.done/v.total*100):null;return `<div class="d"><span class="p num ${p!==null&&p>=80?'ok':''}">${p===null?'–':p+'%'}</span>${p===null?'':`<div class="b ${p<80?'low':''}" style="height:${p*1.3}px"></div>`}<span class="l">${DOW[d.getDay()].toLowerCase()}</span></div>`}).join('');
+  $('days').innerHTML=last7.map((d,i)=>{const v=v7[i];const p=v&&v.total?Math.round(v.done/v.total*100):null;const t=ymd(d)===DAYK;return `<div class="d${t?' t':''}"><div class="bw">${p===null?'<span class="nil"></span>':`<div class="b ${p>=80?'ok':p<50?'low':''}" style="height:${Math.max(3,p)}%"><span class="p num">${p}%</span></div>`}</div><span class="l">${t?'today':DOW[d.getDay()].toLowerCase()}</span></div>`}).join('');
   if(FX)document.querySelectorAll('#days .b').forEach((b,i)=>b.animate([{transform:'scaleY(0)'},{transform:'scaleY(1)'}],{duration:500,delay:i*60,easing:'cubic-bezier(.2,.9,.1,1)',fill:'backwards'}));
   const logged=v7.filter(v=>v&&v.total).length;$('daysNote').textContent=logged<2?'Fills in as you tick items on the today view.':`${logged} of 7 days logged · avg ${Math.round(avg(v7.filter(v=>v&&v.total).map(v=>v.done/v.total*100)))}%`;
-  wkStreaks();
+  wkStreaks();renderReview();
   WEEK=await load('weeks/w-'+WK)||WEEK||{};
   renderTargets();if(document.activeElement!==$('weekNotes'))$('weekNotes').value=WEEK.notes||'';
   $('weekSub').textContent=`${WK} · review Sundays 19:00`;
