@@ -1337,3 +1337,33 @@ html.inkfull-on,html.inkfull-on body{overflow:hidden}
 .jtools{border-radius:var(--r-t)}
 .panel::before{width:16px;height:16px;border-top-left-radius:var(--r-card)}
 .panel::after{width:16px;height:16px;border-bottom-right-radius:var(--r-card)}
+/* ui kit pt2 — every remaining square surface */
+.rcard,.wcard,.blk,.strip,.ex,.wbar,.exc,.restdock,.statcards>div,.dbar,.lcd,.dsetup,.epbox,.wrapped,.wrcard,.rlsum,.rlblock,.tview,.fscan,.modal .mb,.loginbox>div,.banner,.mvid,.mbig,.bktoast,.grep,.rest{border-radius:var(--r-card)}
+.sheet{border-radius:18px 18px 0 0}
+@media (min-width:901px){.sheet{border-radius:18px}}
+.box{border-radius:5px}
+.chipy,.set,.it .ty,.st,.phchip,.dose{border-radius:999px}
+.chipy{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-color:transparent;background:var(--c-bg)}
+.chipy.hot{background:var(--c-on);border-color:transparent;color:var(--pink)}
+.set{border-color:transparent;background:var(--c-bg);padding:4px 10px}
+.kbd{border-radius:6px}
+.s14,.cday,.cur-x{border-radius:9px}
+.calc input,.modal input,.modal select,.modal textarea,.sin,.smin,.slurl,.nfsel,.aenotes textarea,textarea.notes{border-radius:var(--r-c)}
+.thumb,.cxphoto img,.cxphoto>span,.exanim,.mthumb,.mposter,.swimg,.swgal img,.wcimg,.msp{border-radius:10px}
+.thumb,.rth{border:0}
+.rth{border-radius:8px;width:34px;height:34px}
+.nitem .nth{border-radius:8px}
+.mvid{overflow:hidden}
+/* routine + workout cards: even, borderless, button pinned to the bottom */
+.rgrid{gap:12px}
+.rcard,.wcard{border:1px solid transparent;background:rgba(255,255,255,.035);padding:16px;gap:12px}
+.rcard:hover,.wcard:hover{border-color:transparent;background:rgba(255,255,255,.055)}
+.rcard.hot{border-color:rgba(255,42,109,.45);background:linear-gradient(180deg,rgba(255,42,109,.07),rgba(255,255,255,.03))}
+.rtop{min-height:32px}
+.rtop b{font-size:17px;font-weight:700}
+.rthumbs{gap:6px;flex-wrap:nowrap;overflow:hidden}
+.rsum{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;line-height:1.55;min-height:4.65em}
+.rcard>.btn{margin-top:auto;min-height:44px;border-radius:12px;font-size:13.5px}
+.wcimg{margin:0 0 4px}
+.rthumbs{display:grid;grid-template-columns:repeat(6,minmax(0,40px));gap:6px}
+.rthumbs .rth{width:100%;height:auto;aspect-ratio:1}
