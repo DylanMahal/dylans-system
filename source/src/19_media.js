@@ -54,16 +54,18 @@ function initMediaNav(){$('mediaCards').onclick=e=>{const b=e.target.closest('[d
 function poster(it,cls='mposter'){return it.img?`<img class="${cls}" src="${esc(it.img)}" alt="" loading="lazy">`:`<span class="${cls} ph">${esc((it.title||'?').slice(0,18))}</span>`}
 function mCard(k,it){const max=MK[k].stars;const prog=it.total?Math.min(100,(it.prog||0)/it.total*100):null;
   return `<button type="button" class="mcard" data-mkey="${esc(it.key)}">${poster(it)}${it.fav?'<i class="mfav">♥</i>':''}${it.series?'<i class="mser">Series</i>':''}<span class="mst st-${it.st}"></span>${it.rating!=null&&it.rating!==''?`<span class="mrate">${stars(it.rating,max)}</span>`:''}${prog!=null&&it.st!=='done'?`<span class="mbar"><i style="width:${prog}%"></i></span>`:''}<span class="mt">${esc(it.title)}</span></button>`}
-function mLibrary(k){const all=mItems(k);const fav=all.filter(x=>x.fav).slice(0,4);const q=norm(MFILT.q);
-  let list=all.filter(x=>(MFILT.st==='all'||x.st===MFILT.st)&&(!q||norm(x.title).includes(q)));
-  const S={recent:(a,b)=>(b.upd||'')>(a.upd||'')?1:-1,rating:(a,b)=>(+b.rating||0)-(+a.rating||0),title:(a,b)=>a.title.localeCompare(b.title),year:(a,b)=>(+b.year||0)-(+a.year||0)};list.sort(S[MFILT.sort]||S.recent);
-  const cnt=s=>all.filter(x=>s==='all'||x.st===s).length;
-  $('mBody').innerHTML=`${fav.length?`<div class="tag" style="margin-bottom:6px">Favourites</div><div class="mfavs">${fav.map(it=>mCard(k,it)).join('')}</div>`:''}
-  <div class="row" style="gap:6px;flex-wrap:wrap;margin:10px 0"><div class="chips" id="mSt" style="margin:0">${[['all','all']].concat(MSTAT(k)).map(([s,l])=>`<button class="chip" type="button" data-st="${s}" aria-pressed="${MFILT.st===s}">${l} <span class="c">${cnt(s)}</span></button>`).join('')}</div></div>
-  <div class="row" style="gap:6px;margin-bottom:10px"><select class="inp" id="mSort" style="flex:1">${[['recent','recently updated'],['rating','rating'],['title','title'],['year','year']].map(([v,l])=>`<option value="${v}" ${MFILT.sort===v?'selected':''}>${l}</option>`).join('')}</select></div>
-  <div class="mgrid">${list.map(it=>mCard(k,it)).join('')||`<div class="dim mempty">Nothing here yet. Tap “+ add” to search.</div>`}</div>`;
-  $('mSt').onclick=e=>{const b=e.target.closest('[data-st]');if(b){MFILT.st=b.dataset.st;mLibrary(k)}};$('mSort').onchange=e=>{MFILT.sort=e.target.value;mLibrary(k)};
-  $('mBody').onclick=e=>{const b=e.target.closest('[data-mkey]');if(b)mEntry(k,b.dataset.mkey)}}
+/* library: one collapsible section per status (MyAniList style) instead of filter chips */
+function mRow(k,it){const K=MK[k],max=K.stars,p=+it.prog||0;
+  const sub=it.series&&it.parts&&it.parts.length?`Whole series · ${it.parts.length} parts`:k==='movies'?(it.kind==='series'?'Series':'Film')+(it.year?' · '+it.year:''):it.st==='cur'||(it.st==='hold'||it.st==='drop')&&p?`${p} / ${it.total||'?'} ${K.units}`:it.total===1&&it.kind?esc(it.kind[0].toUpperCase()+it.kind.slice(1)):it.total?`${it.total} ${K.units} total`:it.kind?esc(it.kind):'';
+  const pr=it.total&&it.st!=='done'&&p?Math.min(100,p/it.total*100):null;
+  return `<button type="button" class="mrow" data-mkey="${esc(it.key)}">${poster(it,'mrp')}<span class="mri"><b>${esc(it.title)}</b><span class="mrs">${sub}</span>${it.rating!=null&&it.rating!==''?`<span class="mrr">${max===10?'★ '+kgs(it.rating):stars(it.rating,max)}</span>`:''}${it.fav?'<span class="mrf">♥</span>':''}${pr!=null?`<span class="mrb"><i style="width:${pr}%"></i></span>`:''}</span></button>`}
+function mLibrary(k){const all=mItems(k);const q=norm(MFILT.q||'');let shut={};try{shut=JSON.parse(LS.get('mshut')||'{}')}catch(e){}
+  const list=all.filter(x=>!q||norm(x.title).includes(q)).sort((a,b)=>(b.upd||'')>(a.upd||'')?1:-1);
+  const sec=MSTAT(k).map(([s,l])=>{const xs=list.filter(x=>(x.st||'plan')===s);if(!xs.length&&s!=='cur')return '';const open=q?true:!shut[k+s];
+    return `<section class="msec${open?' open':''}"><button type="button" class="msh" data-sec="${s}"><span>${esc(l[0].toUpperCase()+l.slice(1))}</span><span class="num">${xs.length}</span>${MSVG('<path d="M9 6l6 6-6 6"/>')}</button>${open?`<div class="mrows">${xs.map(it=>mRow(k,it)).join('')||`<div class="dim mempty">Nothing ${esc(MK[k].ing)} right now.</div>`}</div>`:''}</section>`}).join('');
+  $('mBody').innerHTML=`<div class="ma-search mlsearch">${MSVG('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>')}<input id="mQ" placeholder="Search your ${esc(MK[k].label)}" value="${esc(MFILT.q||'')}" autocomplete="off"></div>${all.length?sec:`<div class="dim mempty">Nothing here yet. Tap “+ add” to search.</div>`}`;
+  const qi=$('mQ');qi.oninput=()=>{MFILT.q=qi.value;clearTimeout(mLibrary.t);mLibrary.t=setTimeout(()=>{mLibrary(k);const n=$('mQ');n.focus();n.setSelectionRange(n.value.length,n.value.length)},250)};
+  $('mBody').onclick=e=>{const h=e.target.closest('[data-sec]');if(h){shut[k+h.dataset.sec]=!shut[k+h.dataset.sec];LS.set('mshut',JSON.stringify(shut));mLibrary(k);return}const b=e.target.closest('[data-mkey]');if(b)mEntry(k,b.dataset.mkey)}}
 
 /* ---- add (search) ---- */
 mAdd.seq=0;

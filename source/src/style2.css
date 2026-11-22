@@ -2445,3 +2445,19 @@ a.me-pill:active{background:rgba(255,255,255,.16)}
 .me .tes-add svg,.me-l svg{width:18px;height:18px}.me .tes-clr svg{width:12px;height:12px}
 .me-rnum{width:1.75em}.me-rof{margin-left:0}
 .me-seg button{font-size:11.5px}
+/* media library sections */
+.mlsearch{margin:2px 0 12px}
+.msec{margin-bottom:10px}
+.msh{appearance:none;border:0;width:100%;display:flex;align-items:center;gap:10px;height:46px;padding:0 16px;border-radius:14px;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.06);color:#bbb;font:600 15px var(--sf);cursor:pointer;text-align:left}
+.msh span:first-child{flex:1;color:#ddd}.msh .num{color:#888;font-weight:600}
+.msh svg{width:16px;height:16px;color:#777;transition:transform .2s var(--ease)}.msec.open .msh svg{transform:rotate(90deg)}
+.mrows{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px 16px;padding:14px 2px 8px}
+.mrow{appearance:none;border:0;background:none;padding:0;display:flex;gap:12px;align-items:flex-start;text-align:left;color:inherit;cursor:pointer;min-width:0}
+.mrp{width:96px;aspect-ratio:2/3;object-fit:cover;flex:none;border-radius:10px;background:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;font-size:10px;padding:4px;text-align:center;color:#777;transition:transform .15s var(--ease)}
+img.mrp{padding:0}.mrow:active .mrp{transform:scale(.97)}
+.mri{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1;padding-top:4px}
+.mri b{font:600 16px/1.3 var(--sf);color:#eee;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.mrs{font:13px var(--sf);color:#8e8e93}
+.mrr{font:700 13px var(--sf);color:#ffcf3f}.mrf{color:var(--pink);font-size:13px}
+.mrb{display:block;height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin-top:4px;max-width:140px;overflow:hidden}.mrb i{display:block;height:100%;background:var(--pink)}
+@media (max-width:600px){.mrows{grid-template-columns:1fr;gap:12px}.mrp{width:72px}.mri b{font-size:15px}}
