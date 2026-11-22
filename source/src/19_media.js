@@ -173,7 +173,10 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
   let tt=null;const deb=e=>{const id=e.target.id;clearTimeout(tt);tt=setTimeout(()=>{
     if(id==='mePg'){it.prog=+e.target.value||0;if(it.prog>0&&(it.st==='plan'||!it.st)){it.st='cur'}}if(id==='meTot'){it.total=+e.target.value||null}if(id==='meRev')it.review=e.target.value;
     if(id==='meTags')it.tags=e.target.value.split(',').map(x=>x.trim()).filter(Boolean);persist()},400)};
-  sb.oninput=e=>{const t=e.target;if(t.classList.contains('me-slider')){rateSync(t.closest('.me-rate'),+t.value);return}if(t.classList.contains('me-rnum')||t.type==='checkbox'||t.type==='date'||t.id==='meEpN'||t.id==='meEpNote')return;deb(e)};
+  const liveBar=()=>{const pv=+($('mePg')||{}).value||0,tv=+($('meTot')||{}).value||0,bar=sb.querySelector('.me-bar i'),pc=sb.querySelector('.me-psub .num');if(!bar)return;const x=tv?Math.min(100,Math.round(pv/tv*100)):0;bar.style.width=x+'%';if(pc)pc.textContent=tv?x+'%':''};
+  const progDone=()=>{clearTimeout(tt);const pv=+$('mePg').value||0,tv=+$('meTot').value||0;it.total=tv||null;it.prog=pv;if(tv&&pv>=tv){it.prog=tv;if(it.st!=='done'){it.st='done';flash('completed')}}else if(pv>0&&(it.st==='plan'||!it.st))it.st='cur';persist();mEntry(k,key)};
+  sb.onkeydown=e=>{if(e.key==='Enter'&&(e.target.id==='mePg'||e.target.id==='meTot')){e.preventDefault();e.target.blur()}};
+  sb.oninput=e=>{const t=e.target;if(t.id==='mePg'||t.id==='meTot')liveBar();if(t.classList.contains('me-slider')){rateSync(t.closest('.me-rate'),+t.value);return}if(t.classList.contains('me-rnum')||t.type==='checkbox'||t.type==='date'||t.id==='meEpN'||t.id==='meEpNote')return;deb(e)};
   sb.onchange=e=>{const t=e.target;
     if(t.classList.contains('me-slider')||t.classList.contains('me-rnum')){const box=t.closest('.me-rate');let v=t.classList.contains('me-rnum')?(t.value.trim()===''?null:parseFloat(t.value.replace(',','.'))):+t.value;if(v!=null)v=isNaN(v)?null:Math.min(10,Math.max(1,Math.round(v*10)/10));rateSync(box,v);
       if(box.dataset.rc==='meRate'){it.rating=v;if((it.log||[]).length)it.log[it.log.length-1].r=v;persist()}return}
@@ -181,7 +184,7 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
     if(t.id==='meLd'){const v=t.closest('.me-row').querySelector('.me-v');v.textContent=t.value?nice(t.value):'None';return}
     if(t.id==='meFav'){it.fav=t.checked;persist();return}
     if(t.id==='meSer'){toSer(t);return}
-    if(t.id==='mePg'||t.id==='meTot'||t.id==='meRev'||t.id==='meTags')deb(e)}}
+    if(t.id==='mePg'||t.id==='meTot'){progDone();return}if(t.id==='meRev'||t.id==='meTags')deb(e)}}
 
 /* ---- per-episode / per-chapter ratings + notes ---- */
 const EPU=k=>k==='anime'?'episode':'chapter';
