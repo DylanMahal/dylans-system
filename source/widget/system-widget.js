@@ -755,22 +755,55 @@ async function build(param) {
     if (m === 'week' || m === 'cal' || m === 'calendar') return wWeek(await load('week', dWeek));
     if (m === 'habits') return wHabits(await load('habits', dHabits));
     if (m === 'habit' || m === 'streak') return wHabit(await load('habits', dHabits), a[0], m);
-    if (m === 'goal') { if (!a[0] || !a[1]) return errW('Set the parameter like goal|bench|120|2027-01-19'); return wGoal(await load('goal-' + a.join('-'), () => dGoal(a[0], a[1], a[2]))) }
+    if (m === 'goal') { if (!a[0] || !a[1]) return errW('Run Next Goal in Scriptable once to set your lift and target'); return wGoal(await load('goal-' + a.join('-'), () => dGoal(a[0], a[1], a[2]))) }
     return await wToday();
   } catch (e) { return errW(e.message) }
 }
 
-module.exports = async function main() {
-  let p = args.widgetParameter;
-  if (!config.runsInWidget) {
-    /* run inside Scriptable: sign in if needed, then preview any widget */
-    await token();
-    const opts = ['today', 'tasks', 'cals', 'sleep', 'week', 'habits', 'habit', 'streak', 'goal|bench|120'];
-    const a = new Alert(); a.title = 'Preview widget'; opts.forEach(o => a.addAction(o)); a.addCancelAction('Done');
-    const i = await a.presentSheet(); if (i === -1) return Script.complete(); p = opts[i];
-    const w = await build(p), big = ['week', 'tasks'].includes(p);
-    big ? await w.presentLarge() : p === 'sleep' || p === 'streak' || p.startsWith('goal') ? await w.presentSmall() : await w.presentMedium();
-    return Script.complete();
+/* one script per widget type, so the type is picked from Scriptable's Script dropdown */
+const TYPES = [['Today', 'today', 'sun.max'], ['Tasks', 'tasks', 'check-circle'], ['Calories', 'cals', 'utensils'], ['Sleep', 'sleep', 'moon'], ['Week', 'week', 'calendar-alt'],
+  ['Habits', 'habits', 'tasks'], ['Habit Grid', 'habit', 'th'], ['Streak', 'streak', 'fire'], ['Next Goal', 'goal', 'dumbbell']];
+function scriptsDir() {
+  try { const ic = FileManager.iCloud(), d = ic.documentsDirectory(); if (ic.fileExists(ic.joinPath(d, Script.name() + '.js'))) return [ic, d] } catch (e) { }
+  const lf = FileManager.local(); return [lf, lf.documentsDirectory()];
+}
+function installScripts() {
+  const [fm, dir] = scriptsDir(); let n = 0;
+  TYPES.forEach(([name, mode, glyph]) => {
+    const body = `// Variables used by Scriptable.\n// These must be at the top of the file. Do not edit.\n// icon-color: deep-gray; icon-glyph: ${glyph};\n// Dylan's System — ${name} widget. Run it here to set it up; add it from the widget's Script list.\nconst fm = FileManager.local(), path = fm.joinPath(fm.documentsDirectory(), 'ds-widget.js');\ntry { const r = new Request('${APP_URL}widget.js?t=' + Date.now()); r.timeoutInterval = 8; const code = await r.loadString(); if (r.response.statusCode === 200 && code.includes('module.exports')) fm.writeString(path, code) } catch (e) { }\nawait importModule(path)('${mode}');\n`;
+    const f = fm.joinPath(dir, name + '.js'); if (!fm.fileExists(f) || fm.readString(f) !== body) { fm.writeString(f, body); n++ }
+  });
+  return n;
+}
+/* remembered choices for the widgets that need one */
+const PICK = m => { const fm = FileManager.local(), f = fm.joinPath(fm.documentsDirectory(), 'ds-pick-' + m + '.txt'); return { get: () => fm.fileExists(f) ? fm.readString(f) : '', set: v => fm.writeString(f, v) } };
+async function choose(mode) {
+  if (mode === 'habit' || mode === 'streak') {
+    const s = await load('habits', dHabits), a = new Alert(); a.title = mode === 'streak' ? 'Which habit’s streak?' : 'Which habit’s grid?';
+    s.items.forEach(h => a.addAction(`${h.ic || ''} ${h.n}`.trim())); a.addCancelAction('Cancel');
+    const i = await a.presentSheet(); if (i >= 0) PICK(mode).set(mode + '|' + s.items[i].n);
   }
-  Script.setWidget(await build(p)); Script.complete();
+  if (mode === 'goal') {
+    const old = (PICK('goal').get() || 'goal|bench|120|').split('|'), a = new Alert(); a.title = 'Next Goal'; a.message = 'Exercise name (as logged), target kg, and an optional deadline.';
+    a.addTextField('exercise, e.g. bench', old[1] || ''); a.addTextField('target kg', old[2] || ''); a.addTextField('deadline YYYY-MM-DD (optional)', old[3] || ''); a.addAction('Save'); a.addCancelAction('Cancel');
+    if ((await a.present()) === 0) PICK('goal').set(['goal', a.textFieldValue(0).trim(), a.textFieldValue(1).trim(), a.textFieldValue(2).trim()].join('|'));
+  }
+}
+async function preview(p) {
+  const w = await build(p), m = String(p).split('|')[0], big = ['week', 'tasks'].includes(m);
+  big ? await w.presentLarge() : ['sleep', 'streak', 'goal'].includes(m) ? await w.presentSmall() : await w.presentMedium();
+}
+
+module.exports = async function main(mode) {
+  const saved = mode ? PICK(mode).get() : '';
+  if (config.runsInWidget) { Script.setWidget(await build(args.widgetParameter || saved || mode)); return Script.complete() }
+  await token();
+  if (mode) { await choose(mode); await preview(PICK(mode).get() || mode); return Script.complete() }
+  /* the System script itself: install/refresh the per-type scripts, then offer previews */
+  const n = installScripts();
+  const a = new Alert(); a.title = "Dylan's System widgets";
+  a.message = (n ? `Added ${TYPES.length} widget scripts: ${TYPES.map(t => t[0]).join(', ')}.\n\n` : '') + 'Add a Scriptable widget, edit it, and pick one of these from the Script list. Leave Parameter empty.';
+  TYPES.forEach(t => a.addAction('Preview ' + t[0])); a.addCancelAction('Done');
+  const i = await a.presentSheet(); if (i >= 0) { const m = TYPES[i][1]; await choose(m); await preview(PICK(m).get() || m) }
+  Script.complete();
 };
