@@ -216,8 +216,8 @@ function calGauge(c, d, cx, cy, R, sw, numSize) {
   const n = new Date(), pace = Math.max(0, Math.min(1, (n.getHours() + n.getMinutes() / 60) / 24)), a = a0 + span * pace, p = new Path();
   p.move(new Point(cx + (R - sw * .82) * Math.cos(a), cy + (R - sw * .82) * Math.sin(a))); p.addLine(new Point(cx + (R + sw / 2) * Math.cos(a), cy + (R + sw / 2) * Math.sin(a)));
   c.addPath(p); c.setStrokeColor(C_LINE); c.setLineWidth(sw * .13); c.strokePath();
-  [0, .4, -.4].forEach(dx => ctr(c, Math.abs(d.left), cx + dx, cy - numSize * .3, numSize, Font.heavyRoundedSystemFont(numSize), d.left < 0 ? RED : C_TXT));
-  ctr(c, d.left < 0 ? 'OVER' : 'UNDER', cx, cy + numSize * .42, numSize * .36, Font.semiboldSystemFont(numSize * .36), C_SUB);
+  [0, .4, -.4].forEach(dx => ctr(c, Math.abs(d.left), cx + dx, cy - numSize * .22, numSize, Font.heavyRoundedSystemFont(numSize), d.left < 0 ? RED : C_TXT));
+  ctr(c, d.left < 0 ? 'OVER' : 'UNDER', cx, cy + numSize * .5, numSize * .36, Font.semiboldSystemFont(numSize * .36), C_SUB);
 }
 function calBar(c, x, top, w, h, day) {
   rr(c, x, top, w, h, w * .22, C_TRK);
@@ -596,19 +596,17 @@ function cvSleep(d, f) {
   if (f === 'small') {
     cap(c, d.old ? 'Night before' : 'Last night', P, P);
     ringAt(c, W - P - 17, P + 17, 15, 4.5, d.score / 100); T(c, d.score, W - P - 17, P + 10, 11, 'rh', K.t1, 'c', 1);
-    dur(c, d.asleep, P, 38, 28);
-    T(c, `of ${d.goal / 60}h goal`, P, 72, 11, 'm', K.t2);
-    hypno(c, d.segs, P, 92, W - 2 * P, 34);
+    dur(c, d.asleep, P, 36, 28);
+    hypno(c, d.segs, P, 76, W - 2 * P, H - P - 22 - 76);
     T(c, bed, P, H - P - 13, 11, 's', K.t2); T(c, wake, W - P, H - P - 13, 11, 's', K.t2, 'r');
     return c;
   }
   /* medium / large: summary on the left, hypnogram on the right */
   cap(c, d.old ? 'Night before' : 'Last night', P, P);
-  dur(c, d.asleep, P, 36, 30);
-  T(c, `of ${d.goal / 60}h goal`, P, 72, 11, 'm', K.t2);
+  dur(c, d.asleep, P, f === 'large' ? 36 : 42, 30);
   ringAt(c, P + 22, H - P - 30 - (f === 'large' ? 196 : 0), 20, 5.5, d.score / 100); T(c, d.score, P + 22, H - P - 39 - (f === 'large' ? 196 : 0), 14, 'rh', K.t1, 'c', 1);
   T(c, 'SCORE', P + 50, H - P - 40 - (f === 'large' ? 196 : 0), 9, 's', K.t3); T(c, d.score >= 80 ? 'Great' : d.score >= 60 ? 'Okay' : 'Poor', P + 50, H - P - 28 - (f === 'large' ? 196 : 0), 13, 's');
-  const hx = 172, hw = W - P - hx, hy = P + 4, hh = (f === 'large' ? 160 : 108) - 22;
+  const hx = 160, hw = W - P - hx, hy = P + 4, hh = f === 'large' ? 138 : H - P - hy - 24;
   hypno(c, d.segs, hx, hy, hw, hh, true);
   T(c, bed, hx, hy + hh + 8, 11, 's', K.t2); T(c, wake, hx + hw, hy + hh + 8, 11, 's', K.t2, 'r');
   if (f === 'large') {
@@ -706,13 +704,12 @@ function cvWeek(d, f) {
   const h0 = Math.min(8, ...timed.map(e => Math.floor(e.s / 60))), h1 = Math.min(24, Math.max(22, ...timed.map(e => Math.ceil(Math.min(e.e, 1440) / 60))));
   const lx = P + 22, top = P + 34, colW = (W - P - lx) / 3, ph = (H - P - top) / ((h1 - h0) * 60), red = new Color('#ff453a');
   /* hour lines (faint every hour, labelled every two) */
-  for (let h = h0; h <= h1; h++) { const y = top + (h - h0) * 60 * ph; c.setFillColor(h % 2 ? new Color('#ffffff', .035) : K.trk2); c.fillRect(new Rect(lx, y, W - P - lx, 1)); if (h % 2 === 0 && h < 24) T(c, h, lx - 6, y - 6, 9.5, 'm', K.t3, 'r') }
+  for (let h = h0; h < h1; h += 2) { const y = top + (h - h0) * 60 * ph; T(c, h, lx - 6, y - 6, 9.5, 'm', K.t3, 'r') }
   D3.forEach((x, i) => {
     const X0 = lx + i * colW, dt = new Date(x.k + 'T12:00');
     if (i) { c.setFillColor(K.trk2); c.fillRect(new Rect(X0, top - 4, 1, H - P - top + 4)) }
-    const short = dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
-    if (xl) { T(c, i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dt.toLocaleDateString('en-GB', { weekday: 'long' }), X0 + 6, P, 14, 'b', i === 0 ? red : K.t1); T(c, short, X0 + colW - 6, P + 2, 11, 'm', K.t2, 'r') }
-    else T(c, i === 0 ? 'Today' : short, X0 + 6, P + 1, 13, 'b', i === 0 ? red : K.t1);
+    const lab = i === 0 ? 'Today' : `${dt.toLocaleDateString('en-GB', { weekday: 'long' })} ${dt.getDate()}`, hs = xl ? 14 : 13;
+    T(c, fit(lab, hs, colW - 10, 'b'), X0 + 6, P, hs, 'b', i === 0 ? red : K.t1);
     const ev = x.ev.filter(e => !e.ad).map(e => ({ ...e })).sort((a, b) => a.s - b.s || b.e - a.e); let grp = [], end = -1;
     const flush = () => { const cols = []; grp.forEach(e => { let k = cols.findIndex(t => t <= e.s); if (k < 0) { k = cols.length; cols.push(0) } cols[k] = e.e; e.col = k }); grp.forEach(e => e.n = cols.length); grp = [] };
     ev.forEach(e => { if (e.s >= end) { flush(); end = -1 } grp.push(e); end = Math.max(end, e.e) }); flush();
@@ -761,7 +758,7 @@ async function dYear() {
   sl.forEach(r => { if (r.data && r.data.asleep) sp[r.path.slice(8)] = sScore(r.data, S) >= 80 ? 1 : 0 });
   Object.values(((lt['tools/leet'] || {}).items) || {}).forEach(it => (it.attempts || []).forEach(a => { if (a.ok && a.d) lc[String(a.d).slice(0, 10)] = 1 }));
   cache('year-sleep', { at: k, n: sp });
-  return { k, from, rows: [['Workout', wo], ['Sleep 80+', sp], ['LeetCode', lc]] };
+  return { k, from, rows: [['Workout', wo], ['Sleep', sp], ['LeetCode', lc]] };
 }
 function cvYear(d, f) {
   const { c, W, H } = canvas('extraLarge'), P = 18, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], on = new Color('#5fd38d');
