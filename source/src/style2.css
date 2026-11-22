@@ -1689,3 +1689,13 @@ input[type=date].inp,input[type=time].inp{color-scheme:dark}
 .days .l{font-size:11px;line-height:14px}.days .d.t .l{color:var(--pink);font-weight:600}
 .two{align-items:stretch}
 .wr-top{align-items:flex-start}
+/* week: adherence fills its card, cleaner streak cards */
+.two>.panel{display:flex;flex-direction:column}.two>.panel>.pb{flex:1;display:flex;flex-direction:column}
+#days{flex:1;height:auto;min-height:220px}
+.days .b .p.out{top:auto;bottom:calc(100% + 5px);color:#a1a1a6}
+.streaks{grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+.streak,button.streak{border:0;border-radius:14px;background:rgba(255,255,255,.04);padding:14px;gap:6px;transition:background .15s}
+button.streak:hover{border-color:transparent;background:rgba(255,255,255,.07)}
+.streak .tag{font:600 12.5px/1.35 var(--mono);letter-spacing:0;text-transform:none;color:#d1d1d6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.streak b{font-size:32px}
+.streak .dots{gap:3px}.streak .dots i{width:7px;height:7px;border-radius:50%}.streak .dots i.n{background:rgba(255,255,255,.14)}.streak .dots i.s{background:transparent}.streak .dots i.p{outline:1.5px solid var(--pink);outline-offset:-1.5px}

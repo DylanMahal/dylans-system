@@ -64,7 +64,7 @@ async function renderReview(){const el=$('wkReview');if(!el||wrBusy)return;wrBus
     el.innerHTML=`<div class="wr-card"><div class="wr-top"><div><div class="wr-eye">Week in review · ${esc(WK)}</div><div class="wr-title">${range}</div><div class="wr-sub">${n} day${n>1?'s':''} in · compared with the same days last week</div></div>
       ${score!=null?sRing(score,score>=80?'#30d158':score>=50?'#ffd60a':'#ff2a6d',92,9,`<b class="num">${score}</b><span>week score</span>`):''}</div>
       ${hl.length?`<div class="wr-hl">${hl.map(([i,t])=>`<div class="wr-hli ${i}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${IC[i]}</svg><span>${t}</span></div>`).join('')}</div>`:''}
-      <div class="wr-tiles">${tiles.map(([k,l,f,hi,c,v])=>`<button type="button" class="wr-tile" data-go="${v}" style="--c:${c}"><span><i></i>${l}</span><b class="num">${f(cur[k])}</b>${wrDelta(k,cur[k],prev[k],hi)||'<em class="eq">&nbsp;</em>'}</button>`).join('')||'<div class="sl-note">Nothing logged yet this week.</div>'}</div></div>`;
+      <div class="wr-tiles">${tiles.map(([k,l,f,hi,c,v])=>`<button type="button" class="wr-tile" data-go="${v}" style="--c:${c}"><span><i></i>${l}</span><b class="num">${f(cur[k])}</b>${wrDelta(k,cur[k],prev[k],hi)||'<em class="eq">&nbsp;</em>'}</button>`).join('')||'<div class="sl-note">Nothing logged yet this week.</div>'}</div><div id="wkPast"></div></div>`;
     el.onclick=e=>{const b=e.target.closest('[data-go]');if(b)go(b.dataset.go)};
     /* keep a snapshot with the week so past reviews keep their numbers */
     const sum=[cur.adh!=null&&Math.round(cur.adh)+'% plan',cur.sq!=null&&'sleep '+Math.round(cur.sq),cur.dw&&wrHM(cur.dw)+' deep work',cur.gym&&cur.gym+' workouts',cur.screen!=null&&wrHM(cur.screen)+'/day screen',score!=null&&'score '+score].filter(Boolean).join(' · ');
@@ -72,6 +72,6 @@ async function renderReview(){const el=$('wkReview');if(!el||wrBusy)return;wrBus
     wrPast()}catch(e){el.innerHTML='<div class="wr-card wr-load">Could not read the week.</div>'}
   wrBusy=false}
 async function wrPast(){const el=$('wkPast');if(!el)return;try{
-  const rows=(await listDocs('weeks/w-')).filter(r=>r.data&&r.path.slice(8)!==WK&&(r.data.notes||r.data.sum)).sort((a,b)=>a.path<b.path?1:-1);
-  const last=rows.find(r=>r.data.notes);$('wkLast').innerHTML=last?`<div class="wr-last"><span>Last time you wrote (${esc(last.path.slice(8))})</span><p>${esc(last.data.notes).slice(0,400)}</p></div>`:'';
+  const rows=(await listDocs('weeks/w-')).filter(r=>r.data&&r.path.slice(8)!==WK&&r.data.sum).sort((a,b)=>a.path<b.path?1:-1);
+  
   el.innerHTML=rows.length?`<details class="sl-det"><summary>Past reviews · ${rows.length}</summary><div class="wr-past">${rows.slice(0,26).map(r=>`<div><b>${esc(r.path.slice(8))}</b>${r.data.sum?`<span>${esc(r.data.sum)}</span>`:''}${r.data.notes?`<p>${esc(r.data.notes)}</p>`:''}</div>`).join('')}</div></details>`:''}catch(e){}}
