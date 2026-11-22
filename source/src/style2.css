@@ -1649,3 +1649,7 @@ input[type=date].inp,input[type=time].inp{color-scheme:dark}
 .tga .tgs .pbar{flex:1;height:8px}.tga .tgs .pbar em{display:none}
 .tgauto{display:inline-block;margin-left:8px;padding:1px 7px;border-radius:999px;background:rgba(5,217,232,.12);color:var(--cyan);font-size:9.5px;font-weight:600;vertical-align:2px;letter-spacing:.02em}
 .tga .tgv{width:auto!important;min-width:44px}
+.tgs input[type=range]::-webkit-slider-thumb{border-radius:50%;background:#fff;border:0;box-shadow:0 1px 6px rgba(0,0,0,.5)}
+.tgs input[type=range]::-moz-range-thumb{border-radius:50%;background:#fff;border:0}
+.tgs input[type=range]::-webkit-slider-runnable-track{border:0;border-radius:4px}
+.tg2.tgw{grid-template-columns:minmax(120px,170px) 1fr auto}.tg2 b{font-weight:600}
