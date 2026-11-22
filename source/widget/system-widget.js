@@ -1107,6 +1107,81 @@ function nDoses(d) { const s = doseState(d), nx = s.next[0]; return nx ? nSmall(
 const nCals = d => nSmall('food', 'Calories', '', Math.abs(d.left).toLocaleString('en-GB'), d.left < 0 ? 'over' : 'left', `${d.eat.toLocaleString('en-GB')} eaten`, `of ${d.allow.toLocaleString('en-GB')}`, d.eat / d.allow);
 const nGoal = d => nSmall('gym', 'Next goal', d.left != null ? `${d.left}d` : '', `${d.pct}%`, '', `${d.target}kg ${d.q.replace(/\b\w/g, x => x.toUpperCase())}`, d.best ? `e1RM ${d.best}kg` : 'No sets yet', d.pct / 100);
 
+/* ---------- TASK BOARD (largest sizes): the app's weekly Jira-style board — open tasks plus this week's done ---------- */
+function isoWk(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())), dn = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - dn); const y = t.getUTCFullYear(); return y + '-' + Math.ceil(((t - Date.UTC(y, 0, 1)) / 864e5 + 1) / 7) }
+async function dBoard() {
+  const A = (await docs(['tasks/all']))['tasks/all'] || {}, L = A.list || [], k = dayK(), wk = isoWk(new Date(k + 'T12:00'));
+  const PJ = {}; (A.projects || []).forEach(p => PJ[p.id] = p.n);
+  const vis = L.filter(t => !t.done || isoWk(new Date(new Date(t.done) - 5 * 36e5)) === wk);
+  const st = t => t.done ? 'done' : t.st === 'prog' ? 'prog' : 'todo';
+  const srt = a => a.sort((x, y) => ((x.p || 3) - (y.p || 3)) || ((x.d || '9') < (y.d || '9') ? -1 : (x.d || '9') > (y.d || '9') ? 1 : 0));
+  const card = t => ({ n: t.t, key: t.code ? String(t.code).padStart(4, '0') : '', p: t.p || 3, d: t.d || '', tm: t.tm || '', pj: t.proj ? PJ[t.proj] || '' : '', sub: (t.sub || []).length, subDone: (t.sub || []).filter(x => x.done).length });
+  const col = s2 => { const r = vis.filter(t => st(t) === s2); return (s2 === 'done' ? r.sort((a, b) => b.done > a.done ? 1 : -1) : srt(r)).map(card) };
+  return { k, wk: wk.split('-')[1], todo: col('todo'), prog: col('prog'), done: col('done') };
+}
+const JPC = { 1: '#ff5630', 2: '#ff7452', 3: '#ffab00', 4: '#4c9aff' };
+function prioIcon(c, p, x, y, s) {
+  /* the app's own Jira priority marks (24-unit paths), scaled */
+  const k = s / 24, L = pts => { const q = new Path(); pts.forEach(([a, b], i) => i ? q.addLine(new Point(x + a * k, y + b * k)) : q.move(new Point(x + a * k, y + b * k))); c.addPath(q); c.setStrokeColor(new Color(JPC[p] || JPC[3])); c.setLineWidth(2.4 * k); c.strokePath() };
+  if (p === 1) { L([[6, 12.5], [12, 7], [18, 12.5]]); L([[6, 18], [12, 12.5], [18, 18]]) } else if (p === 2) L([[6, 15], [12, 9], [18, 15]]); else if (p === 4) L([[6, 9], [12, 15], [18, 9]]); else { L([[5.5, 9.5], [18.5, 9.5]]); L([[5.5, 14.5], [18.5, 14.5]]) }
+}
+function wrap2(s, size, w, wt) {
+  const words = String(s).split(/\s+/); let a = '', i = 0;
+  for (; i < words.length; i++) { const t = a ? a + ' ' + words[i] : words[i]; if (tws(t, size, wt) > w) break; a = t }
+  if (i >= words.length) return [a]; if (!a) return [fit(s, size, w, wt)];
+  return [a, fit(words.slice(i).join(' '), size, w, wt)];
+}
+function dueChip(c, t, xr, y, k) {
+  if (!t.d) return 0; const late = t.d < k, today = t.d === k, txt = late ? 'Overdue' : today ? (t.tm || 'Today') : new Date(t.d + 'T12:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  const w = tws(txt, 9.5, 's') + 12, col = late ? BADC : today ? K.t1 : K.t2;
+  rr(c, xr - w, y, w, 16, 4, late ? new Color('#ff453a', .18) : new Color('#ffffff', .1)); T(c, txt, xr - 6, y + 2, 9.5, 's', col, 'r'); return w;
+}
+function boardCard(c, t, x, y, w, k, done, lines) {
+  const fs = 12.5, L = wrap2(t.n, fs, w - 20, 's').slice(0, lines), h = 14 + L.length * 16 + 22;
+  rr(c, x, y, w, h, 8, new Color('#ffffff', done ? .05 : .085));
+  L.forEach((ln, i) => T(c, ln, x + 10, y + 9 + i * 16, fs, 's', done ? K.t3 : K.t1));
+  const by = y + h - 22; prioIcon(c, t.p, x + 8, by + 1, 15);
+  let kx = x + 27; if (t.key) { T(c, t.key, kx, by + 2, 10, 'mono', done ? K.t3 : K.t2); kx += tws(t.key, 10, 'm') + 10 }
+  const dw = done ? 0 : dueChip(c, t, x + w - 8, by, k);
+  if (t.pj) T(c, fit(t.pj, 9.5, Math.max(0, x + w - 8 - dw - 8 - kx), 's'), kx, by + 2.5, 9.5, 's', K.t3);
+  return h;
+}
+function cvBoard(d, f) {
+  const { c, W, H, P } = frame(f), xl = f === 'extraLarge', open = d.todo.length + d.prog.length;
+  T(c, 'Board', P, P - 2, 17, 'b'); T(c, `Week ${d.wk}`, P + tws('Board', 17, 'b') + 10, P + 2, 12, 's', K.t2);
+  T(c, open ? `${open} open · ${d.done.length} done` : `All clear · ${d.done.length} done`, W - P, P + 1, 11, 's', K.t2, 'r');
+  if (!xl) {
+    /* square: Jira's list view — In Progress then To Do, one row per ticket */
+    let y = P + 30; const rowH = 27, maxY = H - P - 14, w = W - 2 * P;
+    const sec = (name, list, done) => {
+      if (!list.length || y + 40 > maxY) return; cap(c, name, P, y); T(c, list.length, W - P, y, 11, 's', K.t3, 'r'); y += 20;
+      let n = 0; for (const t of list) { if (y + rowH > maxY - (list.length - n > 1 ? 14 : 0)) break;
+        rr(c, P, y, w, rowH - 4, 6, new Color('#ffffff', done ? .04 : .07)); prioIcon(c, t.p, P + 6, y + 4, 15);
+        let kx = P + 26; if (t.key) { T(c, t.key, kx, y + 5, 10, 'mono', K.t3); kx += tws(t.key, 10, 'm') + 9 }
+        const dw = done ? 0 : dueChip(c, t, W - P - 5, y + 3, d.k);
+        T(c, fit(t.n, 12.5, W - P - 5 - dw - 8 - kx, 's'), kx, y + 4, 12.5, 's', done ? K.t3 : K.t1); y += rowH; n++ }
+      if (list.length > n) { T(c, `+${list.length - n} more`, P, y - 2, 10, 'm', K.t3); y += 12 } y += 8;
+    };
+    sec('In progress', d.prog); sec('To do', d.todo); sec('Done this week', d.done, 1);
+    if (!d.prog.length && !d.todo.length) T(c, 'Nothing open — nice', P, P + 40, 14, 's', K.t2);
+    return c;
+  }
+  const top = P + 30, g = xl ? 12 : 8, cw = (W - 2 * P - g * 2) / 3, lines = xl ? 2 : 1;
+  [['To Do', d.todo], ['In Progress', d.prog], ['Done', d.done]].forEach(([name, list], i) => {
+    const x = P + i * (cw + g); rr(c, x, top, cw, H - P - top, 10, new Color('#ffffff', .035));
+    T(c, name.toUpperCase(), x + 10, top + 9, 10, 'b', K.t2); T(c, list.length, x + cw - 10, top + 9, 10, 'b', K.t3, 'r');
+    let y = top + 28, shown = 0;
+    for (const t of list) {
+      const est = 14 + Math.min(lines, wrap2(t.n, 12.5, cw - 32, 's').length) * 16 + 22;
+      if (y + est > H - P - 6 - (list.length - shown > 1 ? 16 : 0)) break;
+      y += boardCard(c, t, x + 6, y, cw - 12, d.k, i === 2, lines) + 6; shown++;
+    }
+    if (list.length > shown) T(c, `+${list.length - shown} more`, x + 10, H - P - 20, 10, 'm', K.t3);
+    if (!list.length) T(c, i === 2 ? 'Nothing yet' : 'Empty', x + cw / 2, top + 40, 11, 'm', K.t3, 'c');
+  });
+  return c;
+}
+
 /* =============================== router =============================== */
 function errW(e) { const w = base(''); sf(w, "Dylan's System", Font.semiboldSystemFont(13)); w.addSpacer(4); sf(w, e, Font.systemFont(11), GREY, 4); return w }
 async function load(mode, fn) { try { return cache(mode, await fn()) } catch (e) { const c = cache(mode); if (c) return c; throw e } }
@@ -1118,6 +1193,7 @@ async function build(param) {
     if (m === 'budget') return wBudget(await load('budget', dBudget));
     if (m === 'money') return wMoney(await load('money', dMoney));
     if (m === 'doses' || m === 'dose') return wDoses(await load('doses', dDoses));
+    if (m === 'tasks' && ['large', 'extraLarge'].includes(FAM()) && !LOCKBG) return done(base('journal'), cvBoard(await load('board', dBoard), FAM()));
     if (m === 'tasks') return wTasks(await load(m, dTasks));
     if (m === 'cals' || m === 'calories' || m === 'food') return wCals(await load('cals', dCals));
     if (m === 'sleep') return wSleep(await load(m, dSleep));
