@@ -34,7 +34,21 @@ const MSRC={
 };
 const MCHAIN={anime:['anilist','jikan','kitsu'],manga:['anilist','jikan','kitsu'],movies:['cinemeta'],books:['openlibrary','gbooks']};
 let MSEARCH_ERR='';
-async function msearch(k,q){q=q.trim();if(!q)return [];const errs=[];
+/* typo-tolerant ranking: bigram similarity of the query against each title */
+const mBig=s=>{s=' '+norm(s||'').replace(/[^a-z0-9]+/g,' ').trim()+' ';const m=new Map();for(let i=0;i<s.length-1;i++){const g=s.slice(i,i+2);m.set(g,(m.get(g)||0)+1)}return m};
+const mSim=(a,b)=>{const A=mBig(a),B=mBig(b);let n=0,ta=0,tb=0;A.forEach(v=>ta+=v);B.forEach(v=>tb+=v);A.forEach((v,g)=>{n+=Math.min(v,B.get(g)||0)});return ta+tb?2*n/(ta+tb):0};
+const mScore=(x,q)=>Math.max(mSim(x.title,q),mSim(x.alt,q),...String(x.title||'').split(/[:\-–]/).map(t=>mSim(t,q)));
+async function msearch(k,q){q=q.trim();if(!q)return [];if(k==='anime'||k==='manga'){const r=await msearch1(k,q);if(r&&r.length&&mScore(r[0],q)>=.6)return r;
+    /* weak or no hit: likely a typo — ask the fuzzy sources, then re-run the best guess through the main source */
+    const words=q.split(/\s+/).filter(w=>w.length>=3).sort((a,b)=>b.length-a.length).slice(0,3);
+    const tries=[MSRC.kitsu(k,q).catch(()=>[]),MSRC.jikan(k,q).catch(()=>[]),...words.map(w=>MSRC.anilist(k,w).catch(()=>[]))];
+    let pool=(r||[]).concat(...await Promise.all(tries));
+    const best=pool.slice().sort((a,b)=>mScore(b,q)-mScore(a,q))[0];
+    if(best&&best.src==='kitsu'){try{pool=pool.concat(await MSRC.anilist(k,best.alt||best.title))}catch(e){}}
+    const seen=new Set(),out=[];pool.map(x=>({x,s:mScore(x,q)})).filter(o=>o.s>=.3).sort((a,b)=>b.s-a.s).forEach(({x})=>{const id=norm(x.title)+'|'+(x.year||'');if(seen.has(x.key)||seen.has(id))return;seen.add(x.key);seen.add(id);out.push(x)});
+    if(out.length)return out.slice(0,20);return r}
+  return msearch1(k,q)}
+async function msearch1(k,q){const errs=[];
   let ok=false;for(const s of MCHAIN[k]){try{const r=await MSRC[s](k,q);if(r.length)return r;ok=true}catch(e){errs.push(s+': '+e.message)}}
   MSEARCH_ERR=errs.join(' · ');return ok?[]:null}
 /* fill in details (genres, director, runtime, synopsis) for a film after it's picked */
@@ -94,7 +108,7 @@ function mAdd(k){const canSer=k==='anime'||k==='manga';let ser=canSer&&LS.get('m
   $('msQ').oninput=e=>{clearTimeout(t);const q=e.target.value;t=setTimeout(async()=>{const my=++mAdd.seq;$('msRes').innerHTML='<div class="ma-empty">Searching…</div>';const r=await msearch(k,q);if(my!==mAdd.seq||!$('msRes'))return;if(r===null){$('msRes').innerHTML=`<div class="ma-empty">Couldn’t reach the search sources (${esc(MSEARCH_ERR)}). Try again in a moment, or add manually.</div>`;return}last=r;draw()},350)};
   setTimeout(()=>$('msQ')&&$('msQ').focus(),200);
   if(canSer)$('msMode').onclick=e=>{const b=e.target.closest('[data-mode]');if(!b)return;ser=b.dataset.mode==='1';LS.set('maser',ser?'1':'0');$('msMode').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));$('msHint').hidden=!ser;if(last.length)draw()};
-  const mk=(x,key)=>{const it={...x,key,st:k==='movies'?'done':'plan',prog:0,rating:null,added:DAYK,upd:new Date().toISOString(),log:k==='movies'?[{d:DAYK,r:null,re:false}]:[],tags:[],fin:k==='movies'?DAYK:undefined};delete it.score;it.mal=x.score;return it};
+  const mk=(x,key)=>{const it={...x,key,st:k==='movies'?'done':'plan',prog:0,rating:null,added:DAYK,upd:new Date().toISOString(),log:[],tags:[]};delete it.score;it.mal=x.score;return it};
   $('msRes').onclick=async e=>{const b=e.target.closest('[data-i]');if(!b||b.classList.contains('busy'))return;const x=last[+b.dataset.i];
     if(ser){b.classList.add('busy');b.querySelector('.ma-in').textContent='Building…';const f=await mFranchise(k,x);const key='ser'+(f?f.root:x.key);if(MEDIA[k].items[key])return mEntry(k,key);
       const it=mSeriesify(mk(x,key),f);MEDIA[k].items[key]=it;saveMedia(k);flash(f?'series_added_'+f.parts.length+'_parts':'series_added');return mEntry(k,key,true)}
@@ -136,28 +150,28 @@ function mEntry(k,key,fresh){const it=MEDIA[k].items[key];if(!it)return;const ma
   <div class="tes-lab">Review</div><div class="me-card"><textarea class="me-ta" id="meRev" rows="4" placeholder="What did you think?">${esc(it.review||'')}</textarea><input class="me-tags" id="meTags" value="${esc((it.tags||[]).join(', '))}" placeholder="Tags, comma separated"></div>
   ${epBlock(k,it)}
   <div class="tes-lab">Diary <span class="num">${lg.length}</span></div><div class="me-card">${lg.map((l,i)=>`<div class="me-row"><span class="me-l">${esc(nice(l.d))}${l.re?`<small>re${K.verb}</small>`:''}</span><span class="me-v">${l.r!=null&&l.r!==''?stars(l.r,max):''}</span><button type="button" class="tes-clr" data-ldi="${i}" aria-label="Delete">${MSVG('<path d="M7 7l10 10M17 7L7 17"/>')}</button></div>`).join('')}
-    ${dateRow('meLd','Date',DAYK)}${sw('meRe',lg.length,'Re'+K.verb)}<button type="button" class="tes-add" id="meLog">${MSVG('<path d="M12 5v14M5 12h14"/>')} Log ${K.verb==='watch'?'watched':'read'}</button></div>
+    ${dateRow('meLd','Date','')}${sw('meRe',lg.length,'Re'+K.verb)}<button type="button" class="tes-add" id="meLog">${MSVG('<path d="M12 5v14M5 12h14"/>')} Log ${K.verb==='watch'?'watched':'read'}</button></div>
   ${it.syn?`<details class="me-syn"><summary>Synopsis</summary><p>${esc(it.syn)}</p></details>`:''}
   <div class="tes-lab">Lists</div><div class="me-lists" id="meLists">${(MEDIA[k].lists||[]).map(l=>`<button type="button" data-li="${esc(l.id)}" aria-pressed="${l.keys.includes(key)}">${esc(l.name)}</button>`).join('')}<button type="button" data-li="new">+ New list</button></div>
   <div class="tes-foot"><button class="tes-del" type="button" id="meDel">Remove</button><span style="flex:1"></span><button class="btn p tes-save" type="button" id="meOk">Done</button></div></div>`);
   const sb=$('sheetBody');if(keep)sb.scrollTop=keep;
   ['mePg','meTot','meEpN'].forEach(id=>{const el=$(id);if(el)el.onfocus=()=>setTimeout(()=>el.select(),0)});
   sb.onclick=async e=>{if(e.target.classList.contains('me-in')){try{e.target.showPicker()}catch(x){}return}const b=e.target.closest('button');if(!b)return;
-    if(b.dataset.st){it.st=b.dataset.st;if(it.st==='cur'&&!it.start)it.start=DAYK;if(it.st==='done'){if(!it.fin)it.fin=DAYK;if(it.total)it.prog=it.total;if(!(it.log||[]).length)it.log=[{d:DAYK,r:it.rating,re:false}]}persist();mEntry(k,key);if(it.st==='done')flash('completed');return}
+    if(b.dataset.st){it.st=b.dataset.st;if(it.st==='done'&&it.total)it.prog=it.total;persist();mEntry(k,key);if(it.st==='done')flash('completed');return}
     if(b.dataset.rate!=null){it.rating=b.dataset.rate===''?null:+b.dataset.rate;if((it.log||[]).length)it.log[it.log.length-1].r=it.rating;persist();mEntry(k,key);return}
-    if(b.dataset.pg){it.prog=Math.max(0,(+it.prog||0)+ +b.dataset.pg);if(it.total&&it.prog>=it.total){it.prog=+it.total;if(it.st!=='done'){it.st='done';it.fin=DAYK;it.log=[...(it.log||[]),{d:DAYK,r:it.rating,re:false}];flash('completed');burst(innerWidth/2,innerHeight/2,80)}}else if(it.st==='plan'||!it.st){it.st='cur';it.start=it.start||DAYK}persist();mEntry(k,key);return}
-    if(b.id==='meLog'){const d=$('meLd').value||DAYK;it.log=[...(it.log||[]),{d,r:it.rating,re:$('meRe').checked}];if(it.st!=='done'){it.st='done';it.fin=it.fin||d}persist();flash('logged');mEntry(k,key);return}
+    if(b.dataset.pg){it.prog=Math.max(0,(+it.prog||0)+ +b.dataset.pg);if(it.total&&it.prog>=it.total){it.prog=+it.total;if(it.st!=='done'){it.st='done';flash('completed');burst(innerWidth/2,innerHeight/2,80)}}else if(it.st==='plan'||!it.st){it.st='cur'}persist();mEntry(k,key);return}
+    if(b.id==='meLog'){const d=$('meLd').value;if(!d){flash('pick_a_date');try{$('meLd').showPicker()}catch(x){$('meLd').focus()}return}it.log=[...(it.log||[]),{d,r:it.rating,re:$('meRe').checked}];if(it.st!=='done'){it.st='done'}persist();flash('logged');mEntry(k,key);return}
     if(b.dataset.ldi!=null){it.log.splice(+b.dataset.ldi,1);persist();mEntry(k,key);return}
     if(b.dataset.li){if(b.dataset.li==='new'){const n=prompt('List name?');if(!n)return;MEDIA[k].lists=[...(MEDIA[k].lists||[]),{id:rid(),name:n.trim(),keys:[key]}]}else{const l=MEDIA[k].lists.find(x=>x.id===b.dataset.li);l.keys=l.keys.includes(key)?l.keys.filter(x=>x!==key):[...l.keys,key]}persist();mEntry(k,key);return}
     if(b.id==='meDel'){if(!b.dataset.arm){b.dataset.arm=1;b.classList.add('arm');b.textContent='Tap again to remove';return}delete MEDIA[k].items[key];(MEDIA[k].lists||[]).forEach(l=>l.keys=l.keys.filter(x=>x!==key));saveMedia(k);closeSheet();renderMedia();return}
     if(b.dataset.epo){const ep=(it.eps||{})[b.dataset.epo]||{};$('meEpN').value=b.dataset.epo;rateSync(sb.querySelector('[data-rc="meEpR"]'),ep.r==null||ep.r===''?null:+ep.r);$('meEpNote').value=ep.note||'';$('meEpN').scrollIntoView({block:'center',behavior:'smooth'});return}
     if(b.dataset.epd){if(!b.dataset.arm){b.dataset.arm=1;b.classList.add('arm');return}delete it.eps[b.dataset.epd];persist();mEntry(k,key);return}
     if(b.id==='meEpSave'){const n=parseInt($('meEpN').value);if(!(n>0)){flash('which_'+EPU(k));return}const r=rateVal(sb.querySelector('[data-rc="meEpR"]')),note=$('meEpNote').value.trim();
-      it.eps={...(it.eps||{}),[n]:{r,note,d:((it.eps||{})[n]||{}).d||DAYK}};if(K.unit&&(+it.prog||0)<n&&(!it.total||n<=it.total)){it.prog=n;if(it.st==='plan'||!it.st){it.st='cur';it.start=it.start||DAYK}}persist();flash(EPU(k)+'_'+n+'_saved');mEntry(k,key);setTimeout(()=>{const el=$('meEpList');el&&el.scrollIntoView({block:'center'})},60);return}
+      it.eps={...(it.eps||{}),[n]:{r,note,d:((it.eps||{})[n]||{}).d||DAYK}};if(K.unit&&(+it.prog||0)<n&&(!it.total||n<=it.total)){it.prog=n;if(it.st==='plan'||!it.st){it.st='cur'}}persist();flash(EPU(k)+'_'+n+'_saved');mEntry(k,key);setTimeout(()=>{const el=$('meEpList');el&&el.scrollIntoView({block:'center'})},60);return}
     if(b.id==='meOk'){closeSheet()}};
   const toSer=async el=>{if(el.checked){const row=el.closest('.me-row');row.classList.add('busy');const f=await mFranchise(k,it);mSeriesify(it,f,true);flash(f?'series_'+f.parts.length+'_parts':'whole_series')}else{Object.assign(it,it.single||{title:mClean(it.title)});it.series=false;delete it.parts;delete it.single}persist();mEntry(k,key)};
   let tt=null;const deb=e=>{const id=e.target.id;clearTimeout(tt);tt=setTimeout(()=>{
-    if(id==='mePg'){it.prog=+e.target.value||0;if(it.prog>0&&(it.st==='plan'||!it.st)){it.st='cur';it.start=it.start||DAYK}}if(id==='meTot'){it.total=+e.target.value||null}if(id==='meRev')it.review=e.target.value;
+    if(id==='mePg'){it.prog=+e.target.value||0;if(it.prog>0&&(it.st==='plan'||!it.st)){it.st='cur'}}if(id==='meTot'){it.total=+e.target.value||null}if(id==='meRev')it.review=e.target.value;
     if(id==='meTags')it.tags=e.target.value.split(',').map(x=>x.trim()).filter(Boolean);persist()},400)};
   sb.oninput=e=>{const t=e.target;if(t.classList.contains('me-slider')){rateSync(t.closest('.me-rate'),+t.value);return}if(t.classList.contains('me-rnum')||t.type==='checkbox'||t.type==='date'||t.id==='meEpN'||t.id==='meEpNote')return;deb(e)};
   sb.onchange=e=>{const t=e.target;
