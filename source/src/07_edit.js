@@ -20,5 +20,10 @@ addEventListener('pointerdown',e=>{if(!EDIT)return;const t=e.target;if(!t.closes
   addEventListener('touchmove',e=>{if(Math.hypot(e.touches[0].clientX-sx,e.touches[0].clientY-sy)>10)clearTimeout(t)},{passive:true});
   addEventListener('touchend',e=>{clearTimeout(t);if(fired){e.preventDefault();fired=false}});
   addEventListener('contextmenu',e=>{if(e.target.closest('input,textarea'))return;if(trigger(e.target))e.preventDefault()});
+  /* laptop: holding the left mouse button does the same as a long-press */
+  let mt=null,mx=0,my=0;const mStop=()=>{clearTimeout(mt);mt=null};
+  addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'||e.button!==0)return;const tg=e.target;mx=e.clientX;my=e.clientY;mStop();mt=setTimeout(()=>{mt=null;if(trigger(tg))swallow=Date.now()+1500},520)},true);
+  addEventListener('pointermove',e=>{if(mt&&Math.hypot(e.clientX-mx,e.clientY-my)>6)mStop()},true);
+  ['pointerup','pointercancel','dragstart'].forEach(ev=>addEventListener(ev,mStop,true));
 })();
 
