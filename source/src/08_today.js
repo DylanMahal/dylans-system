@@ -41,7 +41,7 @@ function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks(
   const gym=(planKind==='weekday'&&(DOWN==='Tue'||DOWN==='Thu'))||(planKind==='weekend');
   const tdate=L.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short'}).toUpperCase();
   const late=mins(new Date())<300;
-  $('dateline').innerHTML=`<span class="num">${esc(tdate)}</span><span class="chipy">${planKind}</span>${gym?`<button class="chipy hot" type="button" data-go="gym" style="background:none;cursor:pointer">gym day · ${gymTypeFor()} → log</button>`:''}${planKind==='weekday'&&!gym?'<span class="chipy">non-gym · dinner 19:30</span>':''}${late?'<span class="chipy hot">after midnight · still logging '+esc(DOWN)+'</span>':''}`;
+  $('dateline').innerHTML=`<span class="chipy">${planKind==='weekend'?'Weekend':'Weekday'} plan</span>${gym?`<button class="chipy hot" type="button" data-go="gym">Gym day · ${gymTypeFor()} <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>`:''}${planKind==='weekday'&&!gym?'<span class="chipy">Rest day · dinner 19:30</span>':''}${late?'<span class="chipy hot">after midnight · still logging '+esc(DOWN)+'</span>':''}`;
   $('strip').innerHTML=blocks.map(b=>`<button type="button" data-b="${b.bi}" style="flex:${Math.max(b.e-b.s,20)}"><span class="t num">${fmtM(b.s)}</span><span class="n">${esc(b.short.toLowerCase())}</span><span class="fill"></span></button>`).join('')+`<span class="nowline" id="nowline"></span>`;
   const open=new Set([...document.querySelectorAll('#blocks .blk.open')].map(e=>e.dataset.b));
   $('blocks').innerHTML=blocks.map(b=>{const its=b.items.filter(onToday).map(eff);
