@@ -803,22 +803,26 @@ function cvYear(d, f) {
 
 /* the same three habits for the large square: one shared month axis, a header line per habit, ~7 months of weeks */
 function cvYearL(d, f) {
+  /* no title: month axis on top, then three equal sections (name + 30-day count, then the grid), grid flush to both margins */
   const { c, W, H } = canvas(f), P = 16, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], on = new Color('#5fd38d');
-  const cell = 7.5, gap = 2.1, step = cell + gap, weeks = Math.floor((W - 2 * P - 12 + gap) / step), gx = W - P - (weeks * step - gap), start = addD(monOf(d.k), -(weeks - 1) * 7);
-  T(c, 'Habits', P, P - 2, 17, 'b');
-  const ax = P + 28; let lastM = -1;
-  for (let w = 0; w < weeks; w++) { const key = addD(start, w * 7), m = new Date(key + 'T12:00').getMonth(); if (m !== lastM) { if (lastM !== -1 || new Date(key + 'T12:00').getDate() <= 7) if (w < weeks - 2) T(c, MON[m], gx + w * step, ax, 9, 'm', K.t3); lastM = m } }
-  const top0 = ax + 17, bh = (H - P - top0 + 8) / 3;
+  const lblW = 12, gap = 2, gx = P + lblW, avail = W - P - gx, weeks = Math.round((avail + gap) / 10.5), step = (avail + gap) / weeks, cell = step - gap;
+  const start = addD(monOf(d.k), -(weeks - 1) * 7), gh = 7 * step - gap, top0 = P + 16, sh = 20 + gh, sg = (H - P - top0 - 3 * sh) / 2;
+  let lastM = -1, nextX = 0;
+  for (let w = 0; w < weeks; w++) {
+    const dt = new Date(addD(start, w * 7) + 'T12:00'), m = dt.getMonth(); if (m === lastM) continue;
+    const first = lastM === -1; lastM = m; if (first && dt.getDate() > 7) continue;
+    const x = gx + w * step, lw = tws(MON[m], 9, 'm'); if (x < nextX || x + lw > W - P) continue;
+    T(c, MON[m], x, P - 1, 9, 'm', K.t3); nextX = x + lw + 6;
+  }
   d.rows.forEach(([name, set], r) => {
-    const y0 = top0 + r * bh, gy = y0 + 19;
+    const y0 = top0 + r * (sh + sg), gy = y0 + 20;
     let n30 = 0; for (let i = 0; i < 30; i++) if (set[addD(d.k, -i)]) n30++;
-    let run = 0, i = set[d.k] ? 0 : 1; while (set[addD(d.k, -i)]) { run++; i++ }
-    T(c, name, P, y0, 13, 'b');
-    ['M', '', 'W', '', 'F', '', ''].forEach((l, j) => l && T(c, l, gx - 5, gy + j * step - 1.8, 7.5, 'm', K.t3, 'r'));
+    T(c, name, P, y0 - 1, 13, 'b'); T(c, `${n30}/30 days`, W - P, y0 + 1, 10.5, 'm', K.t3, 'r');
+    ['M', '', 'W', '', 'F', '', ''].forEach((l, j) => l && T(c, l, gx - 4, gy + j * step + cell / 2 - 8 * 1.35 / 2, 8, 'm', K.t3, 'r'));
     for (let w = 0; w < weeks; w++) for (let dd = 0; dd < 7; dd++) {
       const key = addD(start, w * 7 + dd); if (key > d.k) continue; const x = gx + w * step, y = gy + dd * step;
-      rr(c, x, y, cell, cell, 2.2, set[key] ? on : K.trk2);
-      if (key === d.k) { c.setStrokeColor(K.t1); c.setLineWidth(1.1); const p = new Path(); p.addRoundedRect(new Rect(x - .55, y - .55, cell + 1.1, cell + 1.1), 2.6, 2.6); c.addPath(p); c.strokePath() }
+      rr(c, x, y, cell, cell, 2.4, set[key] ? on : K.trk2);
+      if (key === d.k) { c.setStrokeColor(K.t1); c.setLineWidth(1.1); const p = new Path(); p.addRoundedRect(new Rect(x - .55, y - .55, cell + 1.1, cell + 1.1), 2.8, 2.8); c.addPath(p); c.strokePath() }
     }
   });
   return c;
@@ -1017,6 +1021,7 @@ async function dBudget() {
   return { month: n.toLocaleDateString('en-GB', { month: 'long' }), list, tb, ta, logged, hist, prog: n.getDate() / dim, left: tb - ta, none: !Object.keys(cats).length };
 }
 function bgHead(c, d, x, y, w, h, sz) {
+  if (sz === 'm') return bgHeadM(c, d, x, y, w, h);
   cap(c, `Budget · ${d.month}`, x, y);
   if (d.none) { T(c, 'Open the app once', x, y + 24, 16, 'b', K.t2); return }
   if (!d.logged) { T(c, gbp(d.tb), x - 1, y + 18, sz === 'm' ? 30 : 34, 'rh', K.t2, 'l', 1); T(c, 'monthly budget', x, y + (sz === 'm' ? 56 : 60), 11, 's', K.t2); T(c, sz === 'm' ? 'Nothing logged yet' : `Nothing logged for ${d.month} yet`, x, y + (sz === 'm' ? 74 : 78), 11, 's', K.t3); return }
@@ -1026,10 +1031,20 @@ function bgHead(c, d, x, y, w, h, sz) {
   const tx = x + w * d.prog; c.setFillColor(K.t2); c.fillRect(new Rect(tx - .75, by - 4, 1.5, 15));
   if (sz === 'l') T(c, `${Math.round(d.prog * 100)}% through the month`, x, by + 13, 10, 'm', K.t3);
 }
+/* medium: no caption — the number block sits vertically centred against the category list */
+function bgHeadM(c, d, x, y, w, h) {
+  if (d.none) { T(c, 'Open the app once', x, y + h / 2 - 11, 16, 'b', K.t2); return }
+  const y0 = y + (h - 70) / 2;
+  if (!d.logged) { T(c, gbp(d.tb), x - 1, y0 - 2, 32, 'rh', K.t2, 'l', 1); T(c, 'monthly budget', x, y0 + 40, 11, 's', K.t2); T(c, 'Nothing logged yet', x, y0 + 57, 11, 's', K.t3); return }
+  T(c, gbp(d.left), x - 1, y0 - 2, 32, 'rh', d.left < 0 ? BADC : K.t1, 'l', 1);
+  T(c, (d.left < 0 ? `over your ${gbp(d.tb)}` : `left of ${gbp(d.tb)}`), x, y0 + 40, 11, 's', K.t2);
+  const by = y0 + 63; rr(c, x, by, w, 7, 3.5, K.trk2); const fr = d.tb ? Math.min(1, d.ta / d.tb) : 0; if (fr) rr(c, x, by, Math.max(7, w * fr), 7, 3.5, d.ta > d.tb ? BADC : K.t1);
+  c.setFillColor(K.t2); c.fillRect(new Rect(x + w * d.prog - .75, by - 4, 1.5, 15));
+}
 function bgCats(c, d, x, y, w, h, sz) {
   const rows = d.list.slice(0, Math.max(1, Math.floor((h + 6) / (sz === 'm' ? 31 : 34)))), rh = sz === 'm' ? 31 : 34;
   if (sz !== 'm') cap(c, 'Categories', x, y);
-  const y0 = sz === 'm' ? y : y + 20;
+  const y0 = sz === 'm' ? y + Math.max(0, (h - ((Math.min(rows.length, Math.floor((h + 6) / rh)) - 1) * rh + 23)) / 2) : y + 20;
   rows.slice(0, Math.floor((h - (y0 - y) + 6) / rh)).forEach((r, i) => {
     const yy = y0 + i * rh; const amt = r.a == null ? `${gbp(r.b)}` : `${gbp(r.a)} / ${gbp(r.b)}`; T(c, fit(r.c, 12, w - tws(amt, 11, 'm') - 12, 's'), x, yy, 12, 's'); T(c, amt, x + w, yy, 11, 'm', r.a > r.b ? BADC : K.t2, 'r');
     rr(c, x, yy + 18, w, 5, 2.5, K.trk2); if (r.a) rr(c, x, yy + 18, Math.max(5, w * Math.min(1, r.a / (r.b || 1))), 5, 2.5, r.a > r.b ? BADC : K.t1);
@@ -1044,7 +1059,7 @@ function bgSmall(c, d, x, y, w, h) {
 }
 const cvBudget = (d, f) => f === 'extraLarge' ? (() => { const { c, W, H, P } = frame(f), lw = 300; bgHead(c, d, P, P, lw, 120, 'l'); bgHist(c, d, P, P + 140, lw, H - 2 * P - 140); c.setFillColor(K.trk2); c.fillRect(new Rect(P + lw + 16, P, 1, H - 2 * P)); bgCats(c, d, P + lw + 32, P, W - P - (P + lw + 32), H - 2 * P, 'l'); return c })()
   : f === 'large' ? (() => { const { c, W, H, P } = frame(f); bgHead(c, d, P, P, W - 2 * P, 104, 'k'); bgCats(c, d, P, P + 116, W - 2 * P, 98, 'l'); c.setFillColor(K.trk2); c.fillRect(new Rect(P, P + 214, W - 2 * P, 1)); bgHist(c, d, P, P + 226, W - 2 * P, H - 2 * P - 226); return c })()
-  : layout(f, d, bgHead, (c, d, x, y, w, h) => bgCats(c, d, x, y + 2, w, h, 'm'), bgHist, bgSmall);
+  : layout(f, d, bgHead, (c, d, x, y, w, h) => bgCats(c, d, x, y, w, h, 'm'), bgHist, bgSmall);
 
 /* ---------- DOSES ---------- */
 async function dDoses() { const t = (await docs(['widget/today']))['widget/today']; if (!t) throw new Error('Open the app once to publish doses'); return { items: t.doses || [], date: t.date } }
@@ -1148,11 +1163,9 @@ function boardCard(c, t, x, y, w, k, done, lines) {
 }
 function cvBoard(d, f) {
   const { c, W, H, P } = frame(f), xl = f === 'extraLarge', open = d.todo.length + d.prog.length;
-  T(c, 'Board', P, P - 2, 17, 'b'); T(c, `Week ${d.wk}`, P + tws('Board', 17, 'b') + 10, P + 2, 12, 's', K.t2);
-  T(c, open ? `${open} open · ${d.done.length} done` : `All clear · ${d.done.length} done`, W - P, P + 1, 11, 's', K.t2, 'r');
   if (!xl) {
     /* square: Jira's list view — In Progress then To Do, one row per ticket */
-    let y = P + 30; const rowH = 27, maxY = H - P - 14, w = W - 2 * P;
+    let y = P; const rowH = 27, maxY = H - P - 14, w = W - 2 * P;
     const sec = (name, list, done) => {
       if (!list.length || y + 40 > maxY) return; cap(c, name, P, y); T(c, list.length, W - P, y, 11, 's', K.t3, 'r'); y += 20;
       let n = 0; for (const t of list) { if (y + rowH > maxY - (list.length - n > 1 ? 14 : 0)) break;
@@ -1163,10 +1176,10 @@ function cvBoard(d, f) {
       if (list.length > n) { T(c, `+${list.length - n} more`, P, y - 2, 10, 'm', K.t3); y += 12 } y += 8;
     };
     sec('In progress', d.prog); sec('To do', d.todo); sec('Done this week', d.done, 1);
-    if (!d.prog.length && !d.todo.length) T(c, 'Nothing open — nice', P, P + 40, 14, 's', K.t2);
+    if (!d.prog.length && !d.todo.length) T(c, 'Nothing open — nice', P, P + 10, 14, 's', K.t2);
     return c;
   }
-  const top = P + 30, g = xl ? 12 : 8, cw = (W - 2 * P - g * 2) / 3, lines = xl ? 2 : 1;
+  const top = P, g = xl ? 12 : 8, cw = (W - 2 * P - g * 2) / 3, lines = xl ? 2 : 1;
   [['To Do', d.todo], ['In Progress', d.prog], ['Done', d.done]].forEach(([name, list], i) => {
     const x = P + i * (cw + g); rr(c, x, top, cw, H - P - top, 10, new Color('#ffffff', .035));
     T(c, name.toUpperCase(), x + 10, top + 9, 10, 'b', K.t2); T(c, list.length, x + cw - 10, top + 9, 10, 'b', K.t3, 'r');
