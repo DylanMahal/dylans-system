@@ -742,6 +742,52 @@ function cvGoal(d, f) {
   return c;
 }
 
+/* ---------- YEAR: three habits as year-long grids (iPad extra-large) ---------- */
+async function raw(q) { const t = await token(), r = new Request(`${SUPA_URL}/rest/v1/kv?${q}`); r.headers = { apikey: SUPA_KEY, Authorization: `Bearer ${t}` }; const j = await r.loadJSON(); if (!Array.isArray(j)) throw new Error((j && j.message) || 'read failed'); return j }
+const WEEKS = 51;
+async function dYear() {
+  const k = dayK(), from = addD(monOf(k), -(WEEKS - 1) * 7), old = cache('year-sleep') || { at: '', n: {} }, enc = encodeURIComponent;
+  /* sleep nights only change for the last few days, so older scores are kept from the last run */
+  const sFrom = old.at && old.at > from ? addD(old.at, -3) : from;
+  const [gym, days, sl, lt, set] = await Promise.all([
+    raw('select=path,d:data->>date&path=like.' + enc('gym/w-*')),
+    raw('select=path,n:data->names&path=like.' + enc('days/d-*') + '&path=gte.' + enc('days/d-' + from)),
+    raw('select=path,data&path=like.' + enc('sleep/w-*') + '&path=gte.' + enc('sleep/w-' + sFrom)),
+    docs(['tools/leet']), docs(['sleep/settings'])]);
+  const S = { wake: '07:30', goal: 8, ...(set['sleep/settings'] || {}) };
+  const wo = {}, lc = {}, sp = { ...old.n };
+  gym.forEach(r => { if (r.d) wo[r.d] = 1 });
+  days.forEach(r => { if ((r.n || []).some(x => /gym|cardio|workout|\brun\b|lift/i.test(String(x)))) wo[r.path.slice(7)] = 1 });
+  sl.forEach(r => { if (r.data && r.data.asleep) sp[r.path.slice(8)] = sScore(r.data, S) >= 80 ? 1 : 0 });
+  Object.values(((lt['tools/leet'] || {}).items) || {}).forEach(it => (it.attempts || []).forEach(a => { if (a.ok && a.d) lc[a.d] = 1 }));
+  cache('year-sleep', { at: k, n: sp });
+  return { k, from, rows: [['Workout', wo], ['Sleep 80+', sp], ['LeetCode', lc]] };
+}
+function cvYear(d, f) {
+  const { c, W, H } = canvas('extraLarge'), P = 18, MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], on = new Color('#5fd38d');
+  T(c, 'Habits', P, P - 2, 17, 'b'); T(c, 'Last 12 months', W - P, P + 1, 11, 'm', K.t2, 'r');
+  const gx = P + 134, cell = 9, gap = 2.4, step = cell + gap, top0 = P + 30, bh = (H - P - top0 + 6) / 3;
+  d.rows.forEach(([name, set], r) => {
+    const y0 = top0 + r * bh, gy = y0 + 13;
+    /* left: name, 30-day count, current run */
+    let n30 = 0; for (let i = 0; i < 30; i++) if (set[addD(d.k, -i)]) n30++;
+    let run = 0, i = set[d.k] ? 0 : 1; while (set[addD(d.k, -i)]) { run++; i++ }
+    T(c, name, P, gy - 2, 14, 'b');
+    T(c, n30, P, gy + 17, 22, 'rh', K.t1, 'l', 1); T(c, 'of last 30 days', P + tws(String(n30), 22, 'rh') + 5, gy + 26, 9.5, 'm', K.t2);
+    T(c, run ? `${run}-day run` : 'No current run', P, gy + 47, 10, 'm', K.t3);
+    ['M', '', 'W', '', 'F', '', ''].forEach((l, j) => l && T(c, l, gx - 7, gy + j * step - 1.5, 8, 'm', K.t3, 'r'));
+    let lastM = -1;
+    for (let w = 0; w < WEEKS; w++) for (let dd = 0; dd < 7; dd++) {
+      const key = addD(d.from, w * 7 + dd), x = gx + w * step, y = gy + dd * step;
+      if (dd === 0) { const m = new Date(key + 'T12:00').getMonth(); if (m !== lastM && w < WEEKS - 1) { if (lastM !== -1 || new Date(key + 'T12:00').getDate() <= 7) T(c, MON[m], x, y0, 8.5, 'm', K.t3); lastM = m } }
+      if (key > d.k) continue;
+      rr(c, x, y, cell, cell, 2.4, set[key] ? on : K.trk2);
+      if (key === d.k) { c.setStrokeColor(K.t1); c.setLineWidth(1.2); const p = new Path(); p.addRoundedRect(new Rect(x - .6, y - .6, cell + 1.2, cell + 1.2), 3, 3); c.addPath(p); c.strokePath() }
+    }
+  });
+  return c;
+}
+
 /* =============================== router =============================== */
 function errW(e) { const w = base(''); sf(w, "Dylan's System", Font.semiboldSystemFont(13)); w.addSpacer(4); sf(w, e, Font.systemFont(11), GREY, 4); return w }
 async function load(mode, fn) { try { return cache(mode, await fn()) } catch (e) { const c = cache(mode); if (c) return c; throw e } }
@@ -752,6 +798,7 @@ async function build(param) {
     if (m === 'cals' || m === 'calories' || m === 'food') return wCals(await load('cals', dCals));
     if (m === 'sleep') return wSleep(await load(m, dSleep));
     if (m === 'week' || m === 'cal' || m === 'calendar') return wWeek(await load('week', dWeek));
+    if (['habit', 'streak', 'habits'].includes(m) && FAM() === 'extraLarge') return done(base('streaks'), cvYear(await load('year', dYear), 'extraLarge'));
     if (m === 'habits') return wHabits(await load('habits', dHabits));
     if (m === 'habit' || m === 'streak') return wHabit(await load('habits', dHabits), a[0], m);
     if (m === 'goal') { if (!a[0] || !a[1]) return errW('Run Next Goal in Scriptable once to set your lift and target'); return wGoal(await load('goal-' + a.join('-'), () => dGoal(a[0], a[1], a[2]))) }
