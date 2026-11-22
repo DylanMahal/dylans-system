@@ -260,6 +260,7 @@ function calsSmall(d) {
 function wCals(d) {
   const f = FAM();
   if (acc(f)) return lock({ p: d.eat / d.allow, v: Math.abs(d.left) >= 1000 ? (Math.abs(d.left) / 1000).toFixed(1) + 'k' : String(Math.abs(d.left)), l: d.left < 0 ? 'over' : 'left', lines: [`${Math.abs(d.left)} kcal ${d.left < 0 ? 'over' : 'left'}`, `${d.eat} eaten of ${d.allow}`], inline: `${Math.abs(d.left)} kcal ${d.left < 0 ? 'over' : 'left'}` });
+  if (LOCKBG && f === 'small') return nCals(d);
   const w = base('food'); w.setPadding(0, 0, 0, 0);
   const im = w.addImage(f === 'small' ? calsSmall(d) : calsMedium(d)); im.resizable = true; im.centerAlignImage();
   return w;
@@ -473,6 +474,7 @@ async function dGoal(q, target, by) {
 function wGoal(d) {
   const f = FAM(), name = d.q.replace(/\b\w/g, c => c.toUpperCase());
   if (acc(f)) return lock({ p: d.pct / 100, v: `${d.pct}%`, l: name.slice(0, 6), lines: [`${d.target}kg ${name}`, `${d.pct}% · best ${d.bestKg}×${d.bestR}`, d.left != null ? `${d.left} days left` : ''], inline: `${d.target}kg ${name} · ${d.pct}%` });
+  if (LOCKBG && f === 'small') return nGoal(d);
   { const w = base('gym'); const g = new LinearGradient(); g.colors = [new Color('#0a0a0a'), new Color('#0d0605'), new Color('#3a1209'), new Color('#7a2a14')]; g.locations = [0, .45, .78, 1]; w.backgroundGradient = g; return done(w, cvGoal(d, f)) }
   const w = base('gym'); w.setPadding(f === 'small' ? 20 : 18, 15, f === 'small' ? 13 : 14, 15);
   const g = new LinearGradient(); g.colors = [new Color('#0a0a0a'), new Color('#0d0605'), new Color('#3a1209'), new Color('#7a2a14')]; g.locations = [0, .45, .78, 1]; w.backgroundGradient = g;
@@ -997,10 +999,29 @@ const cvDoses = (d, f) => f === 'extraLarge' ? (() => { const { c, W, H, P } = f
   : layout(f, d, dsHead, (c, d, x, y, w, h) => dsList(c, d, x, y + 2, w, h, 'm'), dsList, dsSmall);
 
 /* lock-screen content for the four new widgets */
-function wScreen(d) { const f = FAM(); if (!acc(f)) return done(base('tools'), cvScreen(d, f)); if (d.y == null) return lock({ p: null, v: '–', l: 'screen', lines: ['Screen time', 'No data yet'], inline: 'screen time: no data' }); const df = d.y - d.goal; return lock({ p: Math.min(1, d.y / (d.goal * 1.5)), v: d.y >= 60 ? Math.floor(d.y / 60) + 'h' : Math.round(d.y) + 'm', l: 'screen', lines: [`Screen ${hmS(d.y)}`, `${hmS(Math.abs(df))} ${df > 0 ? 'over' : 'under'} goal`, d.on ? 'Bricked now' : 'Yesterday'], inline: `📱 ${hmS(d.y)} yesterday` }) }
-function wGym(d) { const f = FAM(); if (!acc(f)) return done(base('gym'), cvGym(d, f)); return lock({ p: Math.min(1, d.n / 5), v: String(d.n), l: 'gym', lines: [`${d.n} session${d.n === 1 ? '' : 's'}`, d.last ? d.last.name : 'No workouts yet', d.last ? ago(d.last.date) : ''], inline: `🏋 ${d.n} this week${d.last ? ' · ' + ago(d.last.date).toLowerCase() : ''}` }) }
-function wMoney(d) { const f = FAM(); if (!acc(f)) return done(base('money'), cvMoney(d, f)); const L = Math.abs(d.left), v = L >= 1000 ? '£' + (L / 1000).toFixed(1) + 'k' : '£' + Math.round(L); return lock({ p: d.tb ? Math.min(1, d.ta / d.tb) : 0, v, l: d.left < 0 ? 'over' : 'left', lines: [`${gbp(d.left)} ${d.left < 0 ? 'over' : 'left'}`, `${gbp(d.ta)} of ${gbp(d.tb)}`, d.month], inline: `£ ${gbp(d.left).slice(1)} ${d.left < 0 ? 'over' : 'left'} this month` }) }
-function wDoses(d) { const f = FAM(); if (!acc(f)) return done(base('stack'), cvDoses(d, f)); const s = doseState(d), nx = s.next[0]; return lock({ p: s.L.length ? s.taken / s.L.length : 0, v: nx ? nx.t : '✓', l: 'dose', lines: nx ? [nx.n, `${nx.t} · ${inT(nx.m - s.m)}`, `${s.taken}/${s.L.length} taken${s.missed.length ? ` · ${s.missed.length} missed` : ''}`] : ['All doses taken', `${s.taken}/${s.L.length} today`], inline: nx ? `💊 ${nx.t} ${nx.n}` : '💊 all taken' }) }
+function wScreen(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nScreen(d) : done(base('tools'), cvScreen(d, f)); if (d.y == null) return lock({ p: null, v: '–', l: 'screen', lines: ['Screen time', 'No data yet'], inline: 'screen time: no data' }); const df = d.y - d.goal; return lock({ p: Math.min(1, d.y / (d.goal * 1.5)), v: d.y >= 60 ? Math.floor(d.y / 60) + 'h' : Math.round(d.y) + 'm', l: 'screen', lines: [`Screen ${hmS(d.y)}`, `${hmS(Math.abs(df))} ${df > 0 ? 'over' : 'under'} goal`, d.on ? 'Bricked now' : 'Yesterday'], inline: `📱 ${hmS(d.y)} yesterday` }) }
+function wGym(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nGym(d) : done(base('gym'), cvGym(d, f)); return lock({ p: Math.min(1, d.n / 5), v: String(d.n), l: 'gym', lines: [`${d.n} session${d.n === 1 ? '' : 's'}`, d.last ? d.last.name : 'No workouts yet', d.last ? ago(d.last.date) : ''], inline: `🏋 ${d.n} this week${d.last ? ' · ' + ago(d.last.date).toLowerCase() : ''}` }) }
+function wMoney(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nMoney(d) : done(base('money'), cvMoney(d, f)); const L = Math.abs(d.left), v = L >= 1000 ? '£' + (L / 1000).toFixed(1) + 'k' : '£' + Math.round(L); return lock({ p: d.tb ? Math.min(1, d.ta / d.tb) : 0, v, l: d.left < 0 ? 'over' : 'left', lines: [`${gbp(d.left)} ${d.left < 0 ? 'over' : 'left'}`, `${gbp(d.ta)} of ${gbp(d.tb)}`, d.month], inline: `£ ${gbp(d.left).slice(1)} ${d.left < 0 ? 'over' : 'left'} this month` }) }
+function wDoses(d) { const f = FAM(); if (!acc(f)) return LOCKBG && f === 'small' ? nDoses(d) : done(base('stack'), cvDoses(d, f)); const s = doseState(d), nx = s.next[0]; return lock({ p: s.L.length ? s.taken / s.L.length : 0, v: nx ? nx.t : '✓', l: 'dose', lines: nx ? [nx.n, `${nx.t} · ${inT(nx.m - s.m)}`, `${s.taken}/${s.L.length} taken${s.missed.length ? ` · ${s.missed.length} missed` : ''}`] : ['All doses taken', `${s.taken}/${s.L.length} today`], inline: nx ? `💊 ${nx.t} ${nx.n}` : '💊 all taken' }) }
+
+/* ---------- native small layouts for the iPad lock screen (Parameter "lock"): text and stacks render cleanly there ---------- */
+function nBase(url) { const w = base(url); w.backgroundColor = Color.clear(); w.setPadding(14, 16, 14, 16); return w }
+function nCap(w, a, b) { const h = w.addStack(); h.centerAlignContent(); sf(h, a.toUpperCase(), Font.semiboldSystemFont(11), GREY); h.addSpacer(); if (b) sf(h, b, Font.semiboldSystemFont(11), WHITE); return h }
+function nBig(w, v, unit) { const r = w.addStack(); r.bottomAlignContent(); sf(r, v, Font.heavyRoundedSystemFont(30)); if (unit) { r.addSpacer(4); const t = sf(r, unit, Font.semiboldSystemFont(12), GREY); } return r }
+function nBar(w, frac) { const W = 124, b = w.addStack(); b.size = new Size(W, 6); b.cornerRadius = 3; b.backgroundColor = new Color('#ffffff', .22); b.layoutHorizontally(); const f = Math.max(0, Math.min(1, frac || 0)); if (f > 0) { const i = b.addStack(); i.size = new Size(Math.max(6, W * f), 6); i.cornerRadius = 3; i.backgroundColor = Color.white() } b.addSpacer(); return b }
+function nSmall(url, cap, capR, big, unit, line1, line2, frac) {
+  const w = nBase(url); nCap(w, cap, capR); w.addSpacer(6); nBig(w, big, unit);
+  if (line1) sf(w, line1, Font.semiboldSystemFont(12), WHITE, 1); w.addSpacer();
+  if (line2) { sf(w, line2, Font.mediumSystemFont(11), GREY, 1); w.addSpacer(5) }
+  if (frac != null) nBar(w, frac); return w;
+}
+const nScreen = d => d.y == null ? nSmall('tools', 'Screen time', '', '–', '', 'No data yet', 'Add it to your morning Shortcut', null)
+  : nSmall('tools', 'Screen time', d.on ? 'BRICKED' : '', hmS(d.y), '', `${d.y > d.goal ? '+' : '−'}${hmS(Math.abs(d.y - d.goal))} vs goal`, 'Yesterday', Math.min(1, d.y / (d.goal * 1.5)));
+const nGym = d => nSmall('gym', 'Gym', '', String(d.n), 'this week', d.last ? d.last.name : 'No workouts yet', d.last ? ago(d.last.date) : '', Math.min(1, d.n / 5));
+const nMoney = d => nSmall('money', `Budget · ${d.month.slice(0, 3)}`, '', gbp(d.left), '', `${d.left < 0 ? 'over' : 'left'} of ${gbp(d.tb)}`, `${gbp(d.ta)} spent`, d.tb ? d.ta / d.tb : 0);
+function nDoses(d) { const s = doseState(d), nx = s.next[0]; return nx ? nSmall('stack', 'Next dose', inT(nx.m - s.m), nx.t, '', nx.n, `${s.taken}/${s.L.length} taken${s.missed.length ? ` · ${s.missed.length} missed` : ''}`, s.L.length ? s.taken / s.L.length : 0) : nSmall('stack', 'Doses', '', '✓', '', d.items.length ? 'All taken' : 'No doses today', `${s.taken}/${s.L.length} taken`, 1) }
+const nCals = d => nSmall('food', 'Calories', '', Math.abs(d.left).toLocaleString('en-GB'), d.left < 0 ? 'over' : 'left', `${d.eat.toLocaleString('en-GB')} eaten`, `of ${d.allow.toLocaleString('en-GB')}`, d.eat / d.allow);
+const nGoal = d => nSmall('gym', 'Next goal', d.left != null ? `${d.left}d` : '', `${d.pct}%`, '', `${d.target}kg ${d.q.replace(/\b\w/g, x => x.toUpperCase())}`, d.best ? `e1RM ${d.best}kg` : 'No sets yet', d.pct / 100);
 
 /* =============================== router =============================== */
 function errW(e) { const w = base(''); sf(w, "Dylan's System", Font.semiboldSystemFont(13)); w.addSpacer(4); sf(w, e, Font.systemFont(11), GREY, 4); return w }
