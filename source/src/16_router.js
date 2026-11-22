@@ -17,7 +17,7 @@ function go(v,fromHash,dirHint){if(typeof inkExitFull==="function")inkExitFull()
   artMount(v);
   if(v!=='alter'){aLeave();if(typeof aQuiet==='function')aQuiet()}
   if(v==='money'||v==='stack')document.querySelectorAll(`#v-${v} [data-scr]`).forEach(el=>scramble(el,el.dataset.scr,700));
-  window.scrollTo(0,0);
+  window.scrollTo(0,0);setTimeout(repaint,420);
   const LOADERS={today:()=>{if(typeof renderTodayTasks==='function')renderTodayTasks();if(typeof renderTodayCal==='function')renderTodayCal()},week:()=>renderWeek(),gym:()=>loadGym(),tools:()=>renderTools(),media:()=>renderMedia(),food:()=>loadFood(),sleep:()=>loadSleep(),journal:()=>setJTab(JTAB),streaks:()=>loadHabits(),alter:()=>loadAlter()};
   /* a thin progress bar while the page fetches, and the stagger runs once the real content is in (not on stale/empty markup) */
   const tk=++goTok;let p;try{p=LOADERS[v]&&LOADERS[v]()}catch(e){console.error(e)}

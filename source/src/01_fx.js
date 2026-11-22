@@ -36,3 +36,9 @@ function scramble(el,final,dur=520){final=String(final);if(!FX){el.textContent=f
 const cx=$('curx'),cxy=$('curxy');
 addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;cx.style.left=e.clientX+'px';cx.style.top=e.clientY+'px';cxy.style.left=e.clientX+'px';cxy.style.top=e.clientY+'px';cxy.textContent=String(Math.round(e.clientX)).padStart(4,'0')+':'+String(Math.round(e.clientY)).padStart(4,'0');cx.classList.toggle('big',!!e.target.closest('button,a,input,select,textarea,.it,.tr,.cat'))});
 
+/* iOS WebKit sometimes leaves the page unpainted (only the banner/backdrop showing) after resuming the app or a
+   page switch, until you scroll. Nudge a repaint the same way a scroll does, a few times while things settle. */
+function repaint(){const m=document.getElementById('main');if(!m)return;requestAnimationFrame(()=>{const y=scrollY;m.style.transform='translateZ(0)';scrollTo(0,y+1);requestAnimationFrame(()=>{m.style.transform='';scrollTo(0,y)})})}
+function repaintSoon(){[60,400,1200].forEach(t=>setTimeout(repaint,t))}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)repaintSoon()});
+addEventListener('pageshow',repaintSoon);addEventListener('focus',repaintSoon);

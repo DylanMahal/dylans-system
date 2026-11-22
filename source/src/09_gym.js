@@ -253,11 +253,11 @@ function showSummary(w){const muscles=muscleSets([w]);const top=Object.entries(m
 function routineFrom(w){return {id:rid(),name:w.name,folder:'',ex:w.ex.map(x=>({id:exKey(x),n:exOf(x).n,sets:x.sets.filter(s=>s.t!=='w').length||x.sets.length,rest:x.rest??120,note:x.note||'',ss:x.ss||null}))}}
 
 /* ---------- rest timer ---------- */
-function startRest(sec){restTotal=sec;restEnd=Date.now()+sec*1000;LS.set('restEnd',restEnd);LS.set('restTotal',restTotal);renderRest();if(nOn('rest')){let nx='';try{for(const x of ACTIVE.ex){if(x.sets.some(s=>!s.done)){nx=exOf(x).n;break}}}catch(e){}pushOne('rest',restEnd,'rest over 💪',nx?'next: '+nx:'back to it','./#gym')}}
+function startRest(sec){restTotal=sec;restEnd=Date.now()+sec*1000;LS.set('restEnd',restEnd);LS.set('restTotal',restTotal);renderRest();if(nOn('rest')){let nx='';try{for(const x of ACTIVE.ex){if(x.sets.some(s=>!s.done)){nx=exOf(x).n;break}}}catch(e){}pushOne('rest',restEnd,'Rest complete',nx?'Next up: '+nx:'Time for your next set','./#gym')}}
 let restOk=null;
 function clearRest(){restEnd=null;LS.set('restEnd',null);$('restDock').classList.remove('on');pushCancel('rest')}
 function renderRest(){const bar=$('restDock');if(!restEnd){bar.classList.remove('on');return}bar.classList.add('on')}
-$('restDock').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.rd==='skip'){restEnd=null;LS.set('restEnd',null);renderRest();pushCancel('rest');return}const d=+b.dataset.rd;restEnd=Math.max(Date.now()+1000,restEnd+d*1000);restTotal=Math.max(15,restTotal+d);LS.set('restEnd',restEnd);LS.set('restTotal',restTotal);if(nOn('rest'))pushOne('rest',restEnd,'rest over 💪','back to it','./#gym')};
+$('restDock').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.rd==='skip'){restEnd=null;LS.set('restEnd',null);renderRest();pushCancel('rest');return}const d=+b.dataset.rd;restEnd=Math.max(Date.now()+1000,restEnd+d*1000);restTotal=Math.max(15,restTotal+d);LS.set('restEnd',restEnd);LS.set('restTotal',restTotal);if(nOn('rest'))pushOne('rest',restEnd,'Rest complete','Time for your next set','./#gym')};
 function beep(){try{const A=window.AudioContext||window.webkitAudioContext;const a=new A();[0,.18,.36].forEach((t,i)=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=i===2?1320:880;g.gain.setValueAtTime(.0001,a.currentTime+t);g.gain.exponentialRampToValueAtTime(.25,a.currentTime+t+.01);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+t+.15);o.connect(g);g.connect(a.destination);o.start(a.currentTime+t);o.stop(a.currentTime+t+.16)})}catch(e){}}
 setInterval(()=>{
   if(ACTIVE&&!ACTIVE.editing&&$('wDur'))$('wDur').textContent=fmtDur(Date.now()-new Date(ACTIVE.startedAt));

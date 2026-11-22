@@ -46,7 +46,7 @@ function renderFocus(){const el=$('t-focus');if(!el)return;const live=YTP&&$('mB
   drawTimer();bindFocus(!!live);
 }
 function bindFocus(keepDeck){
-  $('tmGo').onclick=()=>{if(TM.end){TM.left=tmLeft();TM.end=null;pushCancel('focus')}else{TM.end=Date.now()+TM.left*1000;if(typeof brickAuto==='function'&&TM.phase==='focus')brickAuto(true,Math.ceil(TM.left/60));if(nOn('focus'))pushOne('focus',TM.end,TM.phase==='break'?'break over':'focus session done ✓',TM.phase==='break'?'back to work':(FOCUS.task||'take a break'),'./#tools')}LS.set('timer',TM);drawTimer();glitchAll()};
+  $('tmGo').onclick=()=>{if(TM.end){TM.left=tmLeft();TM.end=null;pushCancel('focus')}else{TM.end=Date.now()+TM.left*1000;if(typeof brickAuto==='function'&&TM.phase==='focus')brickAuto(true,Math.ceil(TM.left/60));if(nOn('focus'))pushOne('focus',TM.end,TM.phase==='break'?'Break over':'Focus session complete',TM.phase==='break'?'Time to get back to it':(FOCUS.task?'Finished: '+FOCUS.task:'Time for a break'),'./#tools')}LS.set('timer',TM);drawTimer();glitchAll()};
   $('tmReset').onclick=()=>{if(TM.phase==='focus'){const done=Math.floor((TM.len*60-tmLeft())/60);logDw(done)}TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
   $('tmPresets').onclick=e=>{const b=e.target.closest('button');if(!b)return;let m=b.dataset.m;if(m==='custom'){m=parseInt(prompt('Minutes?',TM.len)||'');if(!(m>0))return}TM={len:+m,end:null,left:+m*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
   $('fTask').oninput=e=>{FOCUS.task=e.target.value;clearTimeout(bindFocus.t);bindFocus.t=setTimeout(()=>save('tools/focus',FOCUS),600)};
