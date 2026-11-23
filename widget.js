@@ -1266,6 +1266,9 @@ module.exports = async function main(mode) {
     Script.setShortcutOutput(ok ? 'ok' : 'sign-in needed'); return Script.complete();
   }
   await token();
+  /* scriptable:///run/System?refresh=1 — running in the app makes iOS redraw the widgets; bounce straight back */
+  const qp = args.queryParameters || {};
+  if (qp.refresh || /^refresh$/i.test(String(args.shortcutParameter || ''))) { App.close(); return Script.complete() }
   if (mode) { await choose(mode); await preview(PICK(mode).get() || mode); return Script.complete() }
   /* the System script itself: install/refresh the per-type scripts, then offer previews */
   const n = installScripts();
