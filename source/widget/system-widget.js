@@ -1258,6 +1258,13 @@ module.exports = async function main(mode) {
   const saved = mode ? PICK(mode).get() : '';
   let wp = String(args.widgetParameter || '').trim(); if (/^lock$/i.test(wp)) { LOCKBG = true; wp = '' }
   if (config.runsInWidget) { Script.setWidget(await build(wp || saved || mode)); return Script.complete() }
+  /* run from Shortcuts/Siri: no UI allowed — just keep the sign-in alive, and nudge if it has died */
+  if (config.runsWithSiri) {
+    let ok = true;
+    try { if (Keychain.contains('ds_rt')) await auth('refresh_token', { refresh_token: Keychain.get('ds_rt') }); else ok = false } catch (e) { ok = false }
+    if (!ok) { const n = new Notification(); n.title = "Dylan's System"; n.body = 'Widgets signed out — open the System script in Scriptable to sign in.'; await n.schedule() }
+    Script.setShortcutOutput(ok ? 'ok' : 'sign-in needed'); return Script.complete();
+  }
   await token();
   if (mode) { await choose(mode); await preview(PICK(mode).get() || mode); return Script.complete() }
   /* the System script itself: install/refresh the per-type scripts, then offer previews */
