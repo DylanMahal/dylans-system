@@ -83,7 +83,7 @@ function calRender(){const el=$('gcal');if(!el)return;
     <div class="gc-scroll" style="--gh:${H}px"><div class="gc-body" style="${cols};height:${24*H}px">
       <div class="gc-gut">${Array.from({length:23},(_,i)=>`<span style="top:${(i+1)*H}px">${(i+1)%12||12} ${i+1<12?'AM':'PM'}</span>`).join('')}</div>
       ${lists.map(({k,tm})=>`<div class="gc-col">${tm.map(ev=>{const h=Math.max(11,(ev.e-ev.s)/60*H-2),sm=ev.e-ev.s<=30;
-          return `<button type="button" class="gc-ev${sm?' sm':''}" data-gce="${k}|${esc(calKey(ev))}" style="top:${ev.s/60*H}px;height:${h}px;left:${ev.l*100}%;width:calc(${ev.w*100}% - ${ev.l+ev.w>=.99?8:1}px);z-index:${ev.z};background:${calCol(ev)}"><b>${esc(ev.t)}</b>${sm?`<i>, ${calFmt(ev.s,ev.e).split(' – ')[0]}</i>`:`<i>${calFmt(ev.s,ev.e)}</i>`}</button>`}).join('')}
+          return `<button type="button" class="gc-ev${sm?' sm':''}" data-gce="${k}|${esc(calKey(ev))}" style="top:${ev.s/60*H}px;height:${h}px;left:${ev.l*100}%;width:calc(${ev.w*100}% - ${ev.l+ev.w>=.99?8:1}px);z-index:${ev.z};background:${calCol(ev)}"><b>${esc(dn(ev.t))}</b>${sm?`<i>, ${calFmt(ev.s,ev.e).split(' – ')[0]}</i>`:`<i>${calFmt(ev.s,ev.e)}</i>`}</button>`}).join('')}
           ${k===tk?`<div class="gc-now" style="top:${(now.getHours()*60+now.getMinutes())/60*H}px"></div>`:''}</div>`).join('')}
     </div></div>`;
   const sc=el.querySelector('.gc-scroll');if(keep!=null&&calScrolled)sc.scrollTop=keep;else{sc.scrollTop=calFS?h0*H:Math.max(0,(Math.min(now.getHours(),17)-1.5)*H);calScrolled=true}

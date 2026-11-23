@@ -57,7 +57,7 @@ function renderHabits(){if(!habLoaded){loadHabits();return}const el=$('habBody')
   hBind()}
 function hTile(h){const c=hCnt(h,DAYK),t=hTarget(h),due=hDue(h,DAYK),ok=hDone(h,DAYK);const st=hStreak(h);const p=h.type==='neg'?(ok?1:0):Math.min(1,c/t);const R=42,C=2*Math.PI*R;
   return `<button type="button" class="htile${ok?' ok':''}${due?'':' off'}${h.type==='neg'?' neg':''}" data-h="${h.id}" style="--hc:${h.col||HCOLS[0]}"><span class="hring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="${R}" class="hb"/><circle cx="50" cy="50" r="${R}" class="hf" style="stroke-dasharray:${C};stroke-dashoffset:${C*(1-p)}"/><circle cx="50" cy="50" r="${R}" class="hh" style="stroke-dasharray:${C};stroke-dashoffset:${C}"/></svg><b>${esc(h.ic||'⭐')}</b>${t>1&&h.type!=='neg'?`<em class="num">${c}/${t}</em>`:''}</span>
-    <span class="hn">${esc(hName(h))}</span><span class="hs num">${st.n?`🔥 ${st.n} ${st.unit}${st.n>1?'s':''}`:h.type==='week'?`${hWeekCount(h,DAYK)}/${h.per||3} this week`:due?'start today':'rest day'}</span></button>`}
+    <span class="hn">${esc(dn(hName(h)))}</span><span class="hs num">${st.n?`🔥 ${st.n} ${st.unit}${st.n>1?'s':''}`:h.type==='week'?`${hWeekCount(h,DAYK)}/${h.per||3} this week`:due?'start today':'rest day'}</span></button>`}
 let hHold=null,hFired=0;
 function hBind(){const el=$('habBody');
   el.onclick=e=>{if(e.target.closest('#hNew'))return hEdit(null);const g=e.target.closest('[data-hg]');if(g){const n=g.dataset.hg;const o=new Set(HAB.open||[]);o.has(n)?o.delete(n):o.add(n);HAB.open=[...o];hSave();renderHabits();return}const t=e.target.closest('[data-h]');if(!t)return;if(Date.now()-hFired<700)return;hDetail(t.dataset.h)};
