@@ -119,7 +119,7 @@ async function renderMotivation(){const el=$('g-motivation');if(!el)return;
 function aEdit(ego){const e=ego||{id:rid(),name:'',tag:'',theme:'ghost',notes:''};
   openSheet(ego?'edit alter ego':'new alter ego',`<div class="gc-form">
     <input id="aeN" class="gc-in big" placeholder="Name" value="${esc(e.name)}" autocomplete="off">
-    <input id="aeT" class="gc-in" placeholder="One line — who is he?" value="${esc(e.tag)}" autocomplete="off">
+    <input id="aeT" class="gc-in" placeholder="One line: who is he?" value="${esc(e.tag)}" autocomplete="off">
     <div class="athemes" id="aeTh">${Object.entries(ATHEME).map(([k,t])=>`<button type="button" data-th="${k}" class="${k===e.theme?'on':''}" style="--ac:${t.ac};--abg:${t.bg}"><i></i>${t.n}</button>`).join('')}</div>
     <div class="bigbtns"><button class="btn p" type="button" id="aeOk">${ego?'Save':'Create'}</button>${ego?'<button class="btn" type="button" id="aeDel">Delete</button>':''}</div></div>`);
   let th=e.theme;

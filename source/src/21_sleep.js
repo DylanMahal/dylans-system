@@ -71,7 +71,7 @@ function sQBars(n){const b=sQB(n);if(!b)return '';return `<div class="sl-qb">${b
 function sRow(k){const n=SNIGHTS[k];const q=sQ(n);
   return `<button type="button" class="sl-hrow" data-sn="${k}"><span class="sl-hd"><b>${esc(nice(k))}</b><small class="num">${n.start?sT(n.start)+' – '+sT(n.end):''}</small></span><span class="sl-hbar">${sStBar(n)}</span><span class="sl-hv num">${fmtHM(n.asleep)}</span><span class="sl-pill num" style="--c:${sQC(q)}">${q}</span><svg class="sl-chev" viewBox="0 0 8 14" width="7" height="12"><path d="M1 1l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>`}
 function sLast(){const el=$('sleepBody');const k=Object.keys(SNIGHTS).sort().pop();
-  if(!k){el.innerHTML=sEmpty('No nights yet','Wear your Apple Watch to bed and finish the one-time setup — every morning your sleep lands here automatically.','Open setup');sGoSetup(el);return}
+  if(!k){el.innerHTML=sEmpty('No nights yet','Wear your Apple Watch to bed and finish the one-time setup. Every morning your sleep lands here automatically.','Open setup');sGoSetup(el);return}
   const n=SNIGHTS[k];
   el.innerHTML=sNight(k)+`<div class="sl-card"><div class="sl-h"><span>How do you feel?</span></div><div class="sl-mood">${['😫','😕','😐','🙂','😁'].map((m,i)=>`<button type="button" data-mood="${i+1}" aria-pressed="${n.mood===i+1}">${m}</button>`).join('')}</div>
     <div class="sl-h" style="margin-top:18px"><span>Sleep notes</span></div><div class="chips" style="margin:0">${STAGS.map(t=>`<button type="button" class="chip${(n.tags||[]).includes(t)?' on':''}" data-tag="${esc(t)}">${t}</button>`).join('')}</div></div>
@@ -118,7 +118,7 @@ function sSetup(){const el=$('sleepBody'),S=SSET;const tok=SCFG&&SCFG.token;cons
       <li>A <b>Text</b> with <code>Combined Text</code> then lines <code>HRV|…</code> <code>Resting Heart Rate|…</code> <code>Respiratory Rate|…</code> <code>Active Energy|…</code>, inserting each statistic.</li>
       <li><b>Get Contents of URL</b> — the link below, Method <i>POST</i>, Request Body <i>File</i> → that Text.</li>
       <li>Automation → <b>Time of Day</b> 10:00 daily → <b>Run Immediately</b> → Send sleep.</li></ol></details>
-    <div class="sl-lab">Your private upload link</div>${tok?link('slUrl',url):'<div class="sl-note">Link not ready — reopen the app in a minute.</div>'}</div>
+    <div class="sl-lab">Your private upload link</div>${tok?link('slUrl',url):'<div class="sl-note">Link not ready. Reopen the app in a minute.</div>'}</div>
   <div class="sl-sec">Wake-up mission</div><div class="sl-card">
     <p class="sl-p">Your iPhone alarm rings as normal. Stopping it opens a mission that keeps ringing until you finish it.</p>
     <div class="sl-lab">Mission</div><div class="seg sl-seg">${SMISS.map(([k,l])=>`<button type="button" data-slm="${k}" aria-pressed="${S.miss===k}">${l}</button>`).join('')}</div>
@@ -145,7 +145,7 @@ function sWakeMode(){let p={};try{p=JSON.parse(decodeURIComponent(location.hash.
   $('wkGo').onclick=async()=>{try{SAC=SAC||new (window.AudioContext||window.webkitAudioContext)();await SAC.resume()}catch(e){}try{if(SSET.miss==='shake'&&typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission)await DeviceMotionEvent.requestPermission()}catch(e){}
     if(SSET.miss==='shake')addEventListener('devicemotion',sMotion);sAlarmSound(false);sMission('wake')}}
 function sAwake(){const o=$('sleepNight');history.replaceState(null,'',location.pathname+'#today');
-  o.innerHTML=`<div class="smq">you're up ✓</div><div class="dim">A wake-up check pops up in 3 minutes — tap it or the alarm comes back</div><button class="btn" type="button" id="wkOk" style="margin-top:14px">Ok</button>`;
+  o.innerHTML=`<div class="smq">you're up ✓</div><div class="dim">A wake-up check pops up in 3 minutes. Tap it or the alarm comes back</div><button class="btn" type="button" id="wkOk" style="margin-top:14px">Ok</button>`;
   $('wkOk').onclick=()=>{o.hidden=true;document.body.classList.remove('sleeping')};
   setTimeout(()=>{o.hidden=false;document.body.classList.add('sleeping');let left=90;o.innerHTML=`<div class="smq">Still awake?</div><div class="smshake num" id="scT">${left}</div><button class="btn p slgo" type="button" id="scOk">yes, I'm up</button>`;
     const t=setInterval(()=>{left--;if($('scT'))$('scT').textContent=left;if(left<=0){clearInterval(t);sAlarmSound(false);sMission('check')}},1000);$('scOk').onclick=()=>{clearInterval(t);o.hidden=true;document.body.classList.remove('sleeping')}},3*60e3)}
@@ -180,7 +180,7 @@ function sMission(test){const o=$('sleepNight');o.hidden=false;document.body.cla
     $('smT').oninput=e=>{if(e.target.value.trim().toLowerCase()===ph.toLowerCase())done()};o.onclick=e=>{if(e.target.id==='smSnz')sSnooze()}}
   else{if(!S.code){const m=S.miss;S.miss='math';sMission(test);S.miss=m;return}
     o.innerHTML=head+`<div class="smq" style="font-size:20px">Scan your barcode</div><div class="fscan"><video id="smV" playsinline muted></video><i class="fsline"></i></div><div class="dim" id="smMsg">Find it and point the camera at it</div>${snz}`;
-    sScanner($('smV'),code=>{if(code===S.code){sScanStop();done();return true}$('smMsg').textContent='wrong barcode — that\'s not the one';return false});o.onclick=e=>{if(e.target.id==='smSnz'){sScanStop();sSnooze()}}}}
+    sScanner($('smV'),code=>{if(code===S.code){sScanStop();done();return true}$('smMsg').textContent='wrong barcode, that\'s not the one';return false});o.onclick=e=>{if(e.target.id==='smSnz'){sScanStop();sSnooze()}}}}
 
 let SSC=null;
 async function sScanner(v,cb){sScanStop();try{
@@ -189,7 +189,7 @@ async function sScanner(v,cb){sScanStop();try{
   else{if(!window.ZXing)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/zxing.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
     const zx=new ZXing.BrowserMultiFormatReader();SSC={zx};zx.decodeFromConstraints({video:{facingMode:'environment'}},v,res=>{if(res&&SSC&&cb(res.getText()))sScanStop()})}}catch(e){}}
 function sScanStop(){if(!SSC)return;try{SSC.zx&&SSC.zx.reset()}catch(e){}if(SSC.st)SSC.st.getTracks().forEach(t=>t.stop());SSC=null}
-function sRegister(){openSheet('register barcode',`<div class="dim" style="margin-bottom:8px">Scan something that lives in another room — toothpaste, shower gel, a cereal box.</div><div class="fscan"><video id="srV" playsinline muted></video><i class="fsline"></i></div><div class="row" style="gap:6px;margin-top:8px"><input class="inp num" id="srC" placeholder="Or type the number" style="flex:1"><button class="btn p" type="button" id="srOk">Save</button></div>`);
+function sRegister(){openSheet('register barcode',`<div class="dim" style="margin-bottom:8px">Scan something that lives in another room: toothpaste, shower gel, a cereal box.</div><div class="fscan"><video id="srV" playsinline muted></video><i class="fsline"></i></div><div class="row" style="gap:6px;margin-top:8px"><input class="inp num" id="srC" placeholder="Or type the number" style="flex:1"><button class="btn p" type="button" id="srOk">Save</button></div>`);
   const saveC=c=>{SSET.code=c;saveSS();sScanStop();closeSheet();sTonight()};sScanner($('srV'),c=>{saveC(c);return true});$('srOk').onclick=()=>{const c=$('srC').value.replace(/\s/g,'');if(c)saveC(c)};$('sheetX')&&$('sheetX').addEventListener('click',sScanStop,{once:true})}
 
 
@@ -205,8 +205,8 @@ function sRec(k){const h=SHEALTH[k]||{},n=SNIGHTS[k];const need=sNeed(k);const p
   if(h.hrv){const zH=bH?(h.hrv-bH.m)/Math.max(5,bH.sd):0,zR=h.rhr&&bR?(h.rhr-bR.m)/Math.max(2,bR.sd):0;s=52+22*zH-14*zR+(perf!=null?.35*(perf-80):0);if(h.rr&&bRR&&h.rr>bRR.m+1)s-=8;est=!bH}
   else if(perf!=null){s=perf*.85;est=true}
   return s==null?null:{v:Math.round(Math.max(1,Math.min(99,s))),perf:perf!=null?Math.round(perf):null,need,est,h,bH,bR}}
-const sZone=v=>v>=67?['#30d158','green','Your body is primed — push it today','14 – 18']:v>=34?['#ffd60a','yellow','Maintain — keep strain moderate','10 – 14']:['#ff453a','red','Prioritise rest and recovery','0 – 10'];
-function sLine(vals,col,h=84){const pts=vals.map((v,i)=>v==null||isNaN(+v)?null:[i,+v]).filter(Boolean);if(pts.length<2)return '<div class="sl-note">Not enough data yet — check back after a few mornings.</div>';
+const sZone=v=>v>=67?['#30d158','green','Your body is primed. Push it today','14 – 18']:v>=34?['#ffd60a','yellow','Maintain. Keep strain moderate','10 – 14']:['#ff453a','red','Prioritise rest and recovery','0 – 10'];
+function sLine(vals,col,h=84){const pts=vals.map((v,i)=>v==null||isNaN(+v)?null:[i,+v]).filter(Boolean);if(pts.length<2)return '<div class="sl-note">Not enough data yet. Check back after a few mornings.</div>';
   const lo=Math.min(...pts.map(p=>p[1])),hi=Math.max(...pts.map(p=>p[1])),X=i=>(i/29*1000).toFixed(1),Y=v=>(h-8-(v-lo)/Math.max(1,hi-lo)*(h-16)).toFixed(1);const d=pts.map(([i,v])=>X(i)+','+Y(v)).join(' ');const g='slg'+col.slice(1);
   return `<svg class="sl-line" viewBox="0 0 1000 ${h}" preserveAspectRatio="none" style="height:${h}px"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".3"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><polygon points="${X(pts[0][0])},${h} ${d} ${X(pts[pts.length-1][0])},${h}" fill="url(#${g})"/><polyline points="${d}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg><div class="sl-axis"><span>30 days ago</span><span class="num">${Math.round(lo)} – ${Math.round(hi)}</span><span>Today</span></div>`}
 function sRecovery(){const el=$('sleepBody');const k=DAYK;const R=sRec(k)||sRec(sAddD(k,-1));const kk=sRec(k)?k:sAddD(k,-1);const yS=sStrain(sAddD(k,-1));
@@ -252,7 +252,7 @@ function sRegularity(k){const iv=sSleepIv();const at=t=>{for(const [a,b] of iv){
   return tot?Math.round(same/tot*100):null}
 function sLatency(n){const sg=sNorm(n.segs).filter(x=>x[2]!=='awake').map(x=>x[0]);return sg.length&&n.start?Math.max(0,Math.round((sg[0]-new Date(n.start))/6e4)):null}
 /* the night as one smooth line: awake at the top, deep at the bottom */
-function sWave(n,H=200){const segs=sNorm(n.segs);if(!segs.length)return '<div class="sl-note">No stage data for this night — your Watch needs to be worn to bed.</div>';
+function sWave(n,H=200){const segs=sNorm(n.segs);if(!segs.length)return '<div class="sl-note">No stage data for this night. Your Watch needs to be worn to bed.</div>';
   const t0=Math.min(+new Date(n.start)||segs[0][0],segs[0][0]),t1=Math.max(+new Date(n.end)||0,segs[segs.length-1][1]),W=1000,L={awake:0,rem:1,core:2,deep:3},pt=16,Y=st=>(pt+(L[st]??2)*(H-2*pt)/3).toFixed(1),X=t=>((t-t0)/(t1-t0||1))*W;
   const m=[];segs.forEach(s=>{const l=m[m.length-1];if(l&&l[2]===s[2]&&s[0]-l[1]<12e4)l[1]=Math.max(l[1],s[1]);else m.push([...s])});
   let d=`M0,${Y(m[0][2])} L${X(m[0][0]).toFixed(1)},${Y(m[0][2])}`;
@@ -267,7 +267,7 @@ function sCal(selK){const keys=Object.keys(SNIGHTS);const base=SCALM||(selK||DAY
   return `<div class="sl-card sc"><div class="sc-h"><b>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</b><span><button type="button" class="sc-nav" data-cm="-1" aria-label="Previous month">${sIco('chevL',18)}</button><button type="button" class="sc-nav" data-cm="1" aria-label="Next month"${base>=DAYK.slice(0,7)?' disabled':''}>${sIco('chevR',18)}</button></span></div>
     <div class="sc-g">${['M','T','W','T','F','S','S'].map(d=>`<em>${d}</em>`).join('')}${'<i></i>'.repeat(lead)}${[...Array(days)].map((_,i)=>cell(i+1)).join('')}</div></div>`}
 function sMain(){const el=$('sleepBody');const ks=Object.keys(SNIGHTS).sort();
-  if(!ks.length){el.innerHTML=sEmpty('No nights yet','Wear your Apple Watch to bed and finish the one-time setup — every morning your sleep lands here automatically.','Open setup');sGoSetup(el);return}
+  if(!ks.length){el.innerHTML=sEmpty('No nights yet','Wear your Apple Watch to bed and finish the one-time setup. Every morning your sleep lands here automatically.','Open setup');sGoSetup(el);return}
   const k=SSEL&&SNIGHTS[SSEL]?SSEL:ks[ks.length-1],n=SNIGHTS[k],i=ks.indexOf(k),q=sQ(n);
   const inBed=n.start&&n.end?(new Date(n.end)-new Date(n.start))/6e4:null,lat=sLatency(n),reg=sRegularity(k),R=sRec(k),wk=sWakes(n);
   const d1=new Date(sAddD(k,-1)+'T12:00'),d2=new Date(k+'T12:00');const lbl=`${d1.toLocaleDateString('en-GB',{weekday:'short'})} ${d1.getDate()}–${d2.getDate()} ${d2.toLocaleDateString('en-GB',{month:'short'})}`;

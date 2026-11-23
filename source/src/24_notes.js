@@ -235,7 +235,7 @@ async function renderTodayTasks(){const el=$('todayTasks');if(!el)return;
   el.innerHTML=`<div class="blk ttblk"><div class="bh static"><span class="tm">Tasks</span><span class="ti">Due today</span>
       <span class="ct">${td.length+ov.length} open</span><button type="button" class="ttgo" id="ttGo">Open journal</button></div>
     <div class="items">${ov.length?`<div class="tgrp bad">Overdue</div>${srt(ov).map(row).join('')}`:''}
-      ${td.length?srt(td).map(row).join(''):(ov.length?'':'<div class="dim tempty">Nothing due today — add one in the journal</div>')}
+      ${td.length?srt(td).map(row).join(''):(ov.length?'':'<div class="dim tempty">Nothing due today. Add one in the journal</div>')}
       ${doneToday.length?`<div class="tgrp">Done</div>${doneToday.map(row).join('')}`:''}</div></div>`;
   if(!el.dataset.hold){el.dataset.hold=1;tHold(el,'[data-tte]',c=>tEdit(c.dataset.tte))}
   el.onclick=e=>{const b=e.target.closest('[data-ttc],[data-tte],#ttGo');if(!b)return;

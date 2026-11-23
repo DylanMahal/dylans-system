@@ -123,7 +123,7 @@ async function fSearch(q,meal){const my=++fSeq;const ql=q.toLowerCase(),words=ql
   $('fRes').innerHTML=(loc.length?loc.map(fRow).join(''):'')+'<div class="flab" id="fOnl">searching online…</div>';
   const items=await offCall({q});if(my!==fSeq||!$('fRes'))return;try{
   const on=(items||[]).map(offToFood).filter(Boolean).filter(f=>!seen.has(f.id));
-  const lab=$('fOnl');if(!lab)return;lab.outerHTML=items===null?'<div class="dim fempty">Online search unavailable right now — use create food or quick add.</div>':on.length?'<div class="flab">from Open Food Facts</div>'+on.map(fRow).join(''):(loc.length?'':'<div class="dim fempty">Nothing found. Try another word, scan the barcode, or create it.</div>')}catch(e){const l=$('fOnl');if(l)l.outerHTML='<div class="dim fempty">Online search hit an error — try again.</div>'}}
+  const lab=$('fOnl');if(!lab)return;lab.outerHTML=items===null?'<div class="dim fempty">Online search is unavailable right now. Use create food or quick add.</div>':on.length?'<div class="flab">from Open Food Facts</div>'+on.map(fRow).join(''):(loc.length?'':'<div class="dim fempty">Nothing found. Try another word, scan the barcode, or create it.</div>')}catch(e){const l=$('fOnl');if(l)l.outerHTML='<div class="dim fempty">Online search hit an error. Try again.</div>'}}
 
 /* portion editor (used for new picks and for editing logged entries) */
 function fPortion(f,{meal,idx,isNew}){const ent=!isNew;const sv=(f.sv&&f.sv.length?f.sv:[['100 g',100]]).concat([['g',1]]);
@@ -158,7 +158,7 @@ function fQuickAdd(meal,idx){const x=fDay(FD);const e=idx!=null?x.m[meal][idx]:{
     const ne={id:e.id||rid(),quick:1,n:$('qaN').value.trim()||'quick add',qk:K,qp:P,qc:C,qf:F,t:new Date().toISOString()};if(idx!=null)x.m[meal][idx]=ne;else(x.m[meal]=x.m[meal]||[]).push(ne);saveDay(FD);closeSheet();fLog()}}
 function fCreate(meal,pre={}){openSheet('create food',`<label class="fl">Name<input class="inp" id="cfN" value="${esc(pre.n||'')}"></label><label class="fl">Brand (optional)<input class="inp" id="cfB" value="${esc(pre.b||'')}"></label>
   <div class="fgrid4"><label class="fl">Serving name<input class="inp" id="cfS" value="${esc(pre.sn||'serving')}"></label><label class="fl">Serving size g<input class="inp num" id="cfG" inputmode="decimal" value="${pre.sg||100}"></label></div>
-  <div class="dim" style="font-size:11px;margin:4px 0 6px">Nutrition per serving — copy it straight off the label</div>
+  <div class="dim" style="font-size:11px;margin:4px 0 6px">Nutrition per serving, copied straight off the label</div>
   <div class="fgrid4">${[['K','kcal'],['P','protein g'],['C','carbs g'],['F','fat g'],['Fi','fibre g'],['Su','sugar g'],['Na','sodium mg']].map(([k,l])=>`<label class="fl">${l}<input class="inp num" id="cf${k}" inputmode="decimal"></label>`).join('')}</div>
   <div class="row" style="gap:10px;align-items:center;margin-top:10px"><button class="iconbtn" type="button" id="cfPicB"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-3px;margin-right:4px"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3z"/><circle cx="12" cy="13" r="3"/></svg>Add photo</button><input type="file" id="cfPic" accept="image/*" hidden><img id="cfPrev" alt="" style="width:52px;height:52px;object-fit:cover;border:1px solid var(--line2);display:none"></div>
   <div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="cfOk">Save + add</button></div>`);
@@ -179,7 +179,7 @@ let fStream=null,fZX=null;
 function fScanStop(){try{fZX&&fZX.reset()}catch(e){}fZX=null;if(fStream){fStream.getTracks().forEach(t=>t.stop());fStream=null}}
 async function fScan(meal){openSheet('scan barcode',`<div class="fscan"><video id="fsV" playsinline muted></video><i class="fsline"></i></div><div class="dim" id="fsMsg" style="margin-top:8px">point the camera at the barcode…</div><div class="row" style="gap:8px;margin-top:8px"><input class="inp num" id="fsCode" placeholder="Or type the barcode number" inputmode="numeric" style="flex:1"><button class="btn" type="button" id="fsGo">Look up</button></div>`);
   const done=async code=>{fScanStop();$('fsMsg').textContent='looking up '+code+'…';const items=await offCall({code});const f=items&&items[0]?offToFood(items[0]):null;
-    if(f){FCACHE[f.id]=f;fPortion(f,{meal,isNew:true})}else{$('fsMsg').innerHTML='Not in the database yet — <button class="iconbtn" type="button" id="fsNew">Create it</button>';$('fsNew').onclick=()=>fCreate(meal,{code})}};
+    if(f){FCACHE[f.id]=f;fPortion(f,{meal,isNew:true})}else{$('fsMsg').innerHTML='Not in the database yet. <button class="iconbtn" type="button" id="fsNew">Create it</button>';$('fsNew').onclick=()=>fCreate(meal,{code})}};
   $('fsGo').onclick=()=>{const c=$('fsCode').value.replace(/\D/g,'');if(c)done(c)};
   const obs=new MutationObserver(()=>{if(!$('fsV')){fScanStop();obs.disconnect()}});obs.observe($('sheetBody'),{childList:true});
   $('sheetX')&&$('sheetX').addEventListener('click',fScanStop,{once:true});
@@ -189,11 +189,11 @@ async function fScan(meal){openSheet('scan barcode',`<div class="fscan"><video i
     else{if(!window.ZXing)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/zxing.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
       const hints=new Map();hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E]);
       fZX=new ZXing.BrowserMultiFormatReader(hints);fZX.decodeFromConstraints({video:{facingMode:'environment'}},'fsV',(res)=>{if(res&&fZX){const c=res.getText();done(c)}})}}
-  catch(e){$('fsMsg').textContent='Camera unavailable — type the barcode number instead.'}}
+  catch(e){$('fsMsg').textContent='Camera unavailable. Type the barcode number instead.'}}
 
 function fExercise(){const kg=curKg();openSheet('add exercise',`<div class="fexl">${FEX.map(([n,met],i)=>`<button type="button" class="chip" data-fxp="${i}">${n}</button>`).join('')}</div>
   <div class="fgrid4" style="margin-top:10px"><label class="fl">Activity<input class="inp" id="exN" value="weights / gym"></label><label class="fl">Minutes<input class="inp num" id="exM" inputmode="numeric" value="60"></label><label class="fl">Kcal burned<input class="inp num" id="exK" inputmode="numeric"></label></div>
-  <div class="dim" style="font-size:11px">kcal is estimated from the activity, time and your weight (${r1(kg)} kg) — overwrite it if your watch says different.</div>
+  <div class="dim" style="font-size:11px">kcal is estimated from the activity, time and your weight (${r1(kg)} kg). Overwrite it if your watch says different.</div>
   <div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="exOk">Add</button></div>`);
   let met=5;const est=()=>{$('exK').value=Math.round(met*kg*(+$('exM').value||0)/60)};est();
   $('sheetBody').onclick=e=>{const b=e.target.closest('[data-fxp]');if(!b)return;const p=FEX[+b.dataset.fxp];met=p[1];$('exN').value=p[0];est()};
@@ -217,14 +217,14 @@ function fProgress(){const el=$('foodBody');const P=FPROF||{},B=fBudget(),T=fTar
     <div class="dim" style="font-size:11px;margin-top:6px">dashed line = your budget that day (incl. exercise) · ${logged.length} of 7 days logged this week · ${Math.round(wkEat)} eaten of ${Math.round(wkBud)} budgeted</div></div></div>
   <div class="grid2"><div class="panel"><div class="ph"><span class="tag">Macros · 7-day average</span></div><div class="pb fdonut"><svg viewBox="0 0 42 42">${(()=>{let o=25;return [[ap*4,'var(--pink)'],[ac*4,'var(--cyan)'],[af*9,'#ffb000']].map(([v,c])=>{const p=v/tot*100;const s=`<circle cx="21" cy="21" r="15.9" fill="none" stroke="${c}" stroke-width="5" stroke-dasharray="${p} ${100-p}" stroke-dashoffset="${o}"/>`;o-=p;return s}).join('')})()}</svg>
     <div class="num"><div><b style="color:var(--pink)">${Math.round(ap)} g</b> protein <span class="dim">/ ${T.p} · ${Math.round(ap*4/tot*100)}%</span></div><div><b style="color:var(--cyan)">${Math.round(ac)} g</b> carbs <span class="dim">/ ${T.c} · ${Math.round(ac*4/tot*100)}%</span></div><div><b style="color:#ffb000">${Math.round(af)} g</b> fat <span class="dim">/ ${T.f} · ${Math.round(af*9/tot*100)}%</span></div></div></div></div>
-  <div class="panel"><div class="ph"><span class="tag">Insights</span></div><div class="pb fins">${logged.length?[ap<T.p*0.9?`protein is averaging <b>${Math.round(ap)} g</b> — ${Math.round(T.p-ap)} g a day under your target`:`protein on target — averaging <b>${Math.round(ap)} g</b>`,`average day: <b>${Math.round(wkEat/Math.max(1,logged.length))} kcal</b> vs a <b>${B}</b> budget`,tops.length?`biggest calorie sources this month: ${tops.map(([n,k])=>`<b>${esc(n)}</b> (${Math.round(k)})`).join(', ')}`:''].filter(Boolean).map(t=>`<div>▸ ${t}</div>`).join(''):'<div class="dim">Log a few days and patterns show up here.</div>'}</div></div></div>`;
+  <div class="panel"><div class="ph"><span class="tag">Insights</span></div><div class="pb fins">${logged.length?[ap<T.p*0.9?`protein is averaging <b>${Math.round(ap)} g</b>, ${Math.round(T.p-ap)} g a day under your target`:`protein on target, averaging <b>${Math.round(ap)} g</b>`,`average day: <b>${Math.round(wkEat/Math.max(1,logged.length))} kcal</b> vs a <b>${B}</b> budget`,tops.length?`biggest calorie sources this month: ${tops.map(([n,k])=>`<b>${esc(n)}</b> (${Math.round(k)})`).join(', ')}`:''].filter(Boolean).map(t=>`<div>▸ ${t}</div>`).join(''):'<div class="dim">Log a few days and patterns show up here.</div>'}</div></div></div>`;
   $('fWt').onsubmit=e=>{e.preventDefault();const kg=parseFloat($('fWtIn').value.replace(',','.'));if(!kg)return;WT.r.push({t:new Date().toISOString(),kg});save('body/wt',WT);if(typeof renderBody==='function')renderBody();fProgress()}}
 const gbp0=n=>Math.round(n)+' kcal';
 
 /* ---------- fasting ---------- */
 function fFast(){const el=$('foodBody');const P=FPROF||{};const H=+P.fastH||16;const c=FFAST.cur;const now=Date.now();
   const el_=c?(now-new Date(c.s))/36e5:0;const pct=Math.min(1,el_/(c?c.h:H));const R=86,C=2*Math.PI*R;
-  const zone=h=>h<4?'fed — digesting':h<12?'early fast':h<16?'fat-burning window':h<24?'deep fast':'extended fast';
+  const zone=h=>h<4?'fed · digesting':h<12?'early fast':h<16?'fat-burning window':h<24?'deep fast':'extended fast';
   el.innerHTML=`<div class="panel ffast"><div class="pb"><div class="fdring big"><svg viewBox="0 0 200 200"><circle cx="100" cy="100" r="${R}" class="rb"/><circle cx="100" cy="100" r="${R}" class="rf" style="stroke-dasharray:${C};stroke-dashoffset:${C*(1-pct)}"/></svg><div><span class="dim">${c?'fasting':'not fasting'}</span><b class="num" id="ffT">${c?fmtH(el_):H+':00'}</b><span class="dim" id="ffZ">${c?zone(el_):'target'}</span></div></div>
     ${c?`<div class="dim num" style="text-align:center">started ${new Date(c.s).toLocaleString('en-GB',{weekday:'short',hour:'2-digit',minute:'2-digit'})} · goal ${c.h} h · ends ${new Date(new Date(c.s).getTime()+c.h*36e5).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</div>`:''}
     <div class="seg mini" id="ffH" style="justify-content:center;margin:12px 0">${[12,14,16,18,20,24].map(h=>`<button type="button" data-ffh="${h}" aria-pressed="${(c?c.h:H)===h}">${h===24?'OMAD':h+':'+(24-h)}</button>`).join('')}</div>

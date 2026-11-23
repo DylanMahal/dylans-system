@@ -21,7 +21,7 @@ const bSave=()=>save('tools/brick',BRICK,true);
    An <a> click is used rather than location.href so a missing handler can't blank the page. */
 const bIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function bRun(name,input){if(!name)return false;
-  if(!bIOS()){bToast('Shortcuts only run on your iPhone — the timer still counts here.');return false}
+  if(!bIOS()){bToast('Shortcuts only run on your iPhone. The timer still counts here.');return false}
   const a=document.createElement('a');a.href='shortcuts://run-shortcut?name='+encodeURIComponent(name)+(input?'&input=text&text='+encodeURIComponent(input):'');a.style.display='none';
   document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),0);return true}
 function bToast(msg){const t=document.createElement('div');t.className='bktoast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}
@@ -44,7 +44,7 @@ function bLife(){const ks=Object.keys(BST).sort().slice(-7),vals=ks.map(k=>bSTh(
     <p class="bk-p">Waiting for your screen time. Add one line to your morning sleep Shortcut and this fills in by itself:</p>
     <ol class="sl-steps"><li>Shortcut <b>Send screen time</b>: Jomo <i>Get Today's Screen Time</i> → Text <code>Screen Time|</code> + that result → Get Contents of URL (your sleep upload link, POST, File = Text).</li><li>Automation → Time of Day <b>23:55</b> daily → Run Immediately → Send screen time.</li></ol></div>`;
   if(!age)return `<div class="bk-card bk-life"><div class="bk-h"><span>Your phone life</span></div><div class="bk-big num">${st}<small> h a day</small></div>
-    <p class="bk-p">Your average over the last ${vals.length} day${vals.length===1?'':'s'}. One last thing — how old are you?</p>
+    <p class="bk-p">Your average over the last ${vals.length} day${vals.length===1?'':'s'}. One last thing: how old are you?</p>
     <div class="bk-goal" style="background:rgba(255,255,255,.04)"><div><span>Age</span><div class="bk-step"><button type="button" data-age="-1" aria-label="Younger">−</button><b class="num">${BRICK.ageTmp||21}</b><button type="button" data-age="1" aria-label="Older">+</button></div></div><button class="btn p sm" type="button" id="bkAgeOk">Done</button></div></div>`;
   const left=Math.max(1,80-age),yrs=left*st/24,goalY=left*Math.min(st,goal)/24,back=Math.max(0,yrs-goalY),waking=Math.round(st/16*100);
   const sl=left*8/24,free=left-sl-yrs;const W=x=>(x/left*100).toFixed(2)+'%';

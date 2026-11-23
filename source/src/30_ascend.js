@@ -60,8 +60,8 @@ function ascBind(){const st=$('ascStat');if(!st)return;
   $('ascTog').onchange=e=>LS.set('ascendOff',!e.target.checked);
   $('ascTest').onclick=async()=>{if(!(await ascProbe()))return bToast('Choose a clip first.');ascPlay('100','kg','test lift')};
   $('ascFile').onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;
-    if(f.size>25*1024*1024)return bToast('That clip is over 25MB — trim it first.');
+    if(f.size>25*1024*1024)return bToast('That clip is over 25MB. Trim it first.');
     $('ascStat').textContent='uploading…';
     try{const {error}=await SB.storage.from('vault').upload(ASC_PATH(),f,{contentType:f.type||'video/mp4',upsert:true});if(!error){await mediaForget(ASC_PATH());if(ascEl){ascEl.remove();ascEl=null;ascPrimed=false}}
       if(error)throw error;ascHas=true;ascPrimed=false;ascEl=null;AURL.delete(ASC_PATH());$('ascStat').textContent='clip is set'}
-    catch(x){$('ascStat').textContent='upload failed — try again'}}}
+    catch(x){$('ascStat').textContent='upload failed, try again'}}}

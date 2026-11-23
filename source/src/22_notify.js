@@ -8,7 +8,7 @@ if(NSET.k&&NSET.k.cal==null)NSET.k.cal=true;
 const nOn=k=>NSET.on&&NSET.k[k];
 function b64u(s){const p='='.repeat((4-s.length%4)%4);const b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)))}
 async function nSubscribe(){if(!('serviceWorker' in navigator)||!('PushManager' in window))return 'This device can\'t do web notifications here. On iPhone/iPad they work in the home-screen app (iOS 16.4+).';
-  const p=await Notification.requestPermission();if(p!=='granted')return 'Notifications are blocked — allow them in Settings → Notifications → Dylan\'s System.';
+  const p=await Notification.requestPermission();if(p!=='granted')return 'Notifications are blocked. Allow them in Settings → Notifications → Dylan\'s System.';
   const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
   const cur=(await load('push/subs'))||{list:[]};const j=sub.toJSON();const dev=/iPad/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)?'iPad':/iPhone/.test(navigator.userAgent)?'iPhone':/Windows/.test(navigator.userAgent)?'laptop':'device';
   cur.list=(cur.list||[]).filter(s=>s.sub.endpoint!==j.endpoint).concat({sub:j,dev,at:new Date().toISOString()});save('push/subs',cur,true);NSET.on=true;LS.set('notify',NSET);pushSync();return null}
@@ -44,7 +44,7 @@ function openNotify(){const sup=('serviceWorker' in navigator)&&('PushManager' i
   <div class="bigbtns" style="margin-top:12px"><button class="iconbtn" type="button" id="nTest">Send a test</button><span style="flex:1"></span><button class="btn p" type="button" id="nOk">Done</button></div>`);
   const sb=$('sheetBody');sb.onchange=e=>{const k=e.target.dataset.nk;if(!k)return;NSET.k[k]=e.target.checked;LS.set('notify',NSET);pushSync()};
   $('nOk').onclick=closeSheet;
-  $('nTest').onclick=async()=>{if(!NSET.on){$('nMsg').textContent='turn notifications on first';return}await pushOne('test',Date.now()+8000,'Notifications on','You’re all set. Alerts will appear here.','./');$('nMsg').textContent='sent — it should arrive within ~20 seconds (lock your phone to see it)'};
+  $('nTest').onclick=async()=>{if(!NSET.on){$('nMsg').textContent='turn notifications on first';return}await pushOne('test',Date.now()+8000,'Notifications on','You’re all set. Alerts will appear here.','./');$('nMsg').textContent='sent, it should arrive within ~20 seconds (lock your phone to see it)'};
   $('nTog').onclick=async()=>{if(NSET.on&&perm==='granted'){NSET.on=false;LS.set('notify',NSET);try{const reg=await navigator.serviceWorker.ready;const s=await reg.pushManager.getSubscription();if(s){const cur=(await load('push/subs'))||{list:[]};cur.list=(cur.list||[]).filter(x=>x.sub.endpoint!==s.endpoint);save('push/subs',cur,true);await s.unsubscribe()}}catch(e){}openNotify();return}
     $('nMsg').textContent='asking…';const err=await nSubscribe().catch(e=>String(e&&e.message||e));if(err){$('nMsg').textContent=err;return}openNotify()}}
 document.addEventListener('click',e=>{if(e.target.closest('#notifyBtn'))openNotify()});
