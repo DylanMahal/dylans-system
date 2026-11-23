@@ -10,3 +10,6 @@ const fmtM=m=>pad(Math.floor(m/60)%24)+':'+pad(m%60);
 const addDays=(s,n)=>{const d=new Date(s+'T12:00');d.setDate(d.getDate()+n);return ymd(d)};
 const nice=s=>new Date(s+'T12:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'});
 
+
+/* item names keep their stored text (habits link by name); dashes only change on screen */
+function dn(s){return String(s==null?'':s).replace(/(\D)\s+[–—-]\s+(?=\D)/,'$1: ').replace(/(\D)\s+[–—-]\s+(?=\D)/g,'$1, ')}

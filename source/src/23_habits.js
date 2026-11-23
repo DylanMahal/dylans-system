@@ -49,7 +49,7 @@ function renderHabits(){if(!habLoaded){loadHabits();return}const el=$('habBody')
   $('habSub').textContent=ALL.length?`${done}/${today.length} today · ${Math.max(0,...ALL.map(h=>hStreak(h).n))} best current streak`:'build streaks that stick';
   const grps=[];LK.forEach(h=>{let g=grps.find(x=>x.n===h.grp);if(!g)grps.push(g={n:h.grp,col:h.col,L:[]});g.L.push(h)});L.forEach(h=>{const g=h.grp&&grps.find(x=>x.n===h.grp);if(g)g.L.push(h)});
   const gh=grps.map(g=>{const due=g.L.filter(h=>hDue(h,DAYK));const ok=due.filter(h=>hDone(h,DAYK)).length;const open=(HAB.open||[]).includes(g.n);
-    return `<div class="panel hgrp${open?' open':''}"><button type="button" class="ph hgh" data-hg="${esc(g.n)}"><span class="tag" style="color:${g.col}">${esc(g.n)}</span><span class="num dim">${ok}/${due.length} today${due.length&&ok===due.length?' ✓':''} <span class="hchev">${open?'▾':'▸'}</span></span></button>${open?`<div class="pb"><div class="hgrid sm">${g.L.sort((a,b)=>hDue(b,DAYK)-hDue(a,DAYK)).map(hTile).join('')}</div></div>`:''}</div>`}).join('');
+    return `<div class="panel hgrp${open?' open':''}"><button type="button" class="ph hgh" data-hg="${esc(g.n)}"><span class="tag" style="color:${g.col}">${esc(dn(g.n))}</span><span class="num dim">${ok}/${due.length} today${due.length&&ok===due.length?' ✓':''} <span class="hchev">${open?'▾':'▸'}</span></span></button>${open?`<div class="pb"><div class="hgrid sm">${g.L.sort((a,b)=>hDue(b,DAYK)-hDue(a,DAYK)).map(hTile).join('')}</div></div>`:''}</div>`}).join('');
   el.innerHTML=`<div class="hgrid">${L.filter(h=>!(h.grp&&grps.some(g=>g.n===h.grp))).map(hTile).join('')}<button type="button" class="htile hnew" id="hNew"><span class="hring"><b>＋</b></span><span class="hn">New habit</span></button></div>
     ${gh?`<div style="margin-top:16px">${gh}</div>`:''}
     ${ALL.length?`<div class="dim" style="font-size:11px;text-align:center;margin-top:10px">Hold a habit to complete it · tap for stats</div>`:''}
@@ -94,7 +94,7 @@ function hRename(h){openSheet('rename','');$('sheetBody').innerHTML=`<label clas
   $('hrR').onclick=()=>{if(HAB.ren)delete HAB.ren[h.id];done()}}
 function hSplit(h){HAB.combo=(HAB.combo||[]).filter(c=>c.id!==h.combo);hSave();closeSheet();renderHabits()}
 function hCombo(h){const L=hLinked().filter(x=>!x.combo);const sel=new Set([h.id]);let nm=hDisp(h.n),once=false,every=false;
-  const draw=()=>{$('sheetBody').innerHTML=`<label class="fl">Name<input class="inp" id="hcN" value="${esc(nm)}"></label><div class="dim" style="font-size:11px;margin:8px 0 4px">Combine with</div><div>${L.map(x=>`<button type="button" class="btn${sel.has(x.id)?' p':''}" data-cm="${x.id}" style="margin:2px">${esc(x.n)}</button>`).join('')}</div>
+  const draw=()=>{$('sheetBody').innerHTML=`<label class="fl">Name<input class="inp" id="hcN" value="${esc(nm)}"></label><div class="dim" style="font-size:11px;margin:8px 0 4px">Combine with</div><div>${L.map(x=>`<button type="button" class="btn${sel.has(x.id)?' p':''}" data-cm="${x.id}" style="margin:2px">${esc(dn(x.n))}</button>`).join('')}</div>
     <label class="fl" style="margin-top:10px"><input type="checkbox" id="hcO"${once?' checked':''}> count once a day (any one of them)</label><label class="fl"><input type="checkbox" id="hcE"${every?' checked':''}> due every day</label>
     <div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="hcOk">Combine</button></div>`};
   const read=()=>{nm=($('hcN').value||'').trim();once=$('hcO').checked;every=$('hcE').checked};

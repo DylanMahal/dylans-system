@@ -59,6 +59,6 @@ $('addTarget').onclick=()=>addExtra('weekday','DAILY TARGETS – review Sundays 
 function wkStreaks(){const el=$('streaks');if(!el)return;if(!habLoaded){loadHabits().then(()=>{if(cur==='week')wkStreaks()});return}
   const L=hAll().map(h=>({h,s:hStreak(h).n,r:hRate(h)})).filter(x=>x.s>0||x.r>0).sort((a,b)=>b.s-a.s||((b.r||0)-(a.r||0))).slice(0,8);
   el.innerHTML=L.length?L.map(({h,s,r})=>{const marks=[];for(let i=13;i>=0;i--){const d=hAdd(DAYK,-i);marks.push(!hDue(h,d)?'s':hDone(h,d)?'y':i===0?'p':'n')}
-    return `<button type="button" class="streak" data-go="streaks"><span class="tag dim">${esc(h.ic||'')} ${esc(h.n)}</span><b class="num ${s>=3?'hot':''}">${s}</b><span class="dim" style="font-size:11px">day streak${r!=null?` · ${Math.round(r)}% last 30d`:''}</span><div class="dots">${marks.map(m=>`<i class="${m}"></i>`).join('')}</div></button>`}).join('')
+    return `<button type="button" class="streak" data-go="streaks"><span class="tag dim">${esc(h.ic||'')} ${esc(dn(h.n))}</span><b class="num ${s>=3?'hot':''}">${s}</b><span class="dim" style="font-size:11px">day streak${r!=null?` · ${Math.round(r)}% last 30d`:''}</span><div class="dots">${marks.map(m=>`<i class="${m}"></i>`).join('')}</div></button>`}).join('')
     :'<div class="dim">Tick things off in Today or Streaks and your best streaks show up here.</div>';
   el.onclick=e=>{if(e.target.closest('[data-go]'))go('streaks')}}

@@ -21,7 +21,7 @@ const bSave=()=>save('tools/brick',BRICK,true);
    An <a> click is used rather than location.href so a missing handler can't blank the page. */
 const bIOS=()=>/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 function bRun(name,input){if(!name)return false;
-  if(!bIOS()){bToast('Shortcuts only run on your iPhone. The timer still counts here.');return false}
+  if(!bIOS()){bToast('Shortcuts only run on your iPhone, but the timer still counts here');return false}
   const a=document.createElement('a');a.href='shortcuts://run-shortcut?name='+encodeURIComponent(name)+(input?'&input=text&text='+encodeURIComponent(input):'');a.style.display='none';
   document.body.appendChild(a);a.click();setTimeout(()=>a.remove(),0);return true}
 function bToast(msg){const t=document.createElement('div');t.className='bktoast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3200)}

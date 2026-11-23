@@ -123,7 +123,7 @@ async function fSearch(q,meal){const my=++fSeq;const ql=q.toLowerCase(),words=ql
   $('fRes').innerHTML=(loc.length?loc.map(fRow).join(''):'')+'<div class="flab" id="fOnl">searching online…</div>';
   const items=await offCall({q});if(my!==fSeq||!$('fRes'))return;try{
   const on=(items||[]).map(offToFood).filter(Boolean).filter(f=>!seen.has(f.id));
-  const lab=$('fOnl');if(!lab)return;lab.outerHTML=items===null?'<div class="dim fempty">Online search is unavailable right now. Use create food or quick add.</div>':on.length?'<div class="flab">from Open Food Facts</div>'+on.map(fRow).join(''):(loc.length?'':'<div class="dim fempty">Nothing found. Try another word, scan the barcode, or create it.</div>')}catch(e){const l=$('fOnl');if(l)l.outerHTML='<div class="dim fempty">Online search hit an error. Try again.</div>'}}
+  const lab=$('fOnl');if(!lab)return;lab.outerHTML=items===null?'<div class="dim fempty">Online search is unavailable right now, so use create food or quick add</div>':on.length?'<div class="flab">from Open Food Facts</div>'+on.map(fRow).join(''):(loc.length?'':'<div class="dim fempty">Nothing found. Try another word, scan the barcode, or create it.</div>')}catch(e){const l=$('fOnl');if(l)l.outerHTML='<div class="dim fempty">Online search hit an error, try again</div>'}}
 
 /* portion editor (used for new picks and for editing logged entries) */
 function fPortion(f,{meal,idx,isNew}){const ent=!isNew;const sv=(f.sv&&f.sv.length?f.sv:[['100 g',100]]).concat([['g',1]]);
@@ -179,7 +179,7 @@ let fStream=null,fZX=null;
 function fScanStop(){try{fZX&&fZX.reset()}catch(e){}fZX=null;if(fStream){fStream.getTracks().forEach(t=>t.stop());fStream=null}}
 async function fScan(meal){openSheet('scan barcode',`<div class="fscan"><video id="fsV" playsinline muted></video><i class="fsline"></i></div><div class="dim" id="fsMsg" style="margin-top:8px">point the camera at the barcode…</div><div class="row" style="gap:8px;margin-top:8px"><input class="inp num" id="fsCode" placeholder="Or type the barcode number" inputmode="numeric" style="flex:1"><button class="btn" type="button" id="fsGo">Look up</button></div>`);
   const done=async code=>{fScanStop();$('fsMsg').textContent='looking up '+code+'…';const items=await offCall({code});const f=items&&items[0]?offToFood(items[0]):null;
-    if(f){FCACHE[f.id]=f;fPortion(f,{meal,isNew:true})}else{$('fsMsg').innerHTML='Not in the database yet. <button class="iconbtn" type="button" id="fsNew">Create it</button>';$('fsNew').onclick=()=>fCreate(meal,{code})}};
+    if(f){FCACHE[f.id]=f;fPortion(f,{meal,isNew:true})}else{$('fsMsg').innerHTML='Not in the database yet, <button class="iconbtn" type="button" id="fsNew">Create it</button>';$('fsNew').onclick=()=>fCreate(meal,{code})}};
   $('fsGo').onclick=()=>{const c=$('fsCode').value.replace(/\D/g,'');if(c)done(c)};
   const obs=new MutationObserver(()=>{if(!$('fsV')){fScanStop();obs.disconnect()}});obs.observe($('sheetBody'),{childList:true});
   $('sheetX')&&$('sheetX').addEventListener('click',fScanStop,{once:true});
@@ -189,11 +189,11 @@ async function fScan(meal){openSheet('scan barcode',`<div class="fscan"><video i
     else{if(!window.ZXing)await new Promise((res,rej)=>{const s=document.createElement('script');s.src='vendor/zxing.min.js';s.onload=res;s.onerror=rej;document.head.appendChild(s)});
       const hints=new Map();hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E]);
       fZX=new ZXing.BrowserMultiFormatReader(hints);fZX.decodeFromConstraints({video:{facingMode:'environment'}},'fsV',(res)=>{if(res&&fZX){const c=res.getText();done(c)}})}}
-  catch(e){$('fsMsg').textContent='Camera unavailable. Type the barcode number instead.'}}
+  catch(e){$('fsMsg').textContent='Camera unavailable, type the barcode number instead'}}
 
 function fExercise(){const kg=curKg();openSheet('add exercise',`<div class="fexl">${FEX.map(([n,met],i)=>`<button type="button" class="chip" data-fxp="${i}">${n}</button>`).join('')}</div>
   <div class="fgrid4" style="margin-top:10px"><label class="fl">Activity<input class="inp" id="exN" value="weights / gym"></label><label class="fl">Minutes<input class="inp num" id="exM" inputmode="numeric" value="60"></label><label class="fl">Kcal burned<input class="inp num" id="exK" inputmode="numeric"></label></div>
-  <div class="dim" style="font-size:11px">kcal is estimated from the activity, time and your weight (${r1(kg)} kg). Overwrite it if your watch says different.</div>
+  <div class="dim" style="font-size:11px">kcal is estimated from the activity, time and your weight (${r1(kg)} kg), so overwrite it if your watch says different</div>
   <div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="exOk">Add</button></div>`);
   let met=5;const est=()=>{$('exK').value=Math.round(met*kg*(+$('exM').value||0)/60)};est();
   $('sheetBody').onclick=e=>{const b=e.target.closest('[data-fxp]');if(!b)return;const p=FEX[+b.dataset.fxp];met=p[1];$('exN').value=p[0];est()};
