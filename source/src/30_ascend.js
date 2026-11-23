@@ -4,7 +4,8 @@
 const ASC_PATH=()=>`${UID}/system/ascend.mp4`;
 let ascEl=null,ascPrimed=false;
 const ascOn=()=>LS.get('ascendOff')!==true;
-const ascStep=best=>Best<60?5:10;
+/* milestone spacing grows with the lift, so the next one is always a couple of good sessions away */
+const ascStep=best=>best<30?2.5:best<100?5:10;
 /* pull the clip in quietly once a session is live, so it plays the instant it's earned */
 async function ascPrime(){if(ascPrimed||!ascOn()||!SB||!UID)return;ascPrimed=true;
   try{const [u]=await aSign([ASC_PATH()]);if(!u)return;
