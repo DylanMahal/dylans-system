@@ -102,6 +102,9 @@ function rlNext(e,score){const std=rlStd(e);if(!std||!std.s||score>=21)return ''
   if(std.k==='bw')return `${Math.ceil(v)} reps in a set for ${nm}`;
   if(std.k==='wbw')return `${kgs(Math.max(0,Math.ceil(v*bw-bw)))} kg added (1RM) for ${nm}`;
   return `est. 1RM of ${kgs(Math.ceil(v*Math.pow(bw,2/3)*Math.pow(80,1/3)*2)/2)} kg for ${nm}`}
+/* small inline badge: one exercise's rank (session best or all-time), '' when unranked */
+function rlScoreIn(e,x,date){const std=rlStd(e);if(!std||!std.s)return null;return rlBestIn(e,x,std,rlBWAt(date))}
+function rlMini(sc,sz=18){if(sc==null)return '';const r=rlOf(sc);return `<span class="rlmini" title="${esc(r.name)}" aria-label="rank ${esc(r.name)}">${rlBadge(sc,sz)}</span>`}
 function rlExBlock(e){const sc=rlEx(e.id);if(sc==null)return '';const r=rlOf(sc);
   return `<div class="rlblock" style="--rc:${RL[r.t][1]}">${rlBadge(sc,54)}<div><span class="dim">Rank</span><b>${r.name}</b>${r.t<7?`<div class="rpgbar"><i style="width:${r.frac*100}%;background:var(--rc);box-shadow:0 0 8px var(--rc)"></i></div>`:''}<small class="dim">${esc(rlNext(e,sc))||'top of the ladder'}</small></div></div>`}
 function rlTopList(n){const seen=new Map();WORKOUTS.forEach(w=>(w.ex||[]).forEach(x=>{const e=exOf(x);if(!seen.has(e.id))seen.set(e.id,e)}));
