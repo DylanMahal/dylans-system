@@ -1,6 +1,6 @@
 // Offline cache for the app shell. Data always comes from Supabase (or the local cache in the page).
-const CACHE='system-1795395391';
-const SHELL=['./','index.html','app.css?v=1795395391','app.js?v=1795395391','config.js?v=1795395391','vendor/supabase.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
+const CACHE='system-1795557171';
+const SHELL=['./','index.html','app.css?v=1795557171','app.js?v=1795557171','config.js?v=1795557171','vendor/supabase.js','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png','icons/apple-touch-icon.png'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE&&k!=='ds-media').map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.method!=='GET')return;
@@ -20,7 +20,7 @@ self.addEventListener('fetch',e=>{const u=new URL(e.request.url);if(e.request.me
 });
 // web push: show it, and open/focus the app when tapped
 self.addEventListener('push',e=>{let d={};try{d=e.data?e.data.json():{}}catch(x){d={title:'dylan@system',body:e.data&&e.data.text()}}
-  e.waitUntil(self.registration.showNotification(d.title||'dylan@system',{body:d.body||'',tag:d.tag||undefined,renotify:!!d.tag,icon:'icons/icon-192.png',badge:'icons/icon-192.png',data:{url:d.url||'./'}}))});
+  e.waitUntil(self.registration.showNotification(d.title||'dylan@system',{tag:d.tag||undefined,renotify:!!d.tag,icon:'icons/icon-192.png',badge:'icons/icon-192.png',data:{url:d.url||'./'}}))});
 self.addEventListener('notificationclick',e=>{e.notification.close();const url=new URL((e.notification.data&&e.notification.data.url)||'./',self.registration.scope).href;
   e.waitUntil(self.clients.matchAll({type:'window',includeUncontrolled:true}).then(cs=>{for(const c of cs){if('focus' in c){c.navigate&&c.navigate(url).catch(()=>{});return c.focus()}}return self.clients.openWindow(url)}))});
 
