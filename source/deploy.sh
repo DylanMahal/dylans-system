@@ -4,8 +4,8 @@ set -e
 cd "$(dirname "$0")"
 # Linux: tools in /tmp/tools. Windows (Git Bash): tools in source/.tools, which is gitignored.
 case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) TOOLS="$(pwd -W)/.tools" ;; *) TOOLS=/tmp/tools ;; esac
-export DS_TOOLS="$TOOLS"
-[ -e "$TOOLS/node_modules/.bin/esbuild" ] || (mkdir -p "$TOOLS" && cd "$TOOLS" && npm init -y >/dev/null && npm i -s purgecss@6 esbuild >/dev/null)
+export DS_TOOLS="$TOOLS" PYTHONUTF8=1  # Windows Python defaults to cp1252
+[ -e "$TOOLS/node_modules/.bin/esbuild" ] || (mkdir -p "$TOOLS" && cd "$TOOLS" && echo '{"name":"tools","private":true}' > package.json && npm i -s purgecss@6 esbuild >/dev/null)
 # first Python that actually runs (Windows has a python3 stub that only opens the Store)
 for PY in python3 py python; do "$PY" -c "import sys" >/dev/null 2>&1 && break; done
 "$PY" build.py | tail -1

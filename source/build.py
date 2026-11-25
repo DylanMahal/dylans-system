@@ -24,9 +24,10 @@ T=os.environ.get('DS_TOOLS','/tmp/tools')+'/node_modules/.bin/'
 X='.cmd' if os.name=='nt' else ''  # npm's Windows shims are .cmd files
 if os.path.exists(T+'esbuild'+X) and '--dev' not in sys.argv:
     # strip unused CSS (classes built at runtime are safelisted), then minify both bundles
-    subprocess.run([T+'purgecss'+X,'--css',f'{dist}/app.css','--content',f'{dist}/index.html',f'{dist}/app.js','--output',f'{dist}/',
-      '--safelist','on','open','hidden','fx','poweron','edit-on','done','ok','bad','warn','pink','dim','num','p','active','sel','live','playing',
-      '--safelist','-pattern','/^(lcd-|st-|xl-|m[0-9]|t-|h[0-9]|is-|has-|lv|tier|cat-|ty-|fx-|sk-|nx-)/'],check=True)
+    # on Windows skip the .cmd shim: cmd.exe would read the | and ^ in the pattern as shell syntax
+    PC=['node',T+'../purgecss/bin/purgecss.js'] if os.name=='nt' else [T+'purgecss']
+    subprocess.run(PC+['--css',f'{dist}/app.css','--content',f'{dist}/index.html',f'{dist}/app.js','--output',f'{dist}/app.css',
+      '--config','purgecss.config.cjs'],check=True)  # safelist lives in the config: the CLI can't take regexes
     for f in ['app.js','app.css']:
         subprocess.run([T+'esbuild'+X,f'{dist}/{f}','--minify','--allow-overwrite','--log-level=warning','--outfile='+f'{dist}/{f}']+(['--target=es2020'] if f.endswith('js') else []),check=True)
 print('built',V,os.path.getsize(f'{dist}/app.js'),'js',os.path.getsize(f'{dist}/app.css'),'css')
