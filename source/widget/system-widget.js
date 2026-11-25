@@ -287,7 +287,7 @@ function sScore(n, S) {
   const eff = bed > a ? cl((a / bed - .75) / .17) : 1; const wk = sWakes(n);
   const aw = wk != null ? cl(1 - (wk - 2) / 10) : cl(1 - ((n.awake || 0) - 20) / 70);
   let tim = 1; if (n.start) { const [h, m] = S.wake.split(':').map(Number); const bt = ((h * 60 + m - S.goal * 60) % 1440 + 1440) % 1440; const d = new Date(n.start); let off = Math.abs(d.getHours() * 60 + d.getMinutes() - bt); off = Math.min(off, 1440 - off); tim = cl(1 - (off - 30) / 120) }
-  const P = [[dur, 40], ...(hasSt ? [[deep, 15], [rem, 15]] : []), [eff, 10], [aw, 10], [tim, 10]];
+  const P = [[dur, 40], ...(hasSt ? [[deep, 15], [rem, 15]] : []), [aw, 10], [tim, 5]];
   return Math.round(P.reduce((t, x) => t + x[0] * x[1], 0) / P.reduce((t, x) => t + x[1], 0) * 100)
 }
 async function dSleep() {

@@ -29,7 +29,7 @@ function sQB(n){if(!n||!n.asleep)return null;const g=(SSET&&SSET.goal||8)*60,a=n
   const aw=sWakes(n)!=null?sCl(1-(sWakes(n)-2)/10):sCl(1-((n.awake||0)-20)/70); /* wake-ups: ≤2 full, 12+ zero */
   let tim=1;if(n.start){const d=new Date(n.start),b=d.getHours()*60+d.getMinutes(),[h,m]=sBedFor().split(':').map(Number);let off=Math.abs(b-(h*60+m));off=Math.min(off,1440-off);tim=sCl(1-(off-30)/120)}
   const wk=sWakes(n),offM=n.start?Math.round(Math.abs((()=>{const d=new Date(n.start),b=d.getHours()*60+d.getMinutes(),[h,m]=sBedFor().split(':').map(Number);let o=Math.abs(b-(h*60+m));return Math.min(o,1440-o)})())):0;
-  const P=[['Duration',dur,40,fmtHM(a)],['Deep',deep,15,Math.round(n.deep||0)+'m'],['REM',rem,15,Math.round(n.rem||0)+'m'],['Efficiency',eff,10,bed?Math.round(a/bed*100)+'% asleep':''],['Restfulness',aw,10,wk!=null?wk+' wake-up'+(wk===1?'':'s'):Math.round(n.awake||0)+'m awake'],['Timing',tim,10,n.start?offM+'m off':'']].filter(x=>hasSt||(x[0]!=='Deep'&&x[0]!=='REM'));
+  const P=[['Duration',dur,40,fmtHM(a)],['Deep',deep,15,Math.round(n.deep||0)+'m'],['REM',rem,15,Math.round(n.rem||0)+'m'],['Restfulness',aw,10,wk!=null?wk+' wake-up'+(wk===1?'':'s'):Math.round(n.awake||0)+'m awake'],['Timing',tim,5,n.start?offM+'m off':'']].filter(x=>hasSt||(x[0]!=='Deep'&&x[0]!=='REM'));
   const W=P.reduce((t,x)=>t+x[2],0);return {parts:P,score:Math.round(P.reduce((t,x)=>t+x[1]*x[2],0)/W*100)}}
 /* one clean timeline from overlapping sources (Watch + phone): at every moment the most specific stage wins, gaps count as awake, blips under 3 min fold into their neighbour */
 function sNorm(segs){const g=(segs||[]).map(([a,b,st])=>[+new Date(a),+new Date(b),st]).filter(x=>x[1]>x[0]);if(!g.length)return [];
@@ -276,12 +276,12 @@ function sMain(){const el=$('sleepBody');const ks=Object.keys(SNIGHTS).sort();
   el.innerHTML=`<div class="sm"><div class="sm-l">
     <div class="sh-hero"><div class="sh-top"><button type="button" class="sh-ic" id="shCal" aria-label="Calendar">${sIco('cal',19)}</button><span class="sh-nav"><button type="button" data-sk="-1" aria-label="Previous night"${i<=0?' disabled':''}>${sIco('chevL',18)}</button><b>${lbl}</b><button type="button" data-sk="1" aria-label="Next night"${i>=ks.length-1?' disabled':''}>${sIco('chevR',18)}</button></span><span class="sh-ic sp"></span></div>
       <button type="button" class="sh-ring" id="shQ"><svg viewBox="0 0 200 200"><defs><linearGradient id="shg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9f6b"/><stop offset="1" stop-color="#ffe0cf"/></linearGradient></defs><circle cx="100" cy="100" r="88" class="t"/><circle cx="100" cy="100" r="76" class="t2"/><circle cx="100" cy="100" r="88" class="f" pathLength="100" style="stroke-dasharray:${q} 100"/></svg><span class="sh-v"><b class="num">${q}<small>%</small></b><em>Quality ${sIco('chevR',16)}</em></span></button>
-      <div class="sh-sum"><div><b class="num">${inBed!=null?sHM(inBed):'—'}</b><span>In bed</span></div><i></i><div><b class="num">${sHM(n.asleep)}</b><span>Time asleep</span></div></div></div>
+      <div class="sh-sum"><div><b class="num">${sHM(n.asleep)}</b><span>Time asleep</span></div><i></i><div><b class="num">${n.end?sT(n.end):'—'}</b><span>Woke up</span></div></div></div>
     <div class="sm-cal" id="smCal">${sCal(k)}</div>
   </div><div class="sm-r">
     <div class="sl-card sw-card">${sWave(n)}</div>
     <div class="sl-card sm-stg">${stages.map(([s,l])=>`<div><i style="background:${SLC[s]}"></i><span>${l}</span><b class="num">${s==='awake'?Math.round(n.awake||0)+'<small>m</small>':sHM(n[s])}</b></div>`).join('')}</div>
-    <div class="sm-tiles">${tile('moon','Went to bed',n.start?sT(n.start):'—')}${tile('alarm','Woke up',n.end?sT(n.end):'—')}${tile('lat','Asleep after',lat!=null?lat+'<small> min</small>':'—')}${tile('reg','Regularity',reg!=null?reg+'<small>%</small>':'—')}${tile('heart','Recovery',R?R.v+'<small>%</small>':'—','rec" style="--z:'+(R?sZone(R.v)[0]:'#8e8e93'))}${tile('wake','Wake-ups',wk!=null?wk:'—')}</div>
+    <div class="sm-tiles">${tile('moon','Fell asleep',n.start?sT(n.start):'—')}${tile('reg','Regularity',reg!=null?reg+'<small>%</small>':'—')}${tile('heart','Recovery',R?R.v+'<small>%</small>':'—','rec" style="--z:'+(R?sZone(R.v)[0]:'#8e8e93'))}${tile('wake','Wake-ups',wk!=null?wk:'—')}</div>
     ${reg==null?`<div class="sl-note sm-hint">Regularity appears once you have two nights in a row synced.</div>`:''}
     <div class="sm-sec">Experience</div>
     <div class="sl-card"><div class="sm-q">How did you feel waking up?</div><div class="sm-mood">${[1,2,3,4,5].map(v=>`<button type="button" data-mood="${v}" aria-pressed="${n.mood===v}" aria-label="Mood ${v} of 5">${sFace(v)}</button>`).join('')}</div>
