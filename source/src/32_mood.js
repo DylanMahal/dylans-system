@@ -53,7 +53,7 @@ async function moodData(){
   const bm={};((brick&&brick.sessions)||[]).forEach(s=>{bm[s.d]=(bm[s.d]||0)+(+s.min||0)});Object.keys(day).forEach(k=>set(k,'brick2',(bm[k]||0)>=120));
   const fm={};((focus&&focus.sessions)||[]).forEach(s=>{fm[s.d]=(fm[s.d]||0)+(+s.min||0)});Object.keys(day).forEach(k=>set(k,'focus2',(fm[k]||0)>=120));
   drows.forEach(r=>{const k=r.path.slice(7),d=r.data;if(day[k]&&d&&d.total)set(k,'plan80',d.done/d.total>=.8)});
-  const pk=new Set(((plog&&plog.log)||[]).map(x=>String(x.at).slice(0,10)));Object.keys(day).forEach(k=>set(k,'people',pk.has(k)));
+  const pk=new Set(((plog&&plog.log)||[]).map(x=>x.day||String(x.at).slice(0,10)));Object.keys(day).forEach(k=>set(k,'people',pk.has(k)));
   if(typeof MEDLOG!=='undefined')Object.keys(day).forEach(k=>{const ck=(MEDLOG.checks||[]).filter(c=>String(c.at).slice(0,10)===k);if(ck.length)set(k,'medfocus',nxAvg(ck.map(c=>c.focus))>=4)});
   return day}
 const MOOD_FL={sleep80:'Sleep score 80+',short:'Slept under 6 h',trained:'Trained',steps8:'8k+ steps',brick2:'Bricked 2 h+',focus2:'Focus 2 h+',plan80:'Plan 80%+',screen4:'Screen time 4 h+',people:'Talked to someone close',medfocus:'Meds focus 4+'};
