@@ -1,10 +1,11 @@
 /* ================= TOOLS: focus · protocols · leetcode ================= */
-let lc=0,WK=isoWeek(logical()),SET={},TOOLV=LS.get('toolv')||'focus';if(TOOLV!=='focus'&&TOOLV!=='brick')TOOLV='focus';
+let lc=0,WK=isoWeek(logical()),SET={},TOOLV=LS.get('toolv')||'focus';if(!['focus','brick','keys'].includes(TOOLV))TOOLV='focus';
 function renderTools(){
   $('toolSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===TOOLV));
-  if(TOOLV!=='focus'&&TOOLV!=='brick')TOOLV='focus';['focus','brick'].forEach(v=>$('t-'+v).hidden=v!==TOOLV);
+  if(!['focus','brick','keys'].includes(TOOLV))TOOLV='focus';['focus','brick','keys'].forEach(v=>$('t-'+v).hidden=v!==TOOLV);
+  if(TOOLV!=='keys'&&typeof pvLock==='function')pvLock();
   $('toolsSub').textContent=nice(DAYK).toLowerCase();
-  if(TOOLV==='focus')renderFocus();else renderBrick();
+  if(TOOLV==='focus')renderFocus();else if(TOOLV==='keys')renderKeys();else renderBrick();
   toolCardSubs();
 }
 function toolCardSubs(){const dw=DAY.dw||0;$('tcFocus').textContent=`${Math.floor(dw/60)}h ${pad(dw%60)}m today`;
