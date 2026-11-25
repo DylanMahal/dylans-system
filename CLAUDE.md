@@ -45,6 +45,10 @@ from Git Bash. It puts the build tools in `source/.tools` (gitignored) and finds
 - **Scale testing to the change.** Copy, markup moves and small CSS: build + deploy, no browser.
   New logic or interactions: one headless check of just that thing. Screenshots only for real
   layout work, and only at 390px unless the change is desktop-specific.
+- **Smoke test:** `python source/test/smoke.py` builds, opens every tab and sub-tab at 390px in headless Chrome
+  against an in-memory fake kv (never the real account), and fails on JS errors, blank pages or sideways
+  overflow. Run it for new logic or layout work, not copy or small CSS. Needs `pip install playwright` once;
+  it uses the installed Chrome. A new tab or sub-route goes in its `SUBS` list or the bottom bar it reads.
 - Before `deploy.sh`, run the `reviewer` subagent (`.claude/agents/reviewer.md`) for anything beyond copy or
   small CSS changes, and fix what it fails.
 - Ship with `deploy.sh`; don't poll GitHub Pages afterwards (the container can't reach it anyway).
@@ -63,7 +67,7 @@ Page markup: `body.html` (sections `#v-<view>`).
 - **Minification renames every top-level name.** Browser tests must use DOM selectors
   (`document.querySelector('.apin')`), never app globals like `ALTER` or `SB`.
 - **purgecss strips classes built at runtime from strings.** Anything assembled like
-  `'sk-'+name` must match the safelist pattern in `build.py` or it silently vanishes.
+  `'sk-'+name` must match the safelist pattern in `source/purgecss.config.cjs` or it silently vanishes.
 - **Never put an `autoplay` attribute on a video.** iPadOS draws its own play button on any
   video that declares autoplay and hasn't started — including the whole gap while the source
   loads. Mute from script and call `play()` instead.

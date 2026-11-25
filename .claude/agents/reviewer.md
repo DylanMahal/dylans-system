@@ -70,11 +70,10 @@ Scale this to the change:
   ~360px, `width:100vw` with padding, `white-space:nowrap` on long text, absolute positioning that assumes a wide
   viewport, grids with fixed column counts and no phone breakpoint, and new desktop-only `@media` rules that
   forget the phone case. Remember `style2.css` loads after `style.css` and wins.
-- **Real layout work** → if the browser tools are available and the owner asked for it, build
-  (`cd source && python3 build.py`, unminified is fine) and open `source/dist/index.html` at 390×844 in the
-  browser pane. Check `document.documentElement.scrollWidth <= 390` on the affected view and take one screenshot.
-  Use DOM selectors only — minification renames app globals. Don't sign in or type passwords; if the view needs
-  sign-in, say so and fall back to static review.
+- **Real layout work or new logic** → run the smoke test: `python source/test/smoke.py` (or `python3`).
+  It builds, opens every tab and sub-tab at 390px against fake data, and fails on JS errors, blank pages or
+  sideways overflow. FAIL this check if it fails, quoting its output. If Playwright isn't installed, say so
+  and fall back to static review.
 
 ### 5. No dashes as sentence breaks in visible app text
 Visible text in the app (markup text in `body.html`/`head.html`/`bootfx.html`, and string literals in
