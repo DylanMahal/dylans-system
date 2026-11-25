@@ -23,7 +23,11 @@ const nRange=(a,b)=>nClock(a).replace(/ (am|pm)$/,nClock(a).slice(-2)===nClock(b
 const nLead=m=>!m?'Now':m>=60?'In '+(m/60)+' hr':'In '+m+' min';
 const nJoin=(...a)=>a.filter(Boolean).map(String).map(x=>x.trim()).filter(Boolean).join(' · ');
 async function pushCancel(tag){if(!NSET.on)return;const q=await nQueue();const n=q.items.length;q.items=q.items.filter(i=>i.tag!==tag);if(q.items.length!==n)save('push/q',q,true)}
-async function pushSync(){if(!NSET.on)return;const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|item|dose|bed|leet|water|habit|task|cal|mood|ppl|rev):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
+/* self-repair: if this device thinks it's on but its subscription is missing from push/subs (Apple expired it and push-tick dropped it), register it again silently */
+let NHEALED=false;
+async function nHeal(){if(NHEALED||!NSET.on||typeof Notification==='undefined'||Notification.permission!=='granted'||!('serviceWorker' in navigator)||!('PushManager' in window))return;NHEALED=true;
+  try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();const cur=(await load('push/subs'))||{list:[]};if(sub&&(cur.list||[]).some(s=>s.sub.endpoint===sub.endpoint))return;await nSubscribe()}catch(e){NHEALED=false}}
+async function pushSync(){if(!NSET.on)return;nHeal();const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|item|dose|bed|leet|water|habit|task|cal|mood|ppl|rev):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
   const push=(tag,at,title,body,url)=>{if(at>now+5000&&at<H)add.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body:body||'',url:url||'./'})};
   const days=[DAYK,ymd(new Date(new Date(DAYK+'T12:00').getTime()+864e5))];
   days.forEach((dk,di)=>{const base=new Date(dk+'T00:00').getTime();const dow=new Date(dk+'T12:00').getDay();const kind=(dow===0||dow===6)?'weekend':'weekday';
