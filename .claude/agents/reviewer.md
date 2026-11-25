@@ -35,10 +35,18 @@ Review the union of uncommitted changes and unpushed commits. If the caller name
 The repo is public. Personal words live in the private kv word list `sys/lex` and are read through
 `LX(key, generic)`, `LW(key, generic)`, `PT(key, generic)` or `[data-lx]` markup. You can't read that list, so judge
 from the diff:
-- Look at added lines in `source/src/*` (`git diff -U0 … | grep '^+'`). Flag any new user-visible string literal,
-  comment, CSS class/id, or markup text that names something specific about the owner's life — a particular
-  habit, substance, person, place, body detail, medication, private project, or anything a stranger would find
-  personal — instead of a generic term. Generic UI words ("notes", "tasks", "sleep", "save") are fine.
+- Look at added lines in `source/src/*` (`git diff -U0 … | grep '^+'`): string literals, comments, CSS
+  classes/ids, kv paths, markup text, `data-*` values and variable names. Look specifically for:
+  - **Health terms**: conditions, diagnoses, symptoms, body measurements or body parts beyond generic "body",
+    mental-health words, therapy, lab values.
+  - **Medication and substance names**: drug names (brand or generic), supplements, doses (`mg`, `ml`, `IU`
+    next to a name), and anything taken on a schedule.
+  - **People's names**: first names, surnames, nicknames, handles, or relations ("mom", "gf", a doctor's name),
+    other than the owner's own public GitHub name in commit authorship.
+  - **What a section tracks**: a label, heading, kv path or id that reveals the specific thing being logged or
+    counted (a particular habit, goal, vice, target or private project) rather than a generic word.
+  Anything a stranger would find personal is a flag even if it isn't in those groups. Generic UI words
+  ("notes", "tasks", "sleep", "food", "save") are fine.
 - New personal-sounding text that isn't wrapped in `LX/LW/PT` or `data-lx`, or an `LX(...)` call **without** a bland
   fallback, is a FAIL.
 - Commit messages (`git log --format=%B @{u}..HEAD`, plus any message the caller proposes) must be generic
@@ -68,7 +76,17 @@ Scale this to the change:
   Use DOM selectors only — minification renames app globals. Don't sign in or type passwords; if the view needs
   sign-in, say so and fall back to static review.
 
-### 5. Known traps (flag if touched)
+### 5. No dashes as sentence breaks in visible app text
+Visible text in the app (markup text in `body.html`/`head.html`/`bootfx.html`, and string literals in
+`source/src/*.js` that reach the page: labels, toasts, placeholders, `title`/`aria-label`, empty states) must not use
+` - ` (spaced hyphen), ` — ` (em dash) or ` – ` (en dash) to break a sentence. Use a period, comma, colon or a new
+line instead.
+- Search added lines: `git diff -U0 … -- source/src | grep '^+' | grep -nE " [-–—] |—"`.
+- Not violations: code operators (`a - b`), CSS values, comments, ranges like `5–10`, minus signs, list bullets at
+  the start of a line, and the terminal prompt style (`dylan@system:~$`).
+- Each hit in user-visible text is a FAIL with file:line.
+
+### 6. Known traps (flag if touched)
 - An `autoplay` attribute on any `<video>` (iPadOS draws its own play button) — FAIL.
 - Hiding a playing video with `opacity:0` / `display:none` (WebKit stops it) — FAIL.
 - Class names built at runtime from strings (`'xx-'+name`) that don't match the purgecss safelist in

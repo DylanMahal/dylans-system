@@ -45,6 +45,8 @@ from Git Bash. It puts the build tools in `source/.tools` (gitignored) and finds
 - **Scale testing to the change.** Copy, markup moves and small CSS: build + deploy, no browser.
   New logic or interactions: one headless check of just that thing. Screenshots only for real
   layout work, and only at 390px unless the change is desktop-specific.
+- Before `deploy.sh`, run the `reviewer` subagent (`.claude/agents/reviewer.md`) for anything beyond copy or
+  small CSS changes, and fix what it fails.
 - Ship with `deploy.sh`; don't poll GitHub Pages afterwards (the container can't reach it anyway).
 - Final reply: a few lines saying what changed. No long recaps.
 
