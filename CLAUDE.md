@@ -33,6 +33,10 @@ Commit as Dylan:
 
 Shortcut: `sh source/deploy.sh "message"` does tools install + build + copy + commit + push in one go.
 
+On Dylan's Windows PC (Claude Code, repo at `C:\Users\dylan\git\dylans-system`) run the same `sh source/deploy.sh "message"`
+from Git Bash. It puts the build tools in `source/.tools` (gitignored) and finds whichever Python works. Needs Git, Node and Python.
+`git pull` first: the cloud sessions push to the same repo.
+
 ## Working efficiently (Dylan watches his usage — keep each task lean)
 
 - **Don't explore.** Use the module map below, then `grep -n` for the exact function/id and read

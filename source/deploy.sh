@@ -2,8 +2,13 @@
 # one-shot build + deploy: sh source/deploy.sh "commit message"
 set -e
 cd "$(dirname "$0")"
-[ -x /tmp/tools/node_modules/.bin/esbuild ] || (mkdir -p /tmp/tools && cd /tmp/tools && npm init -y >/dev/null && npm i -s purgecss@6 esbuild >/dev/null)
-python3 build.py | tail -1
+# Linux: tools in /tmp/tools. Windows (Git Bash): tools in source/.tools, which is gitignored.
+case "$(uname -s)" in MINGW*|MSYS*|CYGWIN*) TOOLS="$(pwd -W)/.tools" ;; *) TOOLS=/tmp/tools ;; esac
+export DS_TOOLS="$TOOLS"
+[ -e "$TOOLS/node_modules/.bin/esbuild" ] || (mkdir -p "$TOOLS" && cd "$TOOLS" && npm init -y >/dev/null && npm i -s purgecss@6 esbuild >/dev/null)
+# first Python that actually runs (Windows has a python3 stub that only opens the Store)
+for PY in python3 py python; do "$PY" -c "import sys" >/dev/null 2>&1 && break; done
+"$PY" build.py | tail -1
 cp -r dist/* ..
 cd ..
 git add -A

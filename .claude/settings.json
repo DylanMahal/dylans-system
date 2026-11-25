@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(sh source/deploy.sh *)",
+      "Bash(cd source && python build.py *)",
+      "Bash(cd source && py build.py *)",
+      "Bash(cd source && python3 build.py *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git show *)",
+      "Bash(grep *)",
+      "Bash(sed -n *)",
+      "Bash(ls *)"
+    ],
+    "deny": [
+      "Read(./source/.secrets)",
+      "Read(./source/.vapid.json)"
+    ]
+  }
+}
