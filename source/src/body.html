@@ -161,6 +161,21 @@
     <div id="t-brick" hidden></div>
   </section>
 
+  <!-- GOALS -->
+  <section class="view" id="v-goals" aria-label="Goals">
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Goals">Goals</h2><span class="sub" id="goalsSub"></span></div></div>
+    <div class="seg" id="goalSeg" style="margin:0 0 14px;display:flex"><button type="button" data-gv="goals" style="flex:1">Goals</button><button type="button" data-gv="trends" style="flex:1">Trends</button><button type="button" data-gv="review" style="flex:1">Review</button></div>
+    <div id="goalPane"></div>
+  </section>
+
+  <!-- CAREER -->
+  <section class="view" id="v-career" aria-label="Career">
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Career">Career</h2><span class="sub" id="careerSub"></span></div></div>
+    <div class="seg nx-seg5" id="carSeg" style="margin:0 0 14px;display:flex"><button type="button" data-cv="pipeline" style="flex:1">Pipeline</button><button type="button" data-cv="applied" style="flex:1">Applied</button><button type="button" data-cv="skills" style="flex:1">Skills</button><button type="button" data-cv="projects" style="flex:1">Projects</button></div>
+    <div id="carPane"></div>
+    <div id="t-leetcode" hidden></div>
+  </section>
+
   <!-- WEEK -->
   <section class="view" id="v-week" aria-label="Week">
     <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Week">Week</h2><span class="sub" id="weekSub">review Sundays 19:00</span></div></div>
@@ -169,6 +184,7 @@
       <div class="panel"><div class="ph"><span class="tag">Plan adherence · last 7 days</span></div><div class="pb"><div class="days" id="days"></div><div class="dim" id="daysNote" style="font-size:12px;margin-top:10px"></div></div></div>
       <div class="panel"><div class="ph"><span class="tag">Top streaks</span></div><div class="pb"><div class="streaks" id="streaks"></div></div></div>
     </div>
+    <div id="weekChange" style="margin-top:12px"></div>
     <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">Weekly targets</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ Add target</button></div></div>
     <div id="wkReview" style="margin-top:12px"></div>
   </section>

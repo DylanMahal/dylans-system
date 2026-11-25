@@ -1,6 +1,6 @@
 /* ================= WEEK ================= */
 let WEEK={};
-async function renderWeek(){
+async function renderWeek(){if(typeof renderWeekChange==='function')renderWeekChange();if(typeof goalsLoad==='function'&&!goalsLoaded)goalsLoad().then(()=>{if(cur==='week')renderTargets(true)}).catch(e=>nxErr(e,'goals'));
   calInit();
   const L0=logical();const ds=[];for(let i=29;i>=0;i--){const d=new Date(L0);d.setDate(d.getDate()-i);ds.push(d)}
   const docs=await Promise.all(ds.map(d=>ymd(d)===DAYK?Promise.resolve(DAY):load('days/d-'+ymd(d))));
@@ -38,10 +38,10 @@ function renderTargets(fromAuto){
   const all=rows.concat(kinds.has('gym')?[]:[{key:'auto:gym',item:'train 4x a week',builtin:true}]);
   $('targets').innerHTML=all.map(r=>{const k=TGK(r),A=k&&TGA[k];
     if(k&&k!=='hide'){const n=(A&&A.n)||tgGoal(r)||7,v=A?A.v:0,full=v>=n,pc=Math.min(100,v/n*100);
-      return `<div class="tg2 tgw tga${full?' full':''}"><b>${esc(A&&A.lab||String(r.item||'').toLowerCase())}</b><span>${esc(A?A.sub:'syncing…')}</span>${r.builtin?'<span></span>':`<button class="ed" type="button" data-tg="${esc(r.key)}">✎</button>`}
+      return `<div class="tg2 tgw tga${full?' full':''}"><b>${esc(A&&A.lab||String(r.item||'').toLowerCase())}${typeof goalChip==='function'?goalChip(r.key):''}</b><span>${esc(A?A.sub:'syncing…')}</span>${r.builtin?'<span></span>':`<button class="ed" type="button" data-tg="${esc(r.key)}">✎</button>`}
         <div class="tgs"><span class="pbar${full?' ok':''}"><i style="width:${pc.toFixed(1)}%"></i></span><span class="num tgv">${v}${A&&A.unit||''}/${n}${A&&A.unit||''}</span></div></div>`}
     const n=tgGoal(r),v=tgCount(r,n),pc=v/n*100;
-    return `<div class="tg2 tgw${v>=n?' full':''}"><b>${esc(String(r.item||'').toLowerCase())}${r.edited?'<span class="delta">Δ</span>':''}</b><span>${esc(r.notes||'')}</span><button class="ed" type="button" data-tg="${esc(r.key)}">✎</button>
+    return `<div class="tg2 tgw${v>=n?' full':''}"><b>${esc(String(r.item||'').toLowerCase())}${r.edited?'<span class="delta">Δ</span>':''}${typeof goalChip==='function'?goalChip(r.key):''}</b><span>${esc(r.notes||'')}</span><button class="ed" type="button" data-tg="${esc(r.key)}">✎</button>
       <div class="tgs"><button class="tgb" type="button" data-tgd="${esc(r.key)}" data-d="-1" aria-label="undo one">−</button><input type="range" min="0" max="${n}" step="1" value="${v}" data-tgp="${esc(r.key)}" data-n="${n}" style="--v:${pc}%;--n:${n}" aria-label="done this week"><button class="tgb" type="button" data-tgd="${esc(r.key)}" data-d="1" aria-label="log one">+</button><span class="num tgv">${v}/${n}</span></div></div>`}).join('');
   if(!fromAuto)tgAuto()}
 let tgT=null;
