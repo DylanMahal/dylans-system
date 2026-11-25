@@ -60,7 +60,7 @@ async function signOut(){try{await SB.auth.signOut()}catch(e){}try{Object.keys(l
 /* widget feed: a small summary the iPhone/iPad widgets read */
 let widgetT=null;function schedWidget(){clearTimeout(widgetT);widgetT=setTimeout(publishWidget,1500)}
 let widgetLast='';
-function publishWidget(){if(!R||!booted||!M.plans)return;
+function publishWidget(){if(!R||!booted)return;if(typeof nxWidget==='function')nxWidget();if(!M.plans)return;
   const vis=visibleItems().filter(i=>i.t!==null).sort((a,b)=>a.t-b.t);
   const done=countedItems().filter(i=>DAY.ticks[i.tk]).length,total=countedItems().length;
   const w={at:new Date().toISOString(),date:DAYK,plan:planKind,pct:total?Math.round(done/total*100):0,done,total,

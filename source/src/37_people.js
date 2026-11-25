@@ -65,7 +65,7 @@ function pLogSheet(pid,kind){const p=PPL.people.find(x=>x.id===pid);if(!p)return
   $('sheetBody').onclick=e=>{const k=e.target.closest('[data-plk]');if(k){st.kind=k.dataset.plk;document.querySelectorAll('#plK [data-plk]').forEach(b=>b.setAttribute('aria-pressed',b===k));return}
     const f=e.target.closest('[data-plf]');if(f){st.feel=+f.dataset.plf;f.parentNode.querySelectorAll('[data-plf]').forEach(b=>b.setAttribute('aria-pressed',b===f));return}
     const m=e.target.closest('[data-plm]');if(m){st.mins=+m.dataset.plm;m.parentNode.querySelectorAll('[data-plm]').forEach(b=>b.setAttribute('aria-pressed',b===m));return}
-    if(!e.target.closest('#plS'))return;const note=$('plR').value.trim();PPLOG.log.push({id:rid(),pid,at:new Date().toISOString(),day:DAYK,kind:st.kind,feel:st.feel,mins:st.mins});PPLOG.log=PPLOG.log.slice(-2000);save('people/log',PPLOG);
+    if(!e.target.closest('#plS'))return;const note=$('plR').value.trim();PPLOG.log.push({id:rid(),pid,at:new Date().toISOString(),day:DAYK,kind:st.kind,feel:st.feel,mins:st.mins});PPLOG.log=PPLOG.log.slice(-2000);save('people/log',PPLOG);if(typeof schedWidget==='function')schedWidget();
     if(note){p.remember=(p.remember||[]).concat(note);save('people/list',PPL)}if(typeof pushCancel==='function')pushCancel('ppl:'+DAYK+':'+pid);if(typeof moodInsightsDirty!=='undefined')moodInsightsDirty=true;
     closeSheet();if(cur==='journal'&&JTAB==='people')renderPeople();if(typeof renderTodayNudges==='function')renderTodayNudges()}}
 nxCmd('log a call','people',()=>{go('journal');setJTab('people')});

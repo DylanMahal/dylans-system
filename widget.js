@@ -2,6 +2,7 @@
 // This file is served by the app and loaded by the small loader script (widget/loader.js).
 // Pick what a widget shows with its Parameter (long-press the widget → Edit Widget → Parameter):
 //   today · tasks · cals · sleep · week · habits · habit|<name> · streak|<name> · goal|<exercise>|<kg>|<YYYY-MM-DD>
+//   goals · mood · career · people (these four read widget/life, which the app writes)
 const SUPA_URL = 'https://ucnwefjblxqbmmwdbqhw.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbndlZmpibHhxYm1td2RicWh3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ1NzczMDEsImV4cCI6MjExMDE1MzMwMX0.6jv9kXXMt6h2SmBA_zcPRQ23b7lAMw0DvVcaPB4DrVk';
 const APP_URL = 'https://dylanmahal.github.io/dylans-system/';
@@ -1195,6 +1196,146 @@ function cvBoard(d, f) {
   return c;
 }
 
+/* ---------- GOALS · MOOD · CAREER · PEOPLE: all four read widget/life, which the app writes ---------- */
+async function dLife() { const t = (await docs(['widget/life']))['widget/life']; if (!t) throw new Error('Open the app once to publish this widget'); return t }
+const MOODC = { 1: '#ff453a', 2: '#ff9f0a', 3: '#ffd60a', 4: '#a3e635', 5: '#30d158' }, MOODL = { 1: 'Awful', 2: 'Low', 3: 'Okay', 4: 'Good', 5: 'Great' };
+const mC = v => v ? new Color(MOODC[Math.max(1, Math.min(5, Math.round(v)))]) : K.trk2;
+const stC = s => s === 'Behind' ? BADC : s === 'Ahead' ? new Color('#05d9e8') : GOODC;
+const avgOf = a => { const v = a.filter(x => x != null); return v.length ? Math.round(v.reduce((s, x) => s + x, 0) / v.length * 10) / 10 : null };
+const DOW = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+function face(c, x, y, s, v) {
+  /* a small mood face: filled circle, two eyes, a mouth that bends with the score */
+  c.setFillColor(mC(v)); c.fillEllipse(new Rect(x, y, s, s)); const ink = new Color('#1c1c1e'), e = s * .1;
+  c.setFillColor(ink); c.fillEllipse(new Rect(x + s * .3 - e / 2, y + s * .36, e, e * 1.3)); c.fillEllipse(new Rect(x + s * .7 - e / 2, y + s * .36, e, e * 1.3));
+  const b = { 1: -.16, 2: -.08, 3: 0, 4: .1, 5: .18 }[Math.round(v)] || 0, p = new Path(), my = y + s * .66;
+  p.move(new Point(x + s * .3, my)); p.addQuadCurve(new Point(x + s * .7, my), new Point(x + s * .5, my + s * b * 2));
+  c.addPath(p); c.setStrokeColor(ink); c.setLineWidth(Math.max(1.6, s * .07)); c.strokePath();
+}
+
+/* goals */
+function glRow(c, g, x, y, w) {
+  const u = g.u && !String(g.u).startsWith('/') ? ' ' + g.u : '';
+  T(c, fit(g.n, 13.5, w - 70, 's'), x, y, 13.5, 's'); T(c, g.st, x + w, y + 1.5, 11, 's', stC(g.st), 'r');
+  rr(c, x, y + 22, w, 6, 3, K.trk2); if (g.pct > 0) rr(c, x, y + 22, Math.max(6, w * Math.min(100, g.pct) / 100), 6, 3, new Color(g.c || '#ff2a6d'));
+  if (g.st !== 'Done') { c.setFillColor(new Color('#ffffff', .85)); c.fillRect(new Rect(x + Math.max(1, Math.min(w - 2, w * g.pace / 100)) - 1, y + 19, 2, 12)) }
+  T(c, fit(g.tgt ? `${g.now} of ${g.tgt}${u}` : String(g.now), 10.5, w - 40, 'm'), x, y + 34, 10.5, 'm', K.t2); T(c, g.pct + '%', x + w, y + 34, 10.5, 'm', K.t2, 'r');
+}
+function glHead(c, G, x, y, w) {
+  cap(c, 'Goals', x, y); if (!G.length) return;
+  const n = s => G.filter(g => g.st === s).length, b = n('Behind'), ok = n('On pace') + n('Ahead') + n('Done');
+  T(c, b ? `${b} behind` : 'All on pace', x + w, y, 11, 's', b ? BADC : GOODC, 'r'); if (b && ok) T(c, `${ok} on pace  ·`, x + w - tws(`${b} behind`, 11, 's') - 6, y, 11, 's', K.t2, 'r');
+}
+function glList(c, G, x, y, w, h) { const rh = h < 120 ? 49 : 54, n = Math.max(1, Math.floor((h + 8) / rh)); G.slice(0, n).forEach((g, i) => glRow(c, g, x, y + i * rh, w)); if (G.length > n && n * rh + 12 <= h) T(c, `+${G.length - n} more`, x, y + n * rh - 2, 10, 'm', K.t3) }
+const cvGoals = (d, f) => {
+  const { c, W, H, P } = frame(f), w = W - 2 * P, G = d.goals || [];
+  if (!G.length) { cap(c, 'Goals', P, P); T(c, 'No goals yet', P, P + 26, 17, 'b', K.t2); T(c, 'Set one in the Goals tab', P, P + 50, 11, 'm', K.t3); return c }
+  if (f === 'small') {
+    const g = G[0], u = g.u && !String(g.u).startsWith('/') ? ' ' + g.u : ''; cap(c, 'Goals', P, P); T(c, g.st, W - P, P, 11, 's', stC(g.st), 'r');
+    T(c, g.pct + '%', P, P + 20, 30, 'rh', K.t1, 'l', 1); T(c, fit(g.n, 14, w, 's'), P, P + 60, 14, 's'); T(c, fit(g.tgt ? `${g.now} of ${g.tgt}${u}` : String(g.now), 10.5, w, 'm'), P, P + 80, 10.5, 'm', K.t2);
+    rr(c, P, H - P - 6, w, 6, 3, K.trk2); if (g.pct > 0) rr(c, P, H - P - 6, Math.max(6, w * g.pct / 100), 6, 3, new Color(g.c || '#ff2a6d'));
+    if (g.st !== 'Done') { c.setFillColor(new Color('#ffffff', .85)); c.fillRect(new Rect(P + Math.max(1, Math.min(w - 2, w * g.pace / 100)) - 1, H - P - 9, 2, 12)) }
+    return c;
+  }
+  if (f === 'extraLarge') { const cw = (w - 32) / 2; glHead(c, G, P, P, w); glList(c, G.slice(0, 3), P, P + 30, cw, H - 2 * P - 30); glList(c, G.slice(3), P + cw + 32, P + 30, cw, H - 2 * P - 30); c.setFillColor(K.trk2); c.fillRect(new Rect(P + cw + 16, P + 30, 1, H - 2 * P - 30)); return c }
+  glHead(c, G, P, P, w); glList(c, G, P, P + 28, w, H - 2 * P - 28); return c;
+};
+function wGoals(d) {
+  const f = FAM(), G = d.goals || [], g = G[0];
+  if (!acc(f)) return LOCKBG && f === 'small' ? (g ? nSmall('goals', 'Goals', g.st, g.pct + '%', '', g.n, g.tgt ? `${g.now} of ${g.tgt}` : String(g.now), g.pct / 100) : nSmall('goals', 'Goals', '', '–', '', 'No goals yet', '', null)) : done(base('goals'), cvGoals(d, f));
+  if (!g) return lock({ p: null, v: '–', l: 'goals', lines: ['Goals', 'None set yet'], inline: 'no goals yet' });
+  const b = G.filter(x => x.st === 'Behind').length;
+  return lock({ p: g.pct / 100, v: g.pct + '%', l: 'goal', lines: [g.n, g.st, b ? `${b} behind` : `${G.length} on track`], inline: `◎ ${g.n} ${g.pct}% · ${g.st.toLowerCase()}` });
+}
+
+/* mood */
+function mdHead(c, d, x, y, w, h, sz) {
+  const M = d.mood || {}, L = M.last; cap(c, 'Mood', x, y); if (M.due && sz !== 'm') T(c, 'Check in', x + w, y, 11, 's', new Color('#05d9e8'), 'r');
+  if (!L) { T(c, 'No check-in yet', x, y + 24, sz === 'm' ? 15 : 17, 'b', K.t2); T(c, 'Tap to check in', x, y + 46, 11, 'm', sz === 'm' && M.due ? new Color('#05d9e8') : K.t3); return }
+  const fs = sz === 'm' ? 40 : 46; face(c, x, y + 22, fs, L.m);
+  T(c, MOODL[L.m] || String(L.m), x + fs + 12, y + 24, sz === 'm' ? 18 : 22, 'b', K.t1); T(c, `${L.m}/5${L.e ? ` · energy ${L.e}` : ''}`, x + fs + 12, y + (sz === 'm' ? 47 : 52), 11.5, 'm', K.t2);
+  if (sz === 'm') { const a7 = avgOf((M.days || []).slice(-7).map(z => z[1])); M.due ? T(c, 'Check-in due', x, y + h - 14, 11, 's', new Color('#05d9e8')) : T(c, a7 != null ? `7-day avg ${a7}` : `${M.n || 0} today`, x, y + h - 14, 11, 's', K.t2) }
+}
+function mdBars(c, d, x, y, w, h, sz) {
+  const D = (d.mood || {}).days || [], n = sz === 'm' ? 7 : 14, L = D.slice(-n);
+  cap(c, n === 7 ? 'This week' : 'Last 2 weeks', x, y);
+  bars(c, L.map(z => z[1] || 0), L.map(z => DOW[new Date(z[0] + 'T12:00').getDay()]), x, y + 22, w, h - 22, { max: 5, today: L.length - 1, colOf: v => mC(v) });
+}
+function mdStats(c, d, x, y, w) {
+  const D = ((d.mood || {}).days || []).map(z => z[1]), a = avgOf(D.slice(-7)), b = avgOf(D.slice(-14, -7)), sw = w / 3;
+  stat(c, a != null ? a : '–', 'This week', x, y); stat(c, b != null ? b : '–', 'Week before', x + sw, y); stat(c, String((d.mood || {}).n || 0), 'Today', x + sw * 2, y);
+}
+function mdSmall(c, d, x, y, w, h) {
+  const M = d.mood || {}, L = M.last; cap(c, 'Mood', x, y); if (M.due) T(c, 'Check in', x + w, y, 11, 's', new Color('#05d9e8'), 'r');
+  if (L) { face(c, x, y + 20, 34, L.m); T(c, MOODL[L.m] || '', x + 44, y + 22, 16, 'b'); T(c, `${L.m}/5${L.e ? ` · E${L.e}` : ''}`, x + 44, y + 42, 10.5, 'm', K.t2) } else T(c, 'No check-in yet', x, y + 24, 14, 'b', K.t2);
+  const D = (M.days || []).slice(-7), dw = (w - 6 * 6) / 7; D.forEach((z, i) => { const cx = x + i * (dw + 6); rr(c, cx, y + h - 24, dw, dw > 14 ? 14 : dw, 4, mC(z[1])); T(c, DOW[new Date(z[0] + 'T12:00').getDay()], cx + dw / 2, y + h - 8, 8.5, i === D.length - 1 ? 'b' : 'm', i === D.length - 1 ? K.t1 : K.t3, 'c') });
+}
+const cvMood = (d, f) => layout(f, d, mdHead, mdBars, (c, d, x, y, w) => mdStats(c, d, x, y, w), mdSmall);
+function wMood(d) {
+  const f = FAM(), M = d.mood || {}, L = M.last, url = M.due ? 'today' : 'journal/mood';
+  if (!acc(f)) return LOCKBG && f === 'small' ? nSmall(url, 'Mood', M.due ? 'CHECK IN' : '', L ? `${L.m}/5` : '–', '', L ? MOODL[L.m] : 'No check-in yet', L && L.e ? `energy ${L.e}` : '', L ? L.m / 5 : null) : done(base(url), cvMood(d, f));
+  return lock({ p: L ? L.m / 5 : null, v: L ? String(L.m) : '–', l: 'mood', lines: L ? [MOODL[L.m] || 'Mood', L.e ? `energy ${L.e}` : '', M.due ? 'Check-in due' : ''] : ['Mood', 'No check-in yet'], inline: L ? `☺ ${MOODL[L.m]}${M.due ? ' · check in' : ''}` : '☺ check in' });
+}
+
+/* career */
+function crHead(c, d, x, y, w, h, sz) {
+  const C = d.career || {}; cap(c, 'Career', x, y);
+  const R = sz === 'm' ? 30 : 34, cx = x + R + 2, cy = y + 22 + R; ringAt(c, cx, cy, R, 7, C.wkT ? C.wk / C.wkT : 0, new Color('#bf5af2'));
+  T(c, `${C.wk || 0}`, cx, cy - 13, 20, 'rh', K.t1, 'c', 1); T(c, `of ${C.wkT || 0}`, cx, cy + 9, 9.5, 'm', K.t2, 'c');
+  const tx = x + R * 2 + 14; T(c, 'Applied', tx, y + 26, 13.5, 's'); T(c, 'this week', tx, y + 44, 11, 'm', K.t2);
+  T(c, `LeetCode ${C.lc || 0}/${C.lcT || 0}`, sz === 'm' ? x : tx, sz === 'm' ? y + h - 14 : y + 66, 11, 's', (C.lc || 0) >= (C.lcT || 1) ? GOODC : K.t2);
+}
+function crFunnel(c, d, x, y, w, h) {
+  const F = (d.career || {}).f || [0, 0, 0, 0], mx = Math.max(1, F[0]), cols = ['#bf5af2', '#9f7aea', '#05d9e8', '#30d158'], rh = Math.min(30, h / 4);
+  ['Applied', 'Replied', 'Interview', 'Offer'].forEach((l, i) => {
+    const yy = y + i * rh; T(c, l, x, yy, 11, 'm', K.t2); T(c, String(F[i]), x + w, yy, 11, 'b', K.t1, 'r');
+    rr(c, x, yy + 15, w, 5, 2.5, K.trk2); if (F[i]) rr(c, x, yy + 15, Math.max(5, w * F[i] / mx), 5, 2.5, new Color(cols[i]));
+  });
+}
+function crNext(c, d, x, y, w, h) {
+  const N = (d.career || {}).next || []; cap(c, 'Next up', x, y);
+  if (!N.length) { T(c, 'Nothing waiting', x, y + 22, 12.5, 'm', K.t3); return }
+  const rh = 20, n = Math.max(1, Math.floor((h - 20) / rh)); N.slice(0, n).forEach((a, i) => { const yy = y + 22 + i * rh, nw = a.co ? Math.min(w * .42, tws(a.co, 12.5, 's')) : 0; if (a.co) T(c, fit(a.co, 12.5, w * .42, 's'), x, yy, 12.5, 's'); T(c, fit(a.t, 12, w - nw - 10, 'm'), x + (a.co ? nw + 10 : 0), yy + .5, 12, 'm', K.t2) });
+}
+const cvCareer = (d, f) => {
+  const { c, W, H, P } = frame(f), w = W - 2 * P;
+  if (f === 'small') { crHead(c, d, P, P, w, H - 2 * P, 'm'); return c }
+  if (f === 'medium') { const lw = 150; crHead(c, d, P, P, lw - 10, H - 2 * P, 'm'); crFunnel(c, d, P + lw, P + 2, w - lw, H - 2 * P); return c }
+  if (f === 'extraLarge') { const lw = 300, rx = P + lw + 32; crHead(c, d, P, P, lw, 110, 'l'); crFunnel(c, d, P, P + 118, lw, H - 2 * P - 118); c.setFillColor(K.trk2); c.fillRect(new Rect(P + lw + 16, P, 1, H - 2 * P)); crNext(c, d, rx, P, W - P - rx, H - 2 * P); return c }
+  crHead(c, d, P, P, w, 96, 'l'); crFunnel(c, d, P, P + 104, w, 118); c.setFillColor(K.trk2); c.fillRect(new Rect(P, P + 228, w, 1)); crNext(c, d, P, P + 240, w, H - 2 * P - 240); return c;
+};
+function wCareer(d) {
+  const f = FAM(), C = d.career || {};
+  if (!acc(f)) return LOCKBG && f === 'small' ? nSmall('career', 'Career', `LC ${C.lc || 0}/${C.lcT || 0}`, String(C.wk || 0), `of ${C.wkT || 0}`, 'applied this week', C.next && C.next[0] ? `${C.next[0].co} · ${C.next[0].t}` : '', C.wkT ? C.wk / C.wkT : 0) : done(base('career'), cvCareer(d, f));
+  return lock({ p: C.wkT ? C.wk / C.wkT : 0, v: `${C.wk || 0}/${C.wkT || 0}`, l: 'apps', lines: [`${C.wk || 0}/${C.wkT || 0} applied`, `LeetCode ${C.lc || 0}/${C.lcT || 0}`, C.next && C.next[0] ? C.next[0].t : ''], inline: `💼 ${C.wk || 0}/${C.wkT || 0} applied · LC ${C.lc || 0}/${C.lcT || 0}` });
+}
+
+/* people */
+function ppHead(c, d, x, y, w, h, sz) {
+  const Q = d.people || {}, n = (Q.due || []).length; cap(c, 'People', x, y);
+  if (!Q.n) { T(c, 'Nobody added yet', x, y + 24, 15, 'b', K.t2); T(c, 'Add people in Journal', x, y + 46, 11, 'm', K.t3); return }
+  T(c, String(n), x, y + 18, sz === 'm' ? 34 : 38, 'rh', n ? K.t1 : GOODC, 'l', 1); T(c, n ? 'due to reach out' : 'all caught up', x, y + (sz === 'm' ? 60 : 66), 12, 's', K.t2);
+  if (sz === 'm') T(c, `${Q.wk || 0} this week`, x, y + h - 14, 11, 'm', K.t2);
+}
+function ppList(c, d, x, y, w, h) {
+  const D = (d.people || {}).due || [], rh = 34, n = Math.max(1, Math.floor((h + 6) / rh)); if (!(d.people || {}).n) return;
+  if (!D.length) { T(c, 'Nobody due today', x, y + 4, 13, 'm', K.t2); return }
+  D.slice(0, n).forEach((p, i) => { const yy = y + i * rh; circle(c, x, yy + 1, 15, new Color('#05d9e8'), 1.6); T(c, fit(`${p.k === 'visit' ? 'Visit' : 'Call'} ${p.n}`, 13.5, w - 24, 's'), x + 24, yy, 13.5, 's'); T(c, fit(p.s, 10.5, w - 24, 'm'), x + 24, yy + 17, 10.5, 'm', K.t2) });
+  if (D.length > n) T(c, `+${D.length - n} more`, x + w, y - 18, 10, 'm', K.t3, 'r');
+}
+function ppSmall(c, d, x, y, w, h) {
+  const Q = d.people || {}, D = Q.due || []; cap(c, 'People', x, y);
+  if (!Q.n) { T(c, 'Nobody added yet', x, y + 24, 14, 'b', K.t2); return }
+  T(c, String(D.length), x, y + 18, 30, 'rh', D.length ? K.t1 : GOODC, 'l', 1); T(c, D.length ? 'due' : 'caught up', x + tws(String(D.length), 30, 'rh') + 6, y + 36, 12, 's', K.t2);
+  if (D[0]) { T(c, fit(`${D[0].k === 'visit' ? 'Visit' : 'Call'} ${D[0].n}`, 13, w, 's'), x, y + 60, 13, 's'); if (D[1]) T(c, fit(`+${D.length - 1} more`, 10.5, w, 'm'), x, y + 78, 10.5, 'm', K.t2) }
+  T(c, `${Q.wk || 0} this week`, x, y + h - 12, 10.5, 's', K.t2);
+}
+const cvPeople = (d, f) => layout(f, d, ppHead, (c, d, x, y, w, h) => ppList(c, d, x, y + 4, w, h - 4), (c, d, x, y, w) => { const Q = d.people || {}, sw = w / 3; stat(c, String((Q.due || []).length), 'Due', x, y); stat(c, String(Q.wk || 0), 'This week', x + sw, y); stat(c, String(Q.n || 0), 'People', x + sw * 2, y) }, ppSmall);
+function wPeople(d) {
+  const f = FAM(), Q = d.people || {}, D = Q.due || [];
+  if (!acc(f)) return LOCKBG && f === 'small' ? nSmall('journal/people', 'People', '', String(D.length), D.length ? 'due' : '', D[0] ? `${D[0].k === 'visit' ? 'Visit' : 'Call'} ${D[0].n}` : 'All caught up', `${Q.wk || 0} this week`, null) : done(base('journal/people'), cvPeople(d, f));
+  return lock({ p: null, v: String(D.length), l: 'due', lines: D[0] ? [`${D[0].k === 'visit' ? 'Visit' : 'Call'} ${D[0].n}`, D.length > 1 ? `+${D.length - 1} more` : '', `${Q.wk || 0} this week`] : ['All caught up', `${Q.wk || 0} this week`], inline: D[0] ? `☎ ${D[0].n}${D.length > 1 ? ` +${D.length - 1}` : ''}` : '☎ all caught up' });
+}
+
 /* =============================== router =============================== */
 function errW(e) { const w = base(''); sf(w, "Dylan's System", Font.semiboldSystemFont(13)); w.addSpacer(4); sf(w, e, Font.systemFont(11), GREY, 4); return w }
 async function load(mode, fn) { try { return cache(mode, await fn()) } catch (e) { const c = cache(mode); if (c) return c; throw e } }
@@ -1215,6 +1356,10 @@ async function build(param) {
     if (['habit', 'habits'].includes(m) && FAM() === 'large') return done(base('streaks'), cvYearL(await load('year', dYear), 'large'));
     if (m === 'habits') return wHabits(await load('habits', dHabits));
     if (m === 'habit' || m === 'streak') return wHabit(await load('habits', dHabits), a[0], m);
+    if (m === 'goals') return wGoals(await load('life', dLife));
+    if (m === 'mood') return wMood(await load('life', dLife));
+    if (m === 'career') return wCareer(await load('life', dLife));
+    if (m === 'people') return wPeople(await load('life', dLife));
     if (m === 'goal') { if (!a[0] || !a[1]) return errW('Run Next Goal in Scriptable once to set your lift and target'); return wGoal(await load('goal-' + a.join('-'), () => dGoal(a[0], a[1], a[2]))) }
     return await wToday();
   } catch (e) { return errW(e.message) }
@@ -1222,7 +1367,8 @@ async function build(param) {
 
 /* one script per widget type, so the type is picked from Scriptable's Script dropdown */
 const TYPES = [['Today', 'today', 'sun.max'], ['Tasks', 'tasks', 'check-circle'], ['Calories', 'cals', 'utensils'], ['Sleep', 'sleep', 'moon'], ['Week', 'week', 'calendar-alt'],
-  ['Habits', 'habits', 'tasks'], ['Habit Grid', 'habit', 'th'], ['Streak', 'streak', 'fire'], ['Next Goal', 'goal', 'dumbbell'], ['Screen Time', 'screen', 'mobile-alt'], ['Gym', 'gym', 'running'], ['Budget', 'budget', 'wallet'], ['Money', 'money', 'pound-sign'], ['Doses', 'doses', 'pills']];
+  ['Habits', 'habits', 'tasks'], ['Habit Grid', 'habit', 'th'], ['Streak', 'streak', 'fire'], ['Next Goal', 'goal', 'dumbbell'], ['Screen Time', 'screen', 'mobile-alt'], ['Gym', 'gym', 'running'], ['Budget', 'budget', 'wallet'], ['Money', 'money', 'pound-sign'], ['Doses', 'doses', 'pills'],
+  ['Goals', 'goals', 'bullseye'], ['Mood', 'mood', 'smile'], ['Career', 'career', 'briefcase'], ['People', 'people', 'user-friends']];
 function scriptsDir() {
   try { const ic = FileManager.iCloud(), d = ic.documentsDirectory(); if (ic.fileExists(ic.joinPath(d, Script.name() + '.js'))) return [ic, d] } catch (e) { }
   const lf = FileManager.local(); return [lf, lf.documentsDirectory()];
