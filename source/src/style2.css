@@ -333,7 +333,7 @@ body.booting{overflow:hidden}
 .toolcards button[aria-pressed="true"]{border-color:var(--pink);box-shadow:inset 0 0 0 1px var(--pink),0 0 24px rgba(255,42,109,.18)}
 .toolcards button:hover{transform:translateY(-2px)}
 @media (max-width:600px){.toolcards{gap:6px}.toolcards button{padding:10px}.toolcards button span{display:none}}
-.focusgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px}@media (max-width:860px){.focusgrid{grid-template-columns:1fr}}
+.focusgrid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:12px}@media (max-width:860px){.focusgrid{grid-template-columns:minmax(0,1fr)}}
 .fside{display:flex;flex-direction:column;gap:12px}
 .fintent{width:100%;background:none;border:0;border-bottom:1px dashed var(--line2);color:var(--fg);font:15px var(--mono);padding:8px 2px;margin-bottom:12px;outline:0;text-align:center}.fintent:focus{border-color:var(--pink)}
 .fring{position:relative;width:min(300px,78vw);aspect-ratio:1;margin:6px auto}.fring svg{width:100%;height:100%;transform:rotate(-90deg)}
@@ -2632,3 +2632,7 @@ textarea.nx-inp{min-height:64px;padding:12px 14px;line-height:1.4;resize:vertica
 .toolcards.two{grid-template-columns:repeat(2,1fr)}.toolcards.two button span{display:block}
 #nxPrint{display:none}
 @media print{html.nx-printing body>*:not(#nxPrint){display:none!important}html.nx-printing #nxPrint{display:block!important;padding:12mm}html.nx-printing,html.nx-printing body{background:#fff!important}html.nx-printing #nxPrint .nx-paper{border-radius:0;background:#fff;padding:0}}
+/* no page may ever pan sideways: clip at the root, and let grid/flex columns shrink below their content */
+html,body{overflow-x:clip;max-width:100%}
+.view{max-width:100%;overflow-x:clip}
+.fside,.fcard,.focusgrid>*,.toolcards>*{min-width:0}

@@ -519,9 +519,11 @@ function circle(c, x, y, s, color, lw) { c.setStrokeColor(color); c.setLineWidth
 function dur(c, mins, x, y, big, align) {
   /* "7h 32m" with heavy numbers and small units, measured so it can sit left or right aligned */
   const h = Math.floor(mins / 60), m = Math.round(mins % 60), sm = big * .5;
-  const parts = [[h, big, 'rh', K.t1], ['h ', sm, 's', K.t2], [pad(m), big, 'rh', K.t1], ['m', sm, 's', K.t2]];
-  const wsum = parts.reduce((t, p) => t + tws(p[0], p[1], p[2]), 0); let cx = align === 'r' ? x - wsum : x;
-  parts.forEach(([s, sz, wt, col]) => { T(c, s, cx, y + (big - sz) * 1.02, sz, wt, col, 'l', wt === 'rh'); cx += tws(s, sz, wt) + (wt === 'rh' ? .5 : -1) });
+  /* explicit gaps: a hair between number and unit, a clear space before the minutes. Heavy digits run wider than tw() guesses */
+  const parts = [[h, big, 'rh', K.t1, big * .07], ['h', sm, 's', K.t2, big * .3], [pad(m), big, 'rh', K.t1, big * .07], ['m', sm, 's', K.t2, 0]];
+  const pw = p => tws(p[0], p[1], p[2]) * (p[2] === 'rh' ? 1.1 : 1.04);
+  const wsum = parts.reduce((t, p) => t + pw(p) + p[4], 0); let cx = align === 'r' ? x - wsum : x;
+  parts.forEach(p => { const [s, sz, wt, col, gap] = p; T(c, s, cx, y + (big - sz) * 1.02, sz, wt, col, 'l', wt === 'rh'); cx += pw(p) + gap });
   return wsum;
 }
 
@@ -1191,7 +1193,6 @@ function cvBoard(d, f) {
       y += boardCard(c, t, x + 6, y, cw - 12, d.k, i === 2, lines) + 6; shown++;
     }
     if (list.length > shown) T(c, `+${list.length - shown} more`, x + 10, H - P - 20, 10, 'm', K.t3);
-    if (!list.length) T(c, i === 2 ? 'Nothing yet' : 'Empty', x + cw / 2, top + 40, 11, 'm', K.t3, 'c');
   });
   return c;
 }
