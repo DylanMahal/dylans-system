@@ -25,7 +25,7 @@ if os.path.exists(T+'esbuild') and '--dev' not in sys.argv:
     # strip unused CSS (classes built at runtime are safelisted), then minify both bundles
     subprocess.run([T+'purgecss','--css',f'{dist}/app.css','--content',f'{dist}/index.html',f'{dist}/app.js','--output',f'{dist}/',
       '--safelist','on','open','hidden','fx','poweron','edit-on','done','ok','bad','warn','pink','dim','num','p','active','sel','live','playing',
-      '--safelist','-pattern','/^(lcd-|st-|xl-|m[0-9]|t-|h[0-9]|is-|has-|lv|tier|cat-|ty-|fx-|sk-)/'],check=True)
+      '--safelist','-pattern','/^(lcd-|st-|xl-|m[0-9]|t-|h[0-9]|is-|has-|lv|tier|cat-|ty-|fx-|sk-|nx-)/'],check=True)
     for f in ['app.js','app.css']:
         subprocess.run([T+'esbuild',f'{dist}/{f}','--minify','--allow-overwrite','--log-level=warning','--outfile='+f'{dist}/{f}']+(['--target=es2020'] if f.endswith('js') else []),check=True)
 print('built',V,os.path.getsize(f'{dist}/app.js'),'js',os.path.getsize(f'{dist}/app.css'),'css')

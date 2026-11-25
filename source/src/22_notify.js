@@ -2,9 +2,9 @@
    The app keeps a queue of upcoming notifications in kv "push/q"; a Supabase cron (every 15 s) sends whatever is due
    to this device's push subscription ("push/subs"), even when the app is closed. Works on iPhone/iPad for the home-screen app. */
 const VAPID_PUB='BHHSvXm_9iKVpSZSPkmn2jm_1IiM9rzT5cFtPdOzmpNn6cwQzidSZYJKVYc-p7bYgeisTYvVWIsYmOAW-fGhwoU';
-const NKINDS=[['plan','plan blocks','when each block of your day starts'],['dose','doses','protocol doses at their times'],['rest','gym rest timer','when rest is over, even if you left the app'],['focus','focus timer','when a focus session ends'],['fast','fasting','when you hit your fasting goal'],['bed','bedtime','30 min before your sleep time'],['cal','calendar events','10 min before each event (or what you set on the event)']];
+const NKINDS=[['plan','plan blocks','when each block of your day starts'],['dose','doses','protocol doses at their times'],['rest','gym rest timer','when rest is over, even if you left the app'],['focus','focus timer','when a focus session ends'],['fast','fasting','when you hit your fasting goal'],['bed','bedtime','30 min before your sleep time'],['cal','calendar events','10 min before each event (or what you set on the event)'],['mood','mood check-ins','13:00 and 21:30, unless you already checked in'],['peak','peak check-ins','when a med should be working best'],['people','people','on the day a call or visit is due'],['review','monthly review','last Sunday of the month at 19:00']];
 let NSET=LS.get('notify')||{on:false,k:{plan:true,dose:true,rest:true,focus:true,fast:true,bed:true,leet:true,water:false}};
-if(NSET.k&&NSET.k.cal==null)NSET.k.cal=true;
+if(NSET.k&&NSET.k.cal==null)NSET.k.cal=true;['mood','peak','people','review'].forEach(k=>{if(NSET.k&&NSET.k[k]==null)NSET.k[k]=true});
 const nOn=k=>NSET.on&&NSET.k[k];
 function b64u(s){const p='='.repeat((4-s.length%4)%4);const b=atob((s+p).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from([...b].map(c=>c.charCodeAt(0)))}
 async function nSubscribe(){if(!('serviceWorker' in navigator)||!('PushManager' in window))return 'This device can\'t do web notifications here. On iPhone/iPad they work in the home-screen app (iOS 16.4+).';
@@ -23,7 +23,7 @@ const nRange=(a,b)=>nClock(a).replace(/ (am|pm)$/,nClock(a).slice(-2)===nClock(b
 const nLead=m=>!m?'Now':m>=60?'In '+(m/60)+' hr':'In '+m+' min';
 const nJoin=(...a)=>a.filter(Boolean).map(String).map(x=>x.trim()).filter(Boolean).join(' · ');
 async function pushCancel(tag){if(!NSET.on)return;const q=await nQueue();const n=q.items.length;q.items=q.items.filter(i=>i.tag!==tag);if(q.items.length!==n)save('push/q',q,true)}
-async function pushSync(){if(!NSET.on)return;const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|item|dose|bed|leet|water|habit|task|cal):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
+async function pushSync(){if(!NSET.on)return;const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|item|dose|bed|leet|water|habit|task|cal|mood|ppl|rev):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
   const push=(tag,at,title,body,url)=>{if(at>now+5000&&at<H)add.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body:'',url:url||'./'})};
   const days=[DAYK,ymd(new Date(new Date(DAYK+'T12:00').getTime()+864e5))];
   days.forEach((dk,di)=>{const base=new Date(dk+'T00:00').getTime();const dow=new Date(dk+'T12:00').getDay();const kind=(dow===0||dow===6)?'weekend':'weekday';
@@ -32,7 +32,10 @@ async function pushSync(){if(!NSET.on)return;const q=await nQueue();const now=Da
       push('item:'+dk+':'+it.key,base+(it.t-lead)*60e3,nT(dn(it.item)),nJoin(nLead(lead),nClock(it.t),it.dose,it.notes&&nT(it.notes).slice(0,80)),'./#today')}));
     if(typeof HAB!=='undefined')HAB.list.filter(h=>h.remind&&!h.arch).forEach(h=>{if(!hDue(h,dk))return;if(di===0&&hDone(h,dk))return;const [rh,rm]=h.remind.split(':').map(Number);push('habit:'+dk+':'+h.id,base+(rh*60+rm)*60e3,nT(h.n),h.type==='neg'?'Stay on track today':(hStreak(h).n?`Keep your ${hStreak(h).n}-${hStreak(h).unit} streak going`:'Log it to start a streak'),'./#streaks')});
     if(typeof TASKS!=='undefined'&&di===0)TASKS.list.filter(t=>!t.done&&t.d&&t.tm).forEach(t=>{const [th,tm]=t.tm.split(':').map(Number);push('task:'+t.id,new Date(t.d+'T00:00').getTime()+(th*60+tm)*60e3,nT(t.t),nJoin('Due now',t.note&&nT(t.note).slice(0,80)),'./#journal')});
-    if(nOn('dose')&&typeof PROTO!=='undefined'&&typeof scheduledOn==='function')PROTO.list.forEach(c=>{if(!scheduledOn(c,dk))return;(c.times||[]).forEach((t,i)=>{const m=/^(\d{1,2}):(\d{2})$/.exec(t);if(!m)return;if(di===0&&typeof logsFor==='function'&&logsFor(c.id,dk)[i])return;push('dose:'+dk+':'+c.id+':'+i,base+(+m[1]*60+ +m[2])*60e3,nT(c.name),nJoin('Due now',[c.dose,c.unit].filter(Boolean).join(' '))||'Due now','./#tools')})});
+    if(nOn('dose')&&typeof PROTO!=='undefined'&&typeof scheduledOn==='function')PROTO.list.forEach(c=>{if(!scheduledOn(c,dk))return;(c.times||[]).forEach((t,i)=>{const m=/^(\d{1,2}):(\d{2})$/.exec(t);if(!m)return;if(di===0&&typeof logsFor==='function'&&logsFor(c.id,dk)[i])return;push('dose:'+dk+':'+c.id+':'+i,base+(+m[1]*60+ +m[2])*60e3,nT(c.name),nJoin('Due now',[c.dose,c.unit].filter(Boolean).join(' '))||'Due now','./#stack/protocols')})});
+    if(nOn('mood')&&typeof MOODD!=='undefined')[['mid',13*60],['eve',21*60+30]].forEach(([sl,m])=>{if(di===0&&MOODD.in.some(x=>moodSlotOf(x.at)===sl&&x.m))return;push('mood:'+dk+':'+sl,base+m*60e3,'Mood check-in','','./#today')});
+    if(nOn('people')&&typeof peopleDueOn==='function')peopleDueOn(dk).forEach(p=>push('ppl:'+dk+':'+p.id,base+(17*60+30)*60e3,nT(p.dueLabel),'','./#journal/people'));
+    if(nOn('review')&&typeof reviewDueOn==='function'&&reviewDueOn(dk))push('rev:'+dk,base+19*60*60e3,'Monthly review','','./#goals/review');
     if(nOn('bed')&&typeof SSET!=='undefined'&&SSET&&SSET.bedOn&&typeof sBedFor==='function'){const [bh,bm]=sBedFor().split(':').map(Number);let t=base+(bh*60+bm-30)*60e3;if(bh<12)t+=864e5;push('bed:'+dk,t,'Bedtime',`Lights out by ${sBedFor()} for ${SSET.goal} h before ${SSET.wake}`,'./#sleep')}});
   if(nOn('cal')&&typeof calEnsure==='function'&&await calEnsure())days.forEach(dk=>{const base=new Date(dk+'T00:00').getTime();calEvents(new Date(dk+'T12:00')).forEach(ev=>{if(ev.ad||ev.rm<0)return;const lead=ev.rm==null?10:ev.rm;
     push('cal:'+dk+':'+ev.id,base+(ev.s-lead)*60e3,nT(ev.t)||'Event',nJoin(lead?nLead(lead):'Starting now',nRange(ev.s,ev.e)),'./#week')})});

@@ -3,7 +3,8 @@
    tasks: tasks/all {list:[task],projects:[{id,n,col}]}  task {id,t,d,tm,p,proj,rep,note,sub:[{t,x}],done,created} */
 let JTAB=LS.get('jtab')||'journal';
 function setJTab(t){if(typeof inkExitFull==='function')inkExitFull();JTAB=t;LS.set('jtab',t);document.querySelectorAll('#jTabs [data-jt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.jt===t));
-  $('jPaneJ').hidden=t!=='journal';$('jPaneN').hidden=t!=='notes';$('jPaneT').hidden=t!=='tasks';
+  $('jPaneJ').hidden=t!=='journal';$('jPaneN').hidden=t!=='notes';$('jPaneT').hidden=t!=='tasks';$('jPaneM').hidden=t!=='mood';$('jPaneP').hidden=t!=='people';
+  if(t==='mood'&&typeof renderMood==='function')renderMood().catch(e=>nxErr(e,'mood'));if(t==='people'&&typeof renderPeople==='function')renderPeople().catch(e=>nxErr(e,'people'));
   if(t==='notes')loadNotes();if(t==='tasks')loadTasks();if(t==='journal'){if(jLoaded)renderJEditor();else loadJournal()}}
 document.addEventListener('click',e=>{const b=e.target.closest('#jTabs [data-jt]');if(b)setJTab(b.dataset.jt)});
 

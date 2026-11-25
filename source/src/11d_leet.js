@@ -4,7 +4,7 @@ let LCDB=null,LEET={items:{},target:8},LEETV='log',LQ={q:'',d:'',t:'',st:''};
 const LCDIFF={E:'Easy',M:'Medium',H:'Hard'};
 async function loadLcDb(){if(LCDB)return;try{const r=await fetch('leetcode.json?v=1');const j=await r.json();LCDB={tags:j.tags,q:j.q.map(([id,t,s,d,tg,p])=>({id,t,s,d,tg,p})),bySlug:{}};LCDB.q.forEach(x=>LCDB.bySlug[x.s]=x)}catch(e){LCDB={tags:[],q:[],bySlug:{}}}}
 async function loadLeet(){const l=await load('tools/leet');LEET={items:{},target:8,...(l||{})};lc=leetWeek()}
-watch('tools/leet',d=>{if(d){LEET={items:{},target:8,...d};lc=leetWeek();if(cur==='tools'&&TOOLV==='leetcode')renderLeet()}});
+watch('tools/leet',d=>{if(d){LEET={items:{},target:8,...d};lc=leetWeek();if(cur==='career'&&CARV==='skills')renderLeet()}});
 function leetSaves(){lc=leetWeek();save('tools/leet',LEET);toolCardSubs();if(typeof schedWidget==='function')schedWidget()}
 function solves(){return Object.values(LEET.items).flatMap(it=>(it.attempts||[]).filter(a=>a.ok).map(a=>({...a,slug:it.slug})))}
 function leetWeek(){return solves().filter(a=>isoWeek(new Date(a.d+'T12:00'))===WK).length}

@@ -7,7 +7,8 @@ $('bnav').innerHTML=VIEWS.map(([v,l,ic])=>`<button type="button" data-v="${v}"><
 function bnShow(v,smooth){const b=$('bnav'),nb=b&&b.querySelector(`button[data-v="${v}"]`);if(!nb||b.scrollWidth<=b.clientWidth+2)return;const x=nb.offsetLeft-(b.clientWidth-nb.offsetWidth)/2;b.scrollTo({left:Math.max(0,x),behavior:smooth?'smooth':'auto'})}
 let cur=null,goTok=0;
 function go(v,fromHash,dirHint){if(typeof inkExitFull==="function")inkExitFull();
-  if(!VIEWS.some(x=>x[0]===v))v='today';if(v===cur)return;
+  let sub=null;if(typeof v==='string'&&v.includes('/')){const z=v.split('/');v=z[0];sub=z[1]||null}
+  if(!VIEWS.some(x=>x[0]===v))v='today';if(v===cur){const NXS=window.NX_SUB||{};if(sub&&NXS[v])NXS[v](sub);return}
   const oi=VIEWS.findIndex(x=>x[0]===cur),ni=VIEWS.findIndex(x=>x[0]===v);const dir=dirHint||(oi<0?0:ni>oi?1:-1);cur=v;
   VIEWS.forEach(([x])=>$('v-'+x).classList.toggle('on',x===v));
   document.querySelectorAll('#tabs button,#bnav button[data-v]').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));bnShow(v,true);
@@ -22,9 +23,10 @@ function go(v,fromHash,dirHint){if(typeof inkExitFull==="function")inkExitFull()
   if(v!=='alter'){aLeave();if(typeof aQuiet==='function')aQuiet()}
   if(v==='money'||v==='stack')document.querySelectorAll(`#v-${v} [data-scr]`).forEach(el=>scramble(el,el.dataset.scr,700));
   window.scrollTo(0,0);setTimeout(repaint,420);
-  const LOADERS={today:()=>{if(typeof renderTodayTasks==='function')renderTodayTasks();if(typeof renderTodayCal==='function')renderTodayCal()},week:()=>renderWeek(),gym:()=>loadGym(),tools:()=>renderTools(),media:()=>renderMedia(),food:()=>loadFood(),sleep:()=>loadSleep(),journal:()=>setJTab(JTAB),streaks:()=>loadHabits(),alter:()=>loadAlter()};
+  const LOADERS={today:()=>{if(typeof renderTodayTasks==='function')renderTodayTasks();if(typeof renderTodayCal==='function')renderTodayCal()},week:()=>renderWeek(),gym:()=>loadGym(),tools:()=>renderTools(),media:()=>renderMedia(),food:()=>loadFood(),sleep:()=>loadSleep(),journal:()=>setJTab(JTAB),streaks:()=>loadHabits(),alter:()=>loadAlter(),stack:()=>window.setStackV&&setStackV(LS.get('stackv')||'stack'),goals:()=>window.renderGoals&&renderGoals(),career:()=>window.renderCareer&&renderCareer()};
   /* a thin progress bar while the page fetches, and the stagger runs once the real content is in (not on stale/empty markup) */
-  const tk=++goTok;let p;try{p=LOADERS[v]&&LOADERS[v]()}catch(e){console.error(e)}
+  const tk=++goTok;let p;try{p=LOADERS[v]&&LOADERS[v]()}catch(e){console.error(e);if(typeof nxErr==='function')nxErr(e,v)}
+  if(sub)setTimeout(()=>{const NXS=window.NX_SUB||{};try{if(NXS[v])NXS[v](sub)}catch(e){window.nxErr&&nxErr(e,v)}},0);if(window.nxUsageOpen)window.nxUsageOpen(v);
   if(p&&typeof p.then==='function'){const sl=setTimeout(()=>{if(goTok===tk)view.classList.add('loading')},120);
     p.catch(e=>{console.error(e);if(goTok===tk&&LOADERS[v])return new Promise(r=>setTimeout(r,800)).then(()=>LOADERS[v]())}).catch(e=>console.error(e))
      .finally(()=>{clearTimeout(sl);view.classList.remove('loading');if(goTok===tk&&cur===v)staggerIn(view)})}

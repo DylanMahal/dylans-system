@@ -6,7 +6,7 @@ $CfgFile = Join-Path $Dir 'config.json'
 $TokFile = Join-Path $Dir 'token.dat'
 $StateFile = Join-Path $Dir 'state.json'
 $LogFile = Join-Path $Dir 'agent.log'
-$VERSION = '1.0.3'
+$VERSION = '1.0.4'
 Add-Type -AssemblyName System.Web.Extensions
 $ser = New-Object System.Web.Script.Serialization.JavaScriptSerializer
 $ser.MaxJsonLength = 104857600
@@ -250,6 +250,26 @@ while ($true) {
       PutDoc 'sheet/meta' @{ at = (Get-Date).ToUniversalTime().ToString('o'); mtime = $mt; src = 'excel' }
       $State['mtime'] = $mt; SaveState
       Log "uploaded sheets ($mt)"
+    }
+    # 3. nightly backup: every document in the app as one JSON file in OneDrive (keeps the last 14)
+    $bday = (Get-Date).ToString('yyyy-MM-dd')
+    if ([string]$State['backupDay'] -ne $bday -and (Get-Date).Hour -ge 3) {
+      $bdir = Join-Path (Split-Path -Parent $Xlsx) "Dylan's System backups"
+      if (-not (Test-Path -LiteralPath $bdir)) { New-Item -ItemType Directory -Path $bdir | Out-Null }
+      $all = New-Object System.Collections.Generic.List[object]; $off = 0
+      while ($true) {
+        $r = Rest 'GET' "kv?select=path,data,updated_at&order=path&limit=500&offset=$off"
+        if (-not $r) { break }
+        foreach ($x in $r) { $all.Add($x) }
+        if ($r.Count -lt 500) { break }
+        $off += 500
+      }
+      $bfile = Join-Path $bdir ("backup-" + $bday + ".json")
+      [IO.File]::WriteAllText($bfile, (J @{ app = 'dylans-system'; at = (Get-Date).ToUniversalTime().ToString('o'); count = $all.Count; rows = [object[]]$all }), $utf8)
+      Get-ChildItem -LiteralPath $bdir -Filter 'backup-*.json' | Sort-Object Name -Descending | Select-Object -Skip 14 | Remove-Item -Force -ErrorAction SilentlyContinue
+      $State['backupDay'] = $bday; SaveState
+      PutDoc 'agent/backup' @{ at = (Get-Date).ToUniversalTime().ToString('o'); count = $all.Count; file = ("backup-" + $bday + ".json") }
+      Log "backup saved: $($all.Count) documents"
     }
   } catch { $ok = $false; $msg = $_.Exception.Message; Log ("error: " + $msg + " | " + ($_.InvocationInfo.PositionMessage -replace "`r?`n"," ") + " | " + ($_.ScriptStackTrace -replace "`r?`n"," <- ")) }
   # 3. heartbeat

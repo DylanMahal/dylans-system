@@ -62,7 +62,7 @@ function updateCounts(){
   return {done,total,p};
 }
 function persistDay(){const {done,total}=updateCounts();const names=visibleItems().filter(i=>DAY.ticks[i.tk]).map(i=>i.item);DAY={...DAY,done,total,names,plan:planKind,dow:DOWN};save('days/d-'+DAYK,DAY);schedWidget()}
-function setTick(k,on){if(on)DAY.ticks[k]=1;else delete DAY.ticks[k];document.querySelectorAll(`#v-today .it[data-k="${CSS.escape(k)}"]`).forEach(el=>el.setAttribute('aria-checked',on));persistDay()}
+function setTick(k,on){if(on)DAY.ticks[k]=1;else delete DAY.ticks[k];document.querySelectorAll(`#v-today .it[data-k="${CSS.escape(k)}"]`).forEach(el=>el.setAttribute('aria-checked',on));persistDay();if(typeof medsOnTick==='function')medsOnTick(k,on)}
 function autoTick(re){const it=visibleItems().find(i=>re.test(i.item));if(it&&!DAY.ticks[it.tk])setTick(it.tk,true)}
 function toggle(el){
   const k=el.dataset.k;const on=!DAY.ticks[k];setTick(k,on);
@@ -121,7 +121,7 @@ function tickNow(force){if(!M||!M.plans||!M.plans[planKind]||!M.plans[planKind].
 setInterval(()=>{if(!document.hidden)tickNow(false)},1000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)tickNow(false)});
 async function loadDay(){
   const p='days/d-'+DAYK;const d=await load(p);DAY={ticks:{},water:0,msg:{},dw:0,...(d||{})};
-  renderToday();renderTools();watch(p,dd=>{if(p!=='days/d-'+DAYK)return;DAY={ticks:{},water:0,msg:{},dw:0,...dd};applyTicks();renderTools();if(cur==='streaks'&&typeof renderHabits==='function'&&!hHold)renderHabits()});
+  renderToday();renderTools();if(typeof moodLoad==='function')moodLoad().catch(e=>nxErr(e,'mood'));if(typeof medsLoad==='function')medsLoad(true).then(()=>renderTodayNudges()).catch(e=>nxErr(e,'meds'));if(typeof peopleLoad==='function')peopleLoad().catch(e=>nxErr(e,'people'));watch(p,dd=>{if(p!=='days/d-'+DAYK)return;DAY={ticks:{},water:0,msg:{},dw:0,...dd};applyTicks();renderTools();if(cur==='streaks'&&typeof renderHabits==='function'&&!hHold)renderHabits()});
 }
 
 

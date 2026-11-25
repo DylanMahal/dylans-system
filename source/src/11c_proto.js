@@ -15,8 +15,8 @@ async function loadProto(){const [p,l,old]=await Promise.all([load('tools/protoc
   if(!p&&old&&old.list&&old.list.length){ // one-time move from the old pins + cycles trackers
     old.list.forEach(t=>{const c=protoNew(t.name);if(t.kind==='interval')c.sched={type:'every',n:t.every||1,start:t.last||DAYK};else c.sched={type:'cycle',on:t.on,off:t.off,start:t.start||DAYK,every:1};PROTO.list.push(c);if(t.last)PLOG.logs.push({id:rid(),cid:c.id,at:t.last+'T09:00:00',amt:c.dose,unit:c.unit,site:'',note:'imported'})});
     save('tools/protocols',PROTO);save('tools/protolog',PLOG)}}
-watch('tools/protocols',d=>{if(d){PROTO={list:[],...d};PROTO_READY=true;if(typeof todaySync==='function')todaySync();if(cur==='tools'&&TOOLV==='protocols')renderProto()}});
-watch('tools/protolog',d=>{if(d){PLOG={logs:[],...d};if(cur==='tools'&&TOOLV==='protocols')renderProto()}});
+watch('tools/protocols',d=>{if(d){PROTO={list:[],...d};PROTO_READY=true;if(typeof todaySync==='function')todaySync();if(cur==='stack'&&STACKV==='protocols')renderProto()}});
+watch('tools/protolog',d=>{if(d){PLOG={logs:[],...d};if(cur==='stack'&&STACKV==='protocols')renderProto()}});
 function protoNew(name){return {id:rid(),name:name||'',route:ROUTES[0],dose:250,unit:'mcg',times:['08:00'],sched:{type:'daily',start:DAYK},[PF.h]:null,color:['#ff2a6d','#05d9e8','#ffb000','#57f5a8','#b967ff'][PROTO.list.length%5],
   active:true,rotate:true,inv:{[PF.v]:null,[PF.w]:null,remainMg:null,stock:0,[PF.s]:100},notes:'',created:DAYK}}
 function saveProto(){save('tools/protocols',PROTO);if(typeof todaySync==='function')todaySync()}function saveLog(){PLOG.logs.sort((a,b)=>a.at<b.at?1:-1);save('tools/protolog',PLOG)}

@@ -1,15 +1,15 @@
 /* ================= TOOLS: focus · protocols · leetcode ================= */
-let lc=0,WK=isoWeek(logical()),SET={},TOOLV=LS.get('toolv')||'focus';
+let lc=0,WK=isoWeek(logical()),SET={},TOOLV=LS.get('toolv')||'focus';if(TOOLV!=='focus'&&TOOLV!=='brick')TOOLV='focus';
 function renderTools(){
   $('toolSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.t===TOOLV));
-  ['focus','protocols','leetcode','brick'].forEach(v=>$('t-'+v).hidden=v!==TOOLV);
+  if(TOOLV!=='focus'&&TOOLV!=='brick')TOOLV='focus';['focus','brick'].forEach(v=>$('t-'+v).hidden=v!==TOOLV);
   $('toolsSub').textContent=nice(DAYK).toLowerCase();
-  if(TOOLV==='focus')renderFocus();else if(TOOLV==='protocols')renderProto();else if(TOOLV==='brick')renderBrick();else renderLeet();
+  if(TOOLV==='focus')renderFocus();else renderBrick();
   toolCardSubs();
 }
 function toolCardSubs(){const dw=DAY.dw||0;$('tcFocus').textContent=`${Math.floor(dw/60)}h ${pad(dw%60)}m today`;
-  if(typeof protoDueCount==='function'){const n=protoDueCount();$('tcProto').textContent=n?`${n} due today`:'nothing due'}
-  if(typeof leetWeek==='function')$('tcLeet').textContent=`${leetWeek()} solved this week`;
+  if(typeof protoDueCount==='function'&&$('tcProto')){const n=protoDueCount();$('tcProto').textContent=n?`${n} due today`:'nothing due'}
+  if(typeof leetWeek==='function'&&$('tcLeet'))$('tcLeet').textContent=`${leetWeek()} solved this week`;
   if(typeof bToday==='function'&&$('tcBrick')){const m=bToday();$('tcBrick').textContent=BRICK.on?'bricked now':(m?Math.floor(m/60)+'h '+pad(m%60)+'m today':'lock the phone')}}
 $('toolSeg').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;TOOLV=b.dataset.t;LS.set('toolv',TOOLV);renderTools();staggerIn($('t-'+TOOLV))};
 
