@@ -13,5 +13,7 @@ cp -r dist/* ..
 cd ..
 git add -A
 git -c user.name="Dylan Mahal" -c user.email="DylanMahal@users.noreply.github.com" commit -q -m "${1:-update}"
-git -c push.negotiate=true push -q origin HEAD 2>&1 | grep -iv "moved\|new location\|dylans-system.git" || true
+# a failed push must not look like a success: show the error and stop
+out=$(git -c push.negotiate=true push -q origin HEAD 2>&1) || { echo "$out"; echo "PUSH FAILED: nothing went live"; exit 1; }
+echo "$out" | grep -iv "moved\|new location\|dylans-system.git" || true
 git log --oneline -1
