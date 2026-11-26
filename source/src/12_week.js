@@ -24,14 +24,14 @@ let TGA={},tgBusy=false;
 function tgWeekDays(){const L0=logical(),dn=L0.getDay()||7,m=new Date(L0);m.setDate(m.getDate()-(dn-1));const out=[];for(let i=0;i<7;i++){const d=new Date(m);d.setDate(m.getDate()+i);const k=ymd(d);if(k<=DAYK)out.push(k)}return out}
 async function tgAuto(){if(tgBusy)return;tgBusy=true;const days=tgWeekDays(),A={};
   try{const docs=await Promise.all(days.map(d=>d===DAYK?Promise.resolve(DAY):load('days/d-'+d)));const ps=docs.map(v=>v&&v.total?v.done/v.total*100:null);
-    A.adh={v:ps.filter(p=>p!=null&&p>=80).length,sub:ps.some(p=>p!=null)?'days at 80%+ · avg '+Math.round(avg(ps.filter(p=>p!=null)))+'%':'days at 80%+ on Today'}}catch(e){}
+    A.adh={v:ps.filter(p=>p!=null&&p>=80).length,sub:ps.some(p=>p!=null)?'days at 80%+ · avg '+Math.round(avg(ps.filter(p=>p!=null)))+'%':'days at 80%+ on Today'}}catch(e){nxErr(e,'week targets')}
   try{if(typeof SSET!=='undefined'&&!SSET){const ss=await load('sleep/settings');SSET={wake:'07:30',bed:'23:00',goal:8,miss:'math',diff:2,shakes:30,snd:'rise',code:'',...(ss||{})}}const rows=await listDocs('sleep/w-');const N=rows.filter(r=>r.data&&days.includes(r.path.slice(8))).map(r=>sQ(r.data));
     A.sleep={v:N.filter(q=>q>=75).length,n:6,lab:'sleep score 75+',sub:N.length?'nights this week · avg score '+Math.round(avg(N)):'nights this week, from the Sleep section'}}catch(e){A.sleep={v:0,n:6,lab:'sleep score 75+',sub:'couldn’t read sleep data'}}
   try{const fs=((FOCUS&&FOCUS.sessions&&FOCUS.sessions.length?FOCUS:await load('tools/focus'))||{}).sessions||[];const m=fs.filter(x=>days.includes(x.d)).reduce((a,x)=>a+(+x.min||0),0);const goal=Math.round(DW_TARGET*5/60);
-    A.dw={v:Math.round(m/6)/10,n:goal,unit:'h',sub:'hours from the focus timer · '+Math.floor(m/60)+'h '+pad(m%60)+'m'}}catch(e){}
-  try{if(typeof loadLeet==='function'&&!Object.keys(LEET.items||{}).length)await loadLeet();A.leet={v:leetWeek(),n:LEET.target||8,sub:'problems solved this week'}}catch(e){}
+    A.dw={v:Math.round(m/6)/10,n:goal,unit:'h',sub:'hours from the focus timer · '+Math.floor(m/60)+'h '+pad(m%60)+'m'}}catch(e){nxErr(e,'week targets')}
+  try{if(typeof loadLeet==='function'&&!Object.keys(LEET.items||{}).length)await loadLeet();A.leet={v:leetWeek(),n:LEET.target||8,sub:'problems solved this week'}}catch(e){nxErr(e,'week targets')}
   try{const ws=(typeof gymLoaded!=='undefined'&&gymLoaded)?WORKOUTS:(await listDocs('gym/w-')).map(r=>r.data).filter(Boolean);
-    A.gym={v:ws.filter(w=>w&&days.includes(w.date)&&w.endedAt!==null).length,sub:'workouts logged in Gym'}}catch(e){}
+    A.gym={v:ws.filter(w=>w&&days.includes(w.date)&&w.endedAt!==null).length,sub:'workouts logged in Gym'}}catch(e){nxErr(e,'week targets')}
   TGA=A;tgBusy=false;renderTargets(true)}
 function renderTargets(fromAuto){
   const rows=(M.targets||[]).filter(r=>TGK(r)!=='hide');const kinds=new Set(rows.map(TGK));

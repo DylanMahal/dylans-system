@@ -36,6 +36,11 @@ def seed():
                                  {'id': 'a2', 'co': 'Sample Co', 'status': 'interview', 'applied': d(0), 'next': {'t': 'Prep', 'due': d(0)}}]}
     S['people/list'] = {'people': [{'id': 'p1', 'name': 'Person A', 'call': 7}, {'id': 'p2', 'name': 'Person B', 'visit': 14}]}
     S['people/log'] = {'log': [{'pid': 'p2', 'kind': 'visit', 'at': d(3) + 'T12:00:00Z', 'day': d(3)}]}
+    # for the core-flow checks
+    S['habits/list'] = {'list': [{'id': 'h1', 'n': 'Test habit', 'ic': '*', 'col': '#05d9e8', 'type': 'daily', 'q': 1, 'created': d(30)}]}
+    S['food/profile'] = {'sex': 'm', 'age': 30, 'hcm': 180, 'kg': 80, 'act': 1.4, 'rate': -0.5}
+    S['gym/active'] = {'id': 'smoke-1', 'name': 'Test', 'startedAt': dk.isoformat() + 'T10:00:00Z', 'note': '',
+                       'ex': [{'id': 'bench press', 'n': 'Bench Press', 'rest': 0, 'note': '', 'sets': [{'t': 'n', 'kg': '', 'r': '', 'done': False}]}]}
     return S
 
 def kv_route(url, method, body):
@@ -115,6 +120,47 @@ async def run(base):
             if info['over']: bad.append('wider than the screen (sideways scroll)')
             print(f"  {'FAIL' if bad else 'ok  '} {v:18} {'; '.join(bad)}")
             if bad: fails.append((v, '; '.join(bad)))
+        # core flows: each one must write its document, the same way a tap on the phone would
+        dk = (datetime.datetime.now() - datetime.timedelta(hours=5)).date().isoformat()
+        async def flow(name, steps, check):
+            try:
+                await steps()
+                await pg.wait_for_timeout(1500)
+                ok = check()
+            except Exception as e:
+                ok = False; errs.append(str(e)[:200])
+            bad = [] if ok else ['did not save']
+            if errs: bad.append(' / '.join(errs)); errs.clear()
+            print(f"  {'FAIL' if bad else 'ok  '} flow: {name:12} {'; '.join(bad)}")
+            if bad: fails.append(('flow ' + name, '; '.join(bad)))
+        async def tick_habit():
+            await pg.evaluate("location.hash='#streaks'"); await pg.wait_for_timeout(1500); await pg.click('.hk-chk')
+        await flow('habit', tick_habit, lambda: bool(((KV.get('habits/log') or {}).get('d') or {}).get(dk, {}).get('h1')))
+        async def journal():
+            await pg.evaluate("location.hash='#journal'"); await pg.wait_for_timeout(1500)
+            await pg.evaluate("document.querySelector('#jTabs [data-jt=journal]').click()"); await pg.wait_for_timeout(800)
+            await pg.fill('#jText', 'smoke test entry')
+        await flow('journal', journal, lambda: 'smoke test' in str((KV.get('journal/e-' + dk) or {}).get('text', '')))
+        async def mood():
+            await pg.evaluate("location.hash='#journal'"); await pg.wait_for_timeout(600)
+            await pg.evaluate("(()=>{const r=document.querySelector('#jMoodR');r.value='6.5';r.dispatchEvent(new Event('change',{bubbles:true}))})()")
+        await flow('mood', mood, lambda: (KV.get('journal/e-' + dk) or {}).get('mood') == 6.5)
+        async def food():
+            await pg.evaluate("location.hash='#food'"); await pg.wait_for_timeout(2500)
+            await pg.evaluate("(()=>{const b=document.querySelector('#foodSeg [data-fv=log]');b&&b.click()})()"); await pg.wait_for_timeout(800)
+            await pg.click('[data-fadd]'); await pg.wait_for_timeout(800); await pg.click('#fQuick'); await pg.wait_for_timeout(500)
+            await pg.fill('#qaK', '450'); await pg.click('#qaOk')
+        await flow('food', food, lambda: any(e.get('qk') == 450 for m in ((KV.get('food/d-' + dk) or {}).get('m') or {}).values() for e in m))
+        async def gym_set():
+            await pg.evaluate("location.hash='#gym'"); await pg.wait_for_timeout(2500)
+            await pg.fill('input[data-f=kg][data-at="0:0"]', '60'); await pg.fill('input[data-f=r][data-at="0:0"]', '8')
+            await pg.click('[data-done="0:0"]')
+        await flow('gym set', gym_set, lambda: ((KV.get('gym/active') or {}).get('ex') or [{}])[0].get('sets', [{}])[0].get('done') is True)
+        async def focus_task():
+            await pg.evaluate("location.hash='#tools'"); await pg.wait_for_timeout(1500)
+            await pg.evaluate("(()=>{const b=document.querySelector('#toolSeg [data-t=focus]');b&&b.click()})()"); await pg.wait_for_timeout(800)
+            await pg.fill('#fzCin', 'smoke task'); await pg.press('#fzCin', 'Enter')
+        await flow('focus task', focus_task, lambda: any(x.get('t') == 'smoke task' for x in (KV.get('tools/focus') or {}).get('cl', [])))
         await b.close()
     return fails
 

@@ -51,7 +51,7 @@ function nxErr(e,where){try{
   console.warn('[nx]',m,e);NXERR.unshift({t:new Date().toISOString(),m,v:window.APP_V||''});NXERR=NXERR.slice(0,40);LS.set('diag/errs',NXERR);
   if(typeof R!=='undefined'&&R)save('diag/errors',{list:NXERR});
   let b=$('nxBadge');if(!b){b=document.createElement('div');b.id='nxBadge';b.className='nx-badge';b.setAttribute('role','status');b.innerHTML='<b>!</b><span></span><button type="button">Dismiss</button>';document.body.appendChild(b);b.querySelector('button').onclick=()=>{b.hidden=true}}
-  b.querySelector('span').textContent='Something failed · '+m;b.hidden=false;clearTimeout(nxBadgeT);nxBadgeT=setTimeout(()=>{b.hidden=true},9000);
+  b.querySelector('span').textContent='Something failed · '+m;b.hidden=false;clearTimeout(nxBadgeT);nxBadgeT=setTimeout(()=>{b.hidden=true},9000);if(typeof errBadge==='function')errBadge();
 }catch(_){}}
 window.nxErr=nxErr;
 

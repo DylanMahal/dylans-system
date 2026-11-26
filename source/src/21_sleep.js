@@ -199,7 +199,7 @@ function sRegister(){openSheet('register barcode',`<div class="dim" style="margi
 /* ---------- recovery / strain (Whoop-style) ---------- */
 const sAddD=(k,n)=>{const x=new Date(k+'T12:00');x.setDate(x.getDate()+n);return ymd(x)};
 function sStrain(day){/* strain for a calendar day: active energy arrives the next morning */const h=SHEALTH[sAddD(day,1)]||{};let load=+h.kcal||0;if(!load&&h.steps)load=h.steps*0.04;
-  try{if(typeof WORKOUTS!=='undefined')WORKOUTS.filter(w=>w.date===day).forEach(w=>{const m=w.endedAt&&w.startedAt?(new Date(w.endedAt)-new Date(w.startedAt))/6e4:45;if(!h.kcal)load+=m*5;load+=Math.min(150,(w.vol||0)/100)})}catch(e){}
+  try{if(typeof WORKOUTS!=='undefined')WORKOUTS.filter(w=>w.date===day).forEach(w=>{const m=w.endedAt&&w.startedAt?(new Date(w.endedAt)-new Date(w.startedAt))/6e4:45;if(!h.kcal)load+=m*5;load+=Math.min(150,(w.vol||0)/100)})}catch(e){nxErr(e,'sleep load')}
   return load?Math.round(21*(1-Math.exp(-load/650))*10)/10:null}
 function sBase(k,f,days=30){const v=[];for(let i=1;i<=days;i++){const d=sAddD(k,-i);const x=f==='asleep'?(SNIGHTS[d]||{}).asleep:(SHEALTH[d]||{})[f];if(x!=null&&!isNaN(+x)&&+x>0)v.push(+x)}if(v.length<3)return null;const m=v.reduce((a,b)=>a+b,0)/v.length;const sd=Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/v.length);return {m,sd,n:v.length}}
 function sNeed(k){const g=(SSET&&SSET.goal||8)*60;const st=sStrain(sAddD(k,-1));let need=g+(st&&st>10?(st-10)*6:0);let debt=0;for(let i=1;i<=3;i++){const n=SNIGHTS[sAddD(k,-i)];if(n&&n.asleep)debt+=Math.max(0,g-n.asleep)}return Math.round(need+Math.min(60,debt*.3))}

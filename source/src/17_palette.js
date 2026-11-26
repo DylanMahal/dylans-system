@@ -23,7 +23,7 @@ addEventListener('keydown',e=>{
   if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openPal();return}
   if(e.key==='Escape'){closeDrawer();closeSheet();if(typing)document.activeElement.blur();return}
   if(typing||e.metaKey||e.ctrlKey||e.altKey)return;
-  if(/^[1-8]$/.test(e.key)){go(VIEWS[+e.key-1][0]);return}
+  if(/^[1-8]$/.test(e.key)){go(NAV[+e.key-1][0]);return}
   if(e.key==='/'){e.preventDefault();openPal();return}
   if(e.key==='f'){$('fxBtn').click();return}
   if(e.key==='e'){setEdit(!EDIT);return}

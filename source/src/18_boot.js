@@ -43,7 +43,7 @@ async function startApp(session){
   await loadEdits();BFX('edit queue synced',48);
   const ok=await loadGridsFromDb(true);BFX(ok?'sheets pulled · stack/money/plan':'sheets: using local cache',ok?66:66,ok?undefined:false);
   $('nodata').hidden=ok||!!GMETA.at;
-  try{const [tt,np,ni]=await Promise.all([load('today/titles'),load('today/nopct'),load('push/items')]);TITLES=tt||{};NOPCT=np?{m:{},...np}:{m:{}};if(ni)NITEMS={m:{},...ni}}catch(e){}
+  try{const [tt,np,ni]=await Promise.all([load('today/titles'),load('today/nopct'),load('push/items')]);TITLES=tt||{};NOPCT=np?{m:{},...np}:{m:{}};if(ni)NITEMS={m:{},...ni}}catch(e){nxErr(e,'boot')}
   rebuild();booted=true;jNightTask().catch(e=>console.warn(e));if(typeof loadProto==='function')loadProto().catch(()=>{});await Promise.all([loadStackStatus(),loadActuals()]);renderPend();renderStack();renderMoney();renderTargets();
   cur=null;go(location.hash.slice(1)||'today',true);
   BFX('ui compiled · '+(cur||'today'),78);

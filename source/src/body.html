@@ -21,6 +21,7 @@
   <!-- TODAY -->
   <section class="view" id="v-today" aria-label="Today">
     <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Today">Today</h2><span class="sub" id="todaySub"></span></div></div>
+    <div id="todayDash"></div>
     <div class="hud">
       <div class="panel clockp">
         <div class="ph"><span class="tag">sys.clock</span><span id="planName"></span></div>
@@ -145,6 +146,7 @@
   </section>
   <section class="view" id="v-media" aria-label="Media">
     <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Media">Media</h2><span class="sub">Anime · movies · manga · books</span></div></div>
+    <button type="button" class="mback" data-mback="1">‹ Tools</button>
     <div class="toolcards four" id="mediaCards">
       <button type="button" data-mk="anime"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.6 6.1.7-4.5 4.2 1.2 6L12 16.6 6.6 19.5l1.2-6L3.3 9.3l6.1-.7z"/></svg></i><b>Anime</b><span></span></button>
       <button type="button" data-mk="movies"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M10 9.5v5l4.5-2.5z" fill="currentColor"/></svg></i><b>Film &amp; TV</b><span></span></button>
@@ -160,11 +162,13 @@
     <div class="toolcards" id="toolSeg">
       <button type="button" data-t="focus"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9 2h6"/></svg></i><b>Focus</b><span id="tcFocus">Timer · music · sound</span></button>
       <button type="button" data-t="brick"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg></i><b>Brick</b><span id="tcBrick">Lock the phone</span></button>
+      <button type="button" data-tgo="media"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M10 9.5v5l4.5-2.5z"/></svg></i><b>Media</b><span>Anime · films · books</span></button>
       <button type="button" data-t="keys"><i><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/></svg></i><b>Keys</b><span>Encrypted passwords</span></button>
     </div>
     <div id="t-focus"></div>
     <div id="t-brick" hidden></div>
     <div id="t-keys" hidden></div>
+    <div class="panel" style="margin-top:14px"><div class="ph"><span class="tag">Your data</span></div><div class="pb"><div class="dim" style="font-size:12.5px;margin-bottom:10px">Every document in the app as one JSON file. The PC sync agent also saves one to OneDrive each night.</div><button class="btn p" type="button" id="expAll">Export all data</button></div></div>
   </section>
 
   <!-- GOALS -->

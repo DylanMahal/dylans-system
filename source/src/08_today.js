@@ -63,7 +63,7 @@ function updateCounts(){
   M.plans[planKind].forEach(b=>{const its=b.items.filter(onToday);const el=$('blk-'+b.bi);if(!el)return;const d=its.filter(i=>DAY.ticks[i.tk]).length;
     el.querySelector('.ct').textContent=`${d}/${its.length}`;el.querySelector('.mini span').style.width=(its.length?d/its.length*100:0)+'%';el.classList.toggle('done',its.length>0&&d===its.length);
     const sb=document.querySelector(`#strip button[data-b="${b.bi}"] .fill`);if(sb)sb.style.width=(its.length?d/its.length*100:0)+'%'});
-  return {done,total,p,nd,n};
+  if(typeof dashSoon==='function')dashSoon();return {done,total,p,nd,n};
 }
 function persistDay(){const {done,total,nd,n}=updateCounts();const names=visibleItems().filter(i=>DAY.ticks[i.tk]).map(i=>i.item);DAY={...DAY,done,total,nd,n,names,plan:planKind,dow:DOWN};save('days/d-'+DAYK,DAY);schedWidget()}
 function setTick(k,on){if(on)DAY.ticks[k]=1;else delete DAY.ticks[k];document.querySelectorAll(`#v-today .it[data-k="${CSS.escape(k)}"]`).forEach(el=>el.setAttribute('aria-checked',on));persistDay();if(typeof medsOnTick==='function')medsOnTick(k,on)}

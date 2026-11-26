@@ -12,7 +12,7 @@ function toolCardSubs(){const dw=DAY.dw||0;$('tcFocus').textContent=`${Math.floo
   if(typeof protoDueCount==='function'&&$('tcProto')){const n=protoDueCount();$('tcProto').textContent=n?`${n} due today`:'nothing due'}
   if(typeof leetWeek==='function'&&$('tcLeet'))$('tcLeet').textContent=`${leetWeek()} solved this week`;
   if(typeof bToday==='function'&&$('tcBrick')){const m=bToday();$('tcBrick').textContent=BRICK.on?'bricked now':(m?Math.floor(m/60)+'h '+pad(m%60)+'m today':'lock the phone')}}
-$('toolSeg').onclick=e=>{const b=e.target.closest('[data-t]');if(!b)return;TOOLV=b.dataset.t;LS.set('toolv',TOOLV);renderTools();staggerIn($('t-'+TOOLV))};
+$('toolSeg').onclick=e=>{const g=e.target.closest('[data-tgo]');if(g){go(g.dataset.tgo);return}const b=e.target.closest('[data-t]');if(!b)return;TOOLV=b.dataset.t;LS.set('toolv',TOOLV);renderTools();staggerIn($('t-'+TOOLV))};
 
 /* ---------------- FOCUS ---------------- */
 let TM=LS.get('timer')||{len:90,end:null,left:90*60};if(!TM.phase)TM.phase='focus';

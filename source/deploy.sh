@@ -9,6 +9,8 @@ export DS_TOOLS="$TOOLS" PYTHONUTF8=1  # Windows Python defaults to cp1252
 # first Python that actually runs (Windows has a python3 stub that only opens the Store)
 for PY in python3 py python; do "$PY" -c "import sys" >/dev/null 2>&1 && break; done
 "$PY" build.py | tail -1
+# tests before anything goes live: every page opens and the core flows save (skipped where Playwright isn't installed)
+if "$PY" -c "import playwright" >/dev/null 2>&1; then sout=$("$PY" test/smoke.py --no-build 2>&1) || { echo "$sout" | tail -25; echo "SMOKE TEST FAILED: nothing deployed"; exit 1; }; echo "$sout" | tail -1; else echo "smoke test skipped (pip install playwright to enable)"; fi
 cp -r dist/* ..
 cd ..
 git add -A
