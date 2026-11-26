@@ -11,7 +11,7 @@ async function nSubscribe(){if(!('serviceWorker' in navigator)||!('PushManager' 
   const p=await Notification.requestPermission();if(p!=='granted')return 'Notifications are blocked, allow them in Settings → Notifications → Dylan\'s System.';
   const reg=await navigator.serviceWorker.ready;let sub=await reg.pushManager.getSubscription();if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u(VAPID_PUB)});
   const cur=(await load('push/subs'))||{list:[]};const j=sub.toJSON();const dev=/iPad/.test(navigator.userAgent)||(/Macintosh/.test(navigator.userAgent)&&navigator.maxTouchPoints>1)?'iPad':/iPhone/.test(navigator.userAgent)?'iPhone':/Windows/.test(navigator.userAgent)?'laptop':'device';
-  cur.list=(cur.list||[]).filter(s=>s.sub.endpoint!==j.endpoint).concat({sub:j,dev,at:new Date().toISOString()});save('push/subs',cur,true);NSET.on=true;LS.set('notify',NSET);pushSync();return null}
+  cur.list=(cur.list||[]).filter(s=>s.sub.endpoint!==j.endpoint&&(dev==='device'||s.dev!==dev)).concat({sub:j,dev,at:new Date().toISOString()});save('push/subs',cur,true);NSET.on=true;LS.set('notify',NSET);pushSync();return null}
 /* queue */
 let NQ=null;
 async function nQueue(){if(NQ)return NQ;NQ=(await load('push/q'))||{items:[]};return NQ}
@@ -26,7 +26,7 @@ async function pushCancel(tag){if(!NSET.on)return;const q=await nQueue();const n
 /* self-repair: if this device thinks it's on but its subscription is missing from push/subs (Apple expired it and push-tick dropped it), register it again silently */
 let NHEALED=false;
 async function nHeal(){if(NHEALED||!NSET.on||typeof Notification==='undefined'||Notification.permission!=='granted'||!('serviceWorker' in navigator)||!('PushManager' in window))return;NHEALED=true;
-  try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();const cur=(await load('push/subs'))||{list:[]};if(sub&&(cur.list||[]).some(s=>s.sub.endpoint===sub.endpoint))return;await nSubscribe()}catch(e){NHEALED=false}}
+  try{const reg=await navigator.serviceWorker.ready;const sub=await reg.pushManager.getSubscription();const cur=(await load('push/subs'))||{list:[]};const me=(cur.list||[]).find(s=>s.sub.endpoint===(sub&&sub.endpoint));if(me&&!(cur.list||[]).some(s=>s!==me&&s.dev===me.dev&&me.dev!=='device'))return;await nSubscribe()}catch(e){NHEALED=false}}
 async function pushSync(){if(!NSET.on)return;nHeal();const q=await nQueue();const now=Date.now(),H=now+36*36e5;const keep=q.items.filter(i=>!/^(plan|item|dose|bed|leet|water|habit|task|cal|mood|ppl|rev):/.test(i.tag)&&new Date(i.at)>now-60e3);const add=[];
   const push=(tag,at,title,body,url)=>{if(at>now+5000&&at<H)add.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body:body||'',url:url||'./'})};
   const days=[DAYK,ymd(new Date(new Date(DAYK+'T12:00').getTime()+864e5))];
