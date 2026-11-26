@@ -6,6 +6,9 @@
 const SMISS=[['math','maths'],['shake','shake'],['type','type a phrase'],['scan','scan a barcode']];
 const SSND=[['rise','rising chime'],['classic','classic beeps'],['siren','siren']];
 const STAGS_FN=()=>{const st=(typeof M!=='undefined'&&M&&M.stack)||[];return [...new Set(st.filter(slMatch).map(s=>String(s.name||'').trim()).filter(Boolean))]};
+/* things taken or done that can hurt sleep: generic defaults plus your own, kept in sleep/settings.neg */
+const SNEG_DEF=LX('slneg',['Caffeine','Late meal','Screens in bed','Late workout','Stress','Nap']);
+const SNEG=()=>[...new Set([...SNEG_DEF,...((SSET&&SSET.neg)||[])])];
 const SPHRASE=['I am awake and I am getting up now','Discipline is doing it when you do not feel like it','Get out of bed and win the morning','Everybody wants it until it is time to wake up'];
 const SFN='https://ucnwefjblxqbmmwdbqhw.supabase.co/functions/v1/sleep-in';
 let SHEALTH={};let SSET=null,SNIGHTS={},SV=({recovery:'sleep',last:'sleep',history:'sleep'})[LS.get('sleepv')]||LS.get('sleepv')||'sleep',sleepLoaded=false,SCFG=null;
@@ -89,7 +92,7 @@ function sStats(){const el=$('sleepBody');const N=Object.keys(SNIGHTS).sort().sl
   const avg=f=>N.reduce((a,n)=>a+(+n[f]||0),0)/N.length;const bt=N.map(n=>{const d=new Date(n.start);let m=d.getHours()*60+d.getMinutes();if(m<720)m+=1440;return m});const wk=N.map(n=>{const d=new Date(n.end);return d.getHours()*60+d.getMinutes()});
   const sd=a=>{const m=a.reduce((x,y)=>x+y,0)/a.length;return Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/a.length)};const hm=m=>{m=Math.round(m)%1440;return pad(Math.floor(m/60))+':'+pad(m%60)};
   const L=N.slice(-14);const mx=Math.max(...L.map(n=>n.asleep||0),SSET.goal*60)*1.08;
-  const tagI=STAGS_FN().map(t=>{const w=N.filter(n=>(n.tags||[]).includes(t)),wo=N.filter(n=>!(n.tags||[]).includes(t));if(w.length<2||wo.length<2)return null;const d=w.reduce((a,n)=>a+n.q,0)/w.length-wo.reduce((a,n)=>a+n.q,0)/wo.length;return [t,Math.round(d),w.length]}).filter(Boolean).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
+  const tagI=[...new Set([...STAGS_FN(),...SNEG()])].map(t=>{const w=N.filter(n=>(n.tags||[]).includes(t)),wo=N.filter(n=>!(n.tags||[]).includes(t));if(w.length<2||wo.length<2)return null;const d=w.reduce((a,n)=>a+n.q,0)/w.length-wo.reduce((a,n)=>a+n.q,0)/wo.length;return [t,Math.round(d),w.length]}).filter(Boolean).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1]));
   const debt=N.slice(-7).reduce((a,n)=>a+(SSET.goal*60-(n.asleep||0)),0);const aq=Math.round(avg('q'));const as=Math.max(1,avg('asleep'));
   const tile=(l,v,s,c)=>`<div class="sl-tile"><span>${l}</span><b class="num"${c?` style="color:${c}"`:''}>${v}</b>${s?`<em>${s}</em>`:''}</div>`;
   el.innerHTML=`<div class="sl-tiles sl-t4">${tile('Avg asleep',fmtHM(avg('asleep')),`goal ${SSET.goal}h`)}${tile('Avg score',aq+'%','',sQC(aq))}${tile('Avg bedtime',hm(bt.reduce((a,b)=>a+b,0)/bt.length),`±${Math.round(sd(bt))} min`)}${tile('7-day '+(debt>0?'debt':'surplus'),fmtHM(Math.abs(debt)),'',debt>0?'#ff453a':'#30d158')}</div>
@@ -285,7 +288,8 @@ function sMain(){const el=$('sleepBody');const ks=Object.keys(SNIGHTS).sort();
     ${reg==null?`<div class="sl-note sm-hint">Regularity appears once you have two nights in a row synced.</div>`:''}
     <div class="sm-sec">Experience</div>
     <div class="sl-card"><div class="sm-q">How did you feel waking up?</div><div class="sm-mood">${[1,2,3,4,5].map(v=>`<button type="button" data-mood="${v}" aria-pressed="${n.mood===v}" aria-label="Mood ${v} of 5">${sFace(v)}</button>`).join('')}</div>
-      <div class="sm-q" style="margin-top:18px">Sleep notes</div><div class="sm-tags">${STAGS_FN().map(t=>`<button type="button" data-tag="${esc(t)}" aria-pressed="${(n.tags||[]).includes(t)}">${t}</button>`).join('')}</div></div>
+      <div class="sm-q" style="margin-top:18px">Sleep notes</div><div class="sm-tags">${STAGS_FN().map(t=>`<button type="button" data-tag="${esc(t)}" aria-pressed="${(n.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
+      <div class="sm-q" style="margin-top:16px">Might have hurt sleep</div><div class="sm-tags sm-neg">${SNEG().map(t=>`<button type="button" data-tag="${esc(t)}" aria-pressed="${(n.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}<button type="button" class="sm-add" data-negadd="1">+ Add</button></div></div>
     <div class="sl-card sl-tonight"><span class="sl-ico">${sIco('moon',20)}</span><div><div class="sl-sub">Tonight</div><b>Be asleep by <span class="num">${sBedFor()}</span></b><div class="sl-sub">${SSET.goal} h goal · ${SSET.wake} wake-up${SSET.bedOn?' · reminder 30 min before':''}</div></div></div>
     <button type="button" class="sm-del" id="smDel">Delete this night</button>
   </div></div>`;
@@ -296,6 +300,9 @@ function sMain(){const el=$('sleepBody');const ks=Object.keys(SNIGHTS).sort();
     if(b.id==='shCal'){$('smCal').scrollIntoView({behavior:'smooth',block:'center'});return}
     if(b.id==='shQ'){openSheet('Sleep quality',`<div class="sq-big num">${q}<small>%</small></div><div class="sl-note" style="text-align:center;margin-bottom:14px">Duration counts most, then deep sleep, REM, efficiency, restfulness and timing.</div>${sQBars(n)}`);return}
     if(b.dataset.mood){n.mood=+b.dataset.mood;save('sleep/w-'+k,n);el.querySelectorAll('[data-mood]').forEach(x=>x.setAttribute('aria-pressed',x===b));return}
+    if(b.dataset.negadd){const i2=document.createElement('input');i2.className='sm-negin';i2.placeholder='e.g. late coffee';i2.maxLength=30;b.replaceWith(i2);i2.focus();
+      const add=()=>{const v=i2.value.trim();if(!v){sMain();return}SSET.neg=[...new Set([...(SSET.neg||[]),v])];save('sleep/settings',SSET);n.tags=[...new Set([...(n.tags||[]),v])];save('sleep/w-'+k,n);sMain()};
+      i2.onkeydown=ev=>{if(ev.key==='Enter'){ev.preventDefault();add()}if(ev.key==='Escape')sMain()};i2.onblur=add;return}
     if(b.dataset.tag){const t=b.dataset.tag;n.tags=(n.tags||[]).includes(t)?n.tags.filter(x=>x!==t):(n.tags||[]).concat(t);save('sleep/w-'+k,n);b.setAttribute('aria-pressed',n.tags.includes(t));return}
     if(b.id==='smDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Tap again to delete';return}delete SNIGHTS[k];removeDoc('sleep/w-'+k);SSEL=null;sMain()}}}
 function sTrends(){const el=$('sleepBody');sRecovery();const a=el.innerHTML;sStats();el.innerHTML=a+'<div class="sm-sec">Sleep</div>'+el.innerHTML;sGoSetup(el)}

@@ -1,3 +1,5 @@
+/* the People tab is retired: data stays in kv, nothing surfaces it */
+const PPL_OFF=true;
 /* ================= PEOPLE: a calm rhythm for staying in touch, plus small social steps you choose (Journal › People) =================
    people/list = {people:[{id,name,color,call,visit,msg,remember:[]}]}  (days between contacts, 0 = not tracked)
    people/log = {log:[{id,pid,at,kind,feel,mins,note}]}, people/steps = {steps:[{id,lvl,t,done:[days]}],lvl}
@@ -12,10 +14,10 @@ const pLast=(pid,kind)=>PPLOG.log.filter(x=>x.pid===pid&&(!kind||x.kind===kind||
 const pDay=x=>x.day||String(x.at).slice(0,10);
 /* due: the next call/visit date from the last one of that kind (a visit also counts as contact for calls) */
 function pNext(p,kind){const every=+p[kind];if(!every)return null;const last=PPLOG.log.filter(x=>x.pid===p.id&&(x.kind===kind||(kind==='call'&&x.kind==='visit'))).map(pDay).sort().pop();return last?addDays(last,every):DAYK}
-function peopleDue(){if(!pplLoaded)return [];const out=[];PPL.people.forEach(p=>{const c=pNext(p,'call'),v=pNext(p,'visit');
+function peopleDue(){if(PPL_OFF)return [];if(!pplLoaded)return [];const out=[];PPL.people.forEach(p=>{const c=pNext(p,'call'),v=pNext(p,'visit');
   const pick=[['visit',v],['call',c]].filter(([,d])=>d&&d<=DAYK).sort((a,b)=>a[1]<b[1]?-1:1)[0];if(!pick)return;const [k,d]=pick;
   out.push({...p,dueKind:k,dueLabel:(k==='visit'?'Visit ':'Call ')+p.name,dueSub:(+p[k]===7?'weekly':+p[k]===14?'every other week':'every '+p[k]+' days')+(d===DAYK?' · due today':' · due since '+nxDate(d))})});return out}
-function peopleDueOn(dk){if(!pplLoaded)return [];return PPL.people.filter(p=>['call','visit'].some(k=>pNext(p,k)===dk)).map(p=>({...p,dueLabel:(pNext(p,'visit')===dk?'Visit ':'Call ')+p.name}))}
+function peopleDueOn(dk){if(PPL_OFF)return [];if(!pplLoaded)return [];return PPL.people.filter(p=>['call','visit'].some(k=>pNext(p,k)===dk)).map(p=>({...p,dueLabel:(pNext(p,'visit')===dk?'Visit ':'Call ')+p.name}))}
 function pWeeks(pid,n=8){const out=[];for(let i=n-1;i>=0;i--){const ws=addDays(DAYK,-((new Date(DAYK+'T12:00').getDay()||7)-1)-7*i),we=addDays(ws,6);out.push(PPLOG.log.some(x=>x.pid===pid&&pDay(x)>=ws&&pDay(x)<=we))}return out}
 function pStreak(pid){const w=pWeeks(pid,52);let n=0;for(let i=w.length-1;i>=0;i--){if(w[i])n++;else if(i===w.length-1)continue;else break}return n}
 async function renderPeople(){const el=$('jPaneP');if(!el)return;if(!pplLoaded){el.innerHTML='<div class="nx"><div class="nx-card nx-s">Loading…</div></div>';try{await peopleLoad()}catch(e){nxErr(e,'people')}}
@@ -68,4 +70,4 @@ function pLogSheet(pid,kind){const p=PPL.people.find(x=>x.id===pid);if(!p)return
     if(!e.target.closest('#plS'))return;const note=$('plR').value.trim();PPLOG.log.push({id:rid(),pid,at:new Date().toISOString(),day:DAYK,kind:st.kind,feel:st.feel,mins:st.mins});PPLOG.log=PPLOG.log.slice(-2000);save('people/log',PPLOG);if(typeof schedWidget==='function')schedWidget();
     if(note){p.remember=(p.remember||[]).concat(note);save('people/list',PPL)}if(typeof pushCancel==='function')pushCancel('ppl:'+DAYK+':'+pid);if(typeof moodInsightsDirty!=='undefined')moodInsightsDirty=true;
     closeSheet();if(cur==='journal'&&JTAB==='people')renderPeople();if(typeof renderTodayNudges==='function')renderTodayNudges()}}
-nxCmd('log a call','people',()=>{go('journal');setJTab('people')});
+

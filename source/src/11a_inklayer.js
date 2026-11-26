@@ -35,7 +35,7 @@ function inkLayer(o){
       <button type="button" class="ib-act ib-bad" data-ik="clear">${INK_I.clear}<span class="ib-l">Clear all writing</span></button></div>`;
   const pop=bar.querySelector('.ib-pop'),colsEl=bar.querySelector('.ib-cols');
   const touch=()=>{L.last=Date.now();o.changed&&o.changed()};
-  L.refresh=()=>{const ink=INKS.tool!=='type',hl=INKS.tool==='hl';
+  L.refresh=()=>{L.mirror&&L.mirror();const ink=INKS.tool!=='type',hl=INKS.tool==='hl';
     bar.querySelectorAll('[data-ik^="t:"]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.ik==='t:'+INKS.tool));
     const pal=hl?INK_HL:INK_PEN,cur=hl?INKS.hcol:INKS.col;
     colsEl.innerHTML=pal.map(c=>`<button type="button" class="ib-dot" data-ik="c:${c}" style="--c:${c}" aria-label="Colour" aria-pressed="${c===cur}"></button>`).join('');
@@ -47,7 +47,7 @@ function inkLayer(o){
     cv.style.touchAction='none';host.classList.toggle('inking',ink);bar.classList.toggle('typing',!ink);
     host.querySelectorAll('.inkdead').forEach(x=>x.remove());
     host.querySelectorAll('textarea,[contenteditable]').forEach(x=>{if(!ink){x.style.display='';return}
-      let d;if(x.tagName==='TEXTAREA'){d=document.createElement('div');d.className=x.className;d.textContent=x.value;d.style.height=x.style.height;d.style.whiteSpace='pre-wrap';d.style.overflowWrap='anywhere'}
+      let d;if(x.tagName==='TEXTAREA'){d=document.createElement('div');d.className=x.className;d.innerHTML=inkMarkHtml(x.value);d.style.height=x.style.height;d.style.whiteSpace='pre-wrap';d.style.overflowWrap='anywhere'}
       else{d=x.cloneNode(true);d.removeAttribute('id');d.removeAttribute('contenteditable')}
       d.classList.add('inkdead');d.setAttribute('aria-hidden','true');x.after(d);x.style.display='none'});
     if(ink){const a=document.activeElement;if(a&&a!==document.body&&a.blur)a.blur();try{getSelection().removeAllRanges()}catch(_){}}};
@@ -68,7 +68,7 @@ function inkLayer(o){
       const mx0=i>=6?(p[i-6]+p[i-3])/2:p[i-3],my0=i>=6?(p[i-5]+p[i-2])/2:p[i-2];const mx1=(p[i-3]+p[i])/2,my1=(p[i-2]+p[i+1])/2;
       x.moveTo(mx0,my0);x.quadraticCurveTo(p[i-3],p[i-2],mx1,my1);x.stroke()}
     if(p.length===3){x.fillStyle=s.c;x.beginPath();x.arc(p[0],p[1],s.w/2,0,7);x.fill()}x.restore()}
-  const pt=e=>{const r=cv.getBoundingClientRect();return [Math.round((e.clientX-r.left)/L.scale*10)/10,Math.round((e.clientY-r.top)/L.scale*10)/10,Math.round((e.pointerType==='mouse'?.5:(e.pressure||.5))*100)/100]};
+  const pt=e=>{const r=cv.getBoundingClientRect(),fx=r.width?(L.lw||r.width)/r.width:1,fy=r.height?(L.lh||r.height)/r.height:1;return [Math.round((e.clientX-r.left)*fx/L.scale*10)/10,Math.round((e.clientY-r.top)*fy/L.scale*10)/10,Math.round((e.pointerType==='mouse'?.5:(e.pressure||.5))*100)/100]};
   const scroller=()=>{let n=cv.parentElement;while(n&&n!==document.body){const cs=getComputedStyle(n);if(/(auto|scroll)/.test(cs.overflowY)&&n.scrollHeight>n.clientHeight+2)return n;n=n.parentElement}return document.scrollingElement||document.documentElement};
   ['contextmenu','selectstart','gesturestart'].forEach(t=>cv.addEventListener(t,e=>e.preventDefault()));
   ['touchstart','touchmove'].forEach(t=>cv.addEventListener(t,e=>e.preventDefault(),{passive:false}));
@@ -96,6 +96,7 @@ function inkLayer(o){
   L.docDown=e=>{if(!bar.contains(e.target))closePop()};document.addEventListener('pointerdown',L.docDown,true);
   bar.onclick=e=>{const b=e.target.closest('[data-ik]');if(!b)return;const a=b.dataset.ik,k=a==='more'||a==='full'||a.startsWith('t:')||a.startsWith('c:')||a.startsWith('s:')||a==='po'?null:o.make();
     if(a==='more'){pop.classList.toggle('open');return}
+    if(a==='t:hl'&&L.markSel()){closePop();return}
     if(a.startsWith('t:')){INKS.tool=a.slice(2);closePop();L.refresh();return}
     if(a.startsWith('c:')){const c=a.slice(2);if(INKS.tool==='hl')INKS.hcol=c;else{INKS.col=c;if(INKS.tool==='eraser'||INKS.tool==='type')INKS.tool='pen'}inkSet();L.refresh();return}
     if(a.startsWith('s:')){INKS.w=+a.slice(2);inkSet();L.refresh();return}
@@ -110,10 +111,29 @@ function inkLayer(o){
     if(a==='clear'){const lab=b.querySelector('.ib-l');if(b.dataset.arm){k.strokes.forEach(s=>{s.i=s.i||rid();L.stack.undo.push({del:s})});k.strokes=[];k.h=IH;L.size();touch();delete b.dataset.arm;lab.textContent='Clear all writing';closePop()}
       else{b.dataset.arm=1;lab.textContent='Tap again to clear';setTimeout(()=>{delete b.dataset.arm;lab.textContent='Clear all writing'},2500)}return}};
   let raf=0;const ro=new ResizeObserver(()=>{cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{if(host.clientWidth!==L.lw||host.clientHeight!==L.lh)L.size()})});ro.observe(host);
-  L.destroy=()=>{ro.disconnect();cancelAnimationFrame(raf);document.removeEventListener('pointerdown',L.docDown,true)};
+  /* typed-text highlight: select words, then tap the highlighter. Textareas get invisible marker chars drawn by a mirror behind them */
+  L.sel=null;
+  L.onSel=()=>{const a=document.activeElement;if(a&&a.tagName==='TEXTAREA'&&host.contains(a)){L.sel=a.selectionEnd>a.selectionStart?{ta:a,s:a.selectionStart,e:a.selectionEnd}:null;return}
+    const g=getSelection();if(g&&g.rangeCount&&!g.isCollapsed&&host.contains(g.anchorNode)&&host.contains(g.focusNode))L.sel={r:g.getRangeAt(0).cloneRange()};else if(a&&host.contains(a))L.sel=null};
+  document.addEventListener('selectionchange',L.onSel);
+  bar.addEventListener('mousedown',e=>{if(e.target.closest('[data-ik="t:hl"]'))e.preventDefault()});
+  L.markSel=()=>{const q=L.sel;if(!q)return false;L.sel=null;
+    if(q.ta){const t=q.ta,v=t.value,mid=v.slice(q.s,q.e);if(!mid.trim())return false;
+      const o2=v.lastIndexOf('⁣',q.s),c2=v.lastIndexOf('⁤',q.s-1),inside=!/[⁣⁤]/.test(mid)&&o2>c2;
+      const on=inside||/[⁣⁤]/.test(mid);const ce=inside?v.indexOf('⁤',q.e):-1;
+      const nv=inside?v.slice(0,o2)+v.slice(o2+1,ce<0?v.length:ce)+(ce<0?'':v.slice(ce+1)):on?v.slice(0,q.s)+mid.replace(/[⁣⁤]/g,'')+v.slice(q.e):v.slice(0,q.s)+'⁣'+mid.replace(/[⁣⁤]/g,'')+'⁤'+v.slice(q.e);
+      t.value=nv.replace(/⁣⁤/g,'');t.dispatchEvent(new Event('input',{bubbles:true}));L.mirror();return true}
+    try{const g=getSelection();g.removeAllRanges();g.addRange(q.r);const ed=q.r.commonAncestorContainer.parentElement.closest('[contenteditable]');if(ed)ed.focus();
+      document.execCommand('styleWithCSS',false,true);document.execCommand('hiliteColor',false,'rgba(255,214,10,.42)');g.collapseToEnd()}catch(_){return false}return true};
+  L.mirror=()=>{host.querySelectorAll('textarea').forEach(t=>{let m=t._mir;const has=/⁣/.test(t.value);
+    if(!has){if(m){m.remove();t._mir=null}return}
+    if(!m){m=t._mir=document.createElement('div');m.className=t.className+' inkmir';m.setAttribute('aria-hidden','true');t.before(m);t.addEventListener('input',L.mirror);t.addEventListener('scroll',()=>{if(t._mir)t._mir.scrollTop=t.scrollTop})}
+    m.style.cssText=`left:${t.offsetLeft}px;top:${t.offsetTop}px;width:${t.offsetWidth}px;height:${t.offsetHeight}px`;m.innerHTML=inkMarkHtml(t.value)+'\n';m.scrollTop=t.scrollTop})};
+  L.destroy=()=>{document.removeEventListener('selectionchange',L.onSel);ro.disconnect();cancelAnimationFrame(raf);document.removeEventListener('pointerdown',L.docDown,true)};
   L.reset=()=>{L.stack.undo=[];L.stack.redo=[];L.drawing=null};
   return L}
 
+const inkMarkHtml=v=>String(v||'').split('⁣').map((c,i)=>{if(!i)return esc(c).replace(/⁤/g,'');const j=c.indexOf('⁤');return j<0?'<mark class="inkmk">'+esc(c)+'</mark>':'<mark class="inkmk">'+esc(c.slice(0,j))+'</mark>'+esc(c.slice(j+1)).replace(/⁤/g,'')}).join('');
 /* fullscreen: Esc, or leaving the page, closes it */
 const inkExitFull=()=>{document.querySelectorAll('.inkfull').forEach(x=>x.classList.remove('inkfull'));document.documentElement.classList.remove('inkfull-on')};
 addEventListener('keydown',e=>{if(e.key==='Escape'&&document.querySelector('.inkfull')){inkExitFull();document.querySelectorAll('[data-ik="full"]').forEach(b=>{b.textContent='⛶ full';b.setAttribute('aria-pressed',false)})}});

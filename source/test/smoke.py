@@ -18,7 +18,7 @@ SESS = {'access_token': 'x.eyJzdWIiOiJlYTdmM2MyNC00YWYzLTRiMGMtYTk2Yi0xMGVhN2M4N
         'token_type': 'bearer', 'expires_in': 3600, 'expires_at': 4102444800, 'refresh_token': 'r',
         'user': {'id': UID, 'aud': 'authenticated', 'role': 'authenticated', 'email': 'test@example.com'}}
 # sub-routes on top of every tab in the bottom bar
-SUBS = ['journal/mood', 'journal/people', 'journal/notes', 'journal/tasks', 'stack/protocols', 'stack/meds',
+SUBS = ['journal/mood', 'journal/notes', 'journal/tasks', 'stack/protocols', 'stack/meds',
         'goals/trends', 'goals/review', 'career/applied', 'career/skills', 'career/projects']
 KV = {}
 

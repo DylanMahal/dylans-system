@@ -33,6 +33,7 @@ function calEvents(d){const k=ymd(d),dow=String((d.getDay()+6)%7+1),out=[];
     const mk=(x,one)=>{const m=calM(x);return {t:x[0],c:x[1],s:m.ad?0:calMin(x[3]),e:m.ad?1440:(calMin(x[4])||1440),d:x[5]||'',one:!!one,id:x[6],kind:one?'one':'ev',days:one?'':String(x[2]),date:k,ad:!!m.ad,from:m.from||'',until:m.until||'',rm:m.rm}};
     (CAL.ev||[]).forEach(x=>{const m=calM(x);if(String(x[2]).includes(dow)&&(!m.from||k>=m.from)&&(!m.until||k<=m.until)&&!(ex[x[6]]||[]).includes(k))out.push(mk(x))});
     (CAL.one||[]).forEach(x=>{if(x[2]===k)out.push(mk(x,1))})}
+  if(dow==='7')out.push({t:'Week review',c:'other',s:19*60,e:19*60+30,d:"What worked, what didn't, next week",one:true,id:'wkrev',kind:'virt',virt:true,days:'',date:k,ad:false,from:'',until:'',rm:-1});
   return out}
 function calLay(evs){evs.sort((x,y)=>x.s-y.s||y.e-x.e);let grp=[],gEnd=-1;
   const flush=()=>{const cols=[];grp.forEach(ev=>{let c=cols.findIndex(end=>end<=ev.s);if(c<0){c=cols.length;cols.push(0)}cols[c]=ev.e;ev.col=c});
@@ -139,12 +140,12 @@ function calEdit(o,orig){let c=o.c||'other';const rk=calRepKind(o.rep,o.date),wd
     if(b.id==='ceDel')calDelete(orig)};
   $('ceT').onkeydown=e=>{if(e.key==='Enter')$('ceOk').click()}}
 function calDelete(ev){if(ev.kind==='ev')calAsk('Delete',sc=>calCommit(ev,null,sc));else calCommit(ev,null,'all')}
-function calDetail(ev){const d=calD(ev.date);
+function calDetail(ev){if(ev&&ev.virt){go('week');setTimeout(()=>{const r=$('wkReview');if(r)r.scrollIntoView({behavior:'smooth',block:'start'})},400);return}const d=calD(ev.date);
   openSheet(ev.t,`<div class="gc-det"><div><i style="background:${calCol(ev)}"></i><b>${esc(ev.t)}</b></div><div class="dim">${esc(d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))} · ${ev.ad?'All day':calFmt(ev.s,ev.e)}</div>
     <div class="dim">${esc(ev.c)} calendar${ev.one?'':' · '+calRepLabel(ev.days)+(ev.until?' until '+esc(nice(ev.until)):'')}</div>${ev.ad?'':`<div class="dim">🔔 ${calRmTxt(ev.rm)}</div>`}${ev.d?`<p>${esc(ev.d)}</p>`:''}
     <div class="bigbtns" style="margin-top:10px"><button class="btn p" type="button" id="cdE">Edit</button><button class="btn" type="button" id="cdC">Duplicate</button><button class="btn" type="button" id="cdD">Delete</button></div></div>`);
   $('sheetBody').onclick=e=>{if(e.target.id==='cdE')calEdit({...ev,rep:ev.days},ev);if(e.target.id==='cdC')calEdit({...ev,rep:''},null);if(e.target.id==='cdD')calDelete(ev)}}
-function calEvOf(x){const [k,key]=x.dataset.gce.split('|');return calEvents(calD(k)).find(e=>calKey(e)===key)}
+function calEvOf(x){const [k,key]=x.dataset.gce.split("|");return calEvents(calD(k)).find(e=>calKey(e)===key)}
 function calNewAt(date,s,e,ad){calEdit({t:'',c:'other',date,s,e,d:'',rep:'',ad},null)}
 function calCreate(){const t=ymd(new Date()),days=calDays().map(ymd);const date=days.includes(t)?t:calK();const now=new Date(),s=Math.min(23*60,(now.getHours()+1)*60);calNewAt(date,s,s+60)}
 const calY=(col,y,snap)=>{const r=col.getBoundingClientRect();return Math.max(0,Math.min(1440,Math.round((y-r.top)/calH*60/snap)*snap))};
@@ -158,11 +159,11 @@ function calStart(x,ev,col,cx,cy,touch){const r=x.getBoundingClientRect();
   calDrag={mode:cy>r.bottom-(touch?12:7)?'resize':'move',x,ev,col,y0:cy,x0:cx,off:calY(col,cy,1)-ev.s,s:ev.s,e:ev.e,moved:touch,touch};if(touch)x.classList.add('drag')}
 $('gcal').addEventListener('pointerdown',e=>{calPT=e.pointerType;const col=e.target.closest('.gc-col'),x=e.target.closest('.gc-col [data-gce]');
   if(e.pointerType!=='mouse'){calSw={x:e.clientX,y:e.clientY,t:Date.now()};
-    if(x&&col){const ev=calEvOf(x);if(!ev)return;if(calLP)clearTimeout(calLP.t);const cx=e.clientX,cy=e.clientY;
+    if(x&&col){const ev=calEvOf(x);if(!ev||ev.virt)return;if(calLP)clearTimeout(calLP.t);const cx=e.clientX,cy=e.clientY;
       calLP={x:cx,y:cy,t:setTimeout(()=>{calLP=null;calSw=null;calStart(x,ev,col,cx,cy,true);try{navigator.vibrate&&navigator.vibrate(10)}catch(_){}},380)}}
     return}
   if(e.button!==0||!col)return;
-  if(x){const ev=calEvOf(x);if(!ev)return;calStart(x,ev,col,e.clientX,e.clientY,false)}
+  if(x){const ev=calEvOf(x);if(!ev||ev.virt)return;calStart(x,ev,col,e.clientX,e.clientY,false)}
   else{const s=Math.floor(calY(col,e.clientY,1)/15)*15;calDrag={mode:'new',col,a:s,s,e:s+15,y0:e.clientY,moved:false}}
   e.preventDefault()});
 /* while a touch-drag is live, stop the page from scrolling under the finger */

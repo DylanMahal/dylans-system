@@ -44,7 +44,7 @@ async function startApp(session){
   const ok=await loadGridsFromDb(true);BFX(ok?'sheets pulled · stack/money/plan':'sheets: using local cache',ok?66:66,ok?undefined:false);
   $('nodata').hidden=ok||!!GMETA.at;
   try{const [tt,np,ni]=await Promise.all([load('today/titles'),load('today/nopct'),load('push/items')]);TITLES=tt||{};NOPCT=np?{m:{},...np}:{m:{}};if(ni)NITEMS={m:{},...ni}}catch(e){}
-  rebuild();booted=true;if(typeof loadProto==='function')loadProto().catch(()=>{});await Promise.all([loadStackStatus(),loadActuals()]);renderPend();renderStack();renderMoney();renderTargets();
+  rebuild();booted=true;jNightTask().catch(e=>console.warn(e));if(typeof loadProto==='function')loadProto().catch(()=>{});await Promise.all([loadStackStatus(),loadActuals()]);renderPend();renderStack();renderMoney();renderTargets();
   cur=null;go(location.hash.slice(1)||'today',true);
   BFX('ui compiled · '+(cur||'today'),78);
   await loadDay();await loadTools();loadBody();BFX('day state + tools restored',90);
@@ -54,7 +54,7 @@ async function startApp(session){
 }
 function flushOutbox(){try{const ks=[];for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.startsWith('ds3:outbox:'))ks.push(k.slice(11))}ks.forEach(p=>{const v=LS.get(p);if(v!=null)save(p,v,true);localStorage.removeItem('ds3:outbox:'+p)})}catch(e){}}
 let resumeAt=0;
-async function refreshAfterResume(){if(!booted)return;/* realtime keeps an open app current; only re-pull after a real break */if(Date.now()-resumeAt<30e3)return;resumeAt=Date.now();await loadGridsFromDb();await loadEdits();rebuild();const p='days/d-'+DAYK;const d=await load(p);if(d){DAY={ticks:{},water:0,msg:{},dw:0,...d};applyTicks();renderTools()}AGENT=await load('agent/status');agentState();if(cur==='gym')loadGym(true);if(cur==='journal')loadJournal()}
+async function refreshAfterResume(){if(!booted)return;/* realtime keeps an open app current; only re-pull after a real break */if(Date.now()-resumeAt<30e3)return;resumeAt=Date.now();await loadGridsFromDb();await loadEdits();rebuild();const p='days/d-'+DAYK;const d=await load(p);if(d){DAY={ticks:{},water:0,msg:{},dw:0,...d};applyTicks();renderTools()}AGENT=await load('agent/status');agentState();const y=scrollY;if(cur==='gym'&&!typingInGym())await loadGym(true);if(cur==='journal'&&jLoaded&&!jDirty){const e=await load(jpath(JDATE));if(e&&stab(e)!==stab(JE)&&document.activeElement!==$('jText')){JE=e;if(!JE.ink)JE.ink={h:PAGE_H,strokes:[]};renderJEditor(true)}}if(Math.abs(scrollY-y)>2)scrollTo(0,y)}
 async function signOut(){try{await SB.auth.signOut()}catch(e){}try{Object.keys(localStorage).filter(k=>k.startsWith('ds3:')).forEach(k=>localStorage.removeItem(k))}catch(e){}location.reload()}
 
 /* widget feed: a small summary the iPhone/iPad widgets read */
@@ -62,8 +62,8 @@ let widgetT=null;function schedWidget(){clearTimeout(widgetT);widgetT=setTimeout
 let widgetLast='';
 function publishWidget(){if(!R||!booted)return;if(typeof nxWidget==='function')nxWidget();if(!M.plans)return;
   const vis=visibleItems().filter(i=>i.t!==null).sort((a,b)=>a.t-b.t);
-  const done=countedItems().filter(i=>DAY.ticks[i.tk]).length,total=countedItems().length;
-  const w={at:new Date().toISOString(),date:DAYK,plan:planKind,pct:total?Math.round(done/total*100):0,done,total,
+  const done=countedItems().filter(i=>DAY.ticks[i.tk]).length,total=countedItems().length,wp=pctOf(countedItems()).p;
+  const w={at:new Date().toISOString(),date:DAYK,plan:planKind,pct:wp,done,total,
     items:vis.map(i=>({t:fmtM(i.t),n:i.item,d:!!DAY.ticks[i.tk],c:!!i.cmp})),water:DAY.water||0,waterTarget:(SET&&SET.water)||8,dw:DAY.dw||0,lc:typeof leetWeek==='function'?leetWeek():0,
     habits:habLoaded?hAll().filter(h=>hDue(h,DAYK)).slice(0,12).map(h=>({l:h.n,d:hDone(h,DAYK)})):[]};
   /* doses: today's plan items that match an active Stack entry; budget categories for the money widget */
@@ -121,3 +121,11 @@ document.addEventListener('gesturestart',e=>e.preventDefault());document.addEven
   const go=()=>{off();if(!document.fullscreenElement)document.documentElement.requestFullscreen({navigationUI:'hide'}).catch(()=>{})};
   const off=()=>{removeEventListener('pointerdown',go,true);removeEventListener('keydown',go,true)};
   addEventListener('pointerdown',go,true);addEventListener('keydown',go,true)})();
+
+/* one-time: put Journal into the night routine of both plans (deleting it later sticks) */
+async function jNightTask(){if(!M||!M.plans||!M.plans.weekday||!M.plans.weekday.length)return;if((await load('today/mig-journal')))return;
+  for(const kind of ['weekday','weekend']){const B=M.plans&&M.plans[kind];if(!B||!B.length)continue;
+    if(B.some(b=>b.items.some(i=>/journal/i.test(i.item||''))))continue;
+    const b=B.find(x=>/night|evening|wind|bed|sleep/i.test(x.title||''))||B[B.length-1];const pre=kind==='weekday'?'wd':'we';
+    patch(`${pre}:n:${rid()}`,{time:fmtM(Math.max(b.s,b.e-30)),item:'Journal',type:'Mindset',sched:'Daily',_new:true},{block:b.row,kind})}
+  save('today/mig-journal',{at:new Date().toISOString()},true)}

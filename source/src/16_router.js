@@ -39,6 +39,11 @@ function bnavFit(){const b=$('bnav');if(!b||!b.offsetWidth)return;const n=[...b.
 $('bnav').onclick=e=>{const b=e.target.closest('button');if(b){go(b.dataset.v);try{navigator.vibrate&&navigator.vibrate(8)}catch(_){}}};
 addEventListener('hashchange',()=>go(location.hash.slice(1),true));
 /* section changes only from the nav buttons (no swipe) */
-function renderAllViews(){renderToday();renderStack();renderMoney();renderTargets();renderTools()}
+/* sync can fire rebuild several times in a burst: draw once, only if the model really changed, never under a typing cursor, and keep the scroll */
+let ravT=null,ravSig='';
+function renderAllViews(force){clearTimeout(ravT);ravT=setTimeout(()=>{const a=document.activeElement;
+  if(!force&&a&&a!==document.body&&(a.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))){ravT=setTimeout(()=>renderAllViews(),1500);return}
+  let sig='';try{sig=DAYK+stab(M)}catch(e){}if(!force&&sig&&sig===ravSig)return;ravSig=sig;
+  const y=scrollY;renderToday();renderStack();renderMoney();renderTargets();renderTools();if(Math.abs(scrollY-y)>2)scrollTo(0,y)},force?0:80)}
 
 applyLex();

@@ -1,9 +1,9 @@
 /* ================= JOURNAL (typing + Apple Pencil) ================= */
 const PAGE_W=1000,PAGE_H=1400;
 const MOODS=[...Array(10)].map((_,i)=>[String(i+1),String(i+1)]);
-const MOODC=['#f50a0a','#f52d0a','#f5510a','#f5740a','#f5970a','#f5be0a','#edf50a','#9ff50a','#49f50a','#09e126'];const moodI=v=>`<i class="mood" style="background:${MOODC[(+v||1)-1]||'#777'}"></i>`;
-const PROMPTS=[['grat','Gratitude',"3 good things today, and why they happened\n1. \n   why: \n2. \n   why: \n3. \n   why: "],['review','Review',"Review\nWhat went well: \nWhat didn't: \nWhat I learned: \nWhat I'll do differently: "],['unload','Unload',"Unload: what's on my mind, and how I honestly feel about it\n"],['tmrw','Tomorrow',"Tomorrow\nThe one thing that matters: \nWhen and where I'll do it: \nIf ___ gets in the way, then I'll: \nEverything else to remember:\n- "]];
-const JPI={recap:'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',grat:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',review:'<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/><path d="M12 8v4l3 2"/>',unload:'<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',tmrw:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'};
+const MOODC=['#f50a0a','#f52d0a','#f5510a','#f5740a','#f5970a','#f5be0a','#edf50a','#9ff50a','#49f50a','#09e126'];const moodI=v=>`<i class="mood" style="background:${MOODC[Math.max(0,Math.min(9,Math.round(+v||1)-1))]||'#777'}"></i>`;
+const PROMPTS=[['review','Review',"Review\nWhat went well: \nWhat didn't: \nWhat I learned: \nWhat I'll do differently: "]];
+const JPI={recap:'<path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/>',grat:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',review:'<path d="M4 12a8 8 0 1 0 2.4-5.7"/><path d="M4 4v4h4"/><path d="M12 8v4l3 2"/>',unload:'<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',ask:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 0 1 5 .9c0 1.7-2.5 2.2-2.5 3.9"/><path d="M12 17.2v.3"/>',tmrw:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'};
 const jpBtn=(k,l,c)=>`<button class="jpb${c?' '+c:''}" type="button" data-pr="${k}"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${JPI[k]}</svg><span>${l}</span></button>`;
 let JDATE=null,JE=null,JLIST=[],jSaveT=null,jLoaded=false;
 const jpath=d=>'journal/e-'+d;
@@ -16,16 +16,16 @@ watchPrefix('journal/e-',(evt,path,data)=>{const d=path.slice(10);JLIST=JLIST.fi
   if(cur==='journal'){renderJList();if(d===JDATE&&data&&!jDirty){JE=data;renderJEditor(true)}}});
 let jDirty=false;
 async function openEntry(d){JDATE=d;const e=await load(jpath(d));JE=e||{date:d,text:'',mood:null,tags:[],ink:{h:PAGE_H,strokes:[]}};if(!JE.ink)JE.ink={h:PAGE_H,strokes:[]};if(typeof JL!=='undefined')JL.reset();renderJList();renderJEditor()}
-const jEmpty=e=>!String(e.text||'').trim()&&!e.mood&&!(e.tags||[]).length&&!((e.ink&&e.ink.strokes)||[]).some(k=>k&&(k.tool||k.t)!=='eraser'&&(k.pts||k.p||k.points||[1]).length);
+const jEmpty=e=>!String(e.text||'').trim()&&e.mood==null&&!(e.tags||[]).length&&!((e.ink&&e.ink.strokes)||[]).some(k=>k&&(k.tool||k.t)!=='eraser'&&(k.pts||k.p||k.points||[1]).length);
 function saveJ(){jDirty=true;clearTimeout(jSaveT);$('jSaved').textContent='…';jSaveT=setTimeout(()=>{JE.updatedAt=new Date().toISOString();const empty=jEmpty(JE);
   if(empty)removeDoc(jpath(JE.date));else save(jpath(JE.date),JE,true);
-  JLIST=JLIST.filter(x=>x.date!==JE.date);if(!empty)JLIST.push(clone(JE));JLIST.sort((a,b)=>a.date<b.date?1:-1);renderJList();$('jSaved').textContent='saved';jDirty=false},700)}
+  JLIST=JLIST.filter(x=>x.date!==JE.date);if(!empty)JLIST.push(clone(JE));JLIST.sort((a,b)=>a.date<b.date?1:-1);renderJList();$('jSaved').textContent='saved';jDirty=false;if(!empty&&JE.date===DAYK&&String(JE.text||'').trim().length>20&&typeof autoTick==='function')autoTick(/^journal$/i)},700)}
 function renderJList(){
   const q=norm($('jQ').value);
   const days=new Set(JLIST.map(e=>e.date));
   const items=JLIST.filter(e=>!q||norm(e.text).includes(q)||(e.tags||[]).some(t=>norm(t).includes(q)));
   $('jList').innerHTML=(days.has(DAYK)||q?'':`<button type="button" class="jitem${JDATE===DAYK?' on':''}" data-jd="${DAYK}"><span class="jd">${esc(nice(DAYK))}</span></button>`)+
-    items.map(e=>`<button type="button" class="jitem${e.date===JDATE?' on':''}" data-jd="${e.date}"><span class="jd">${esc(nice(e.date))}${e.mood?`${moodI(e.mood)}`:''}${e.ink&&e.ink.strokes&&e.ink.strokes.length?'<span class="dim"> ✎</span>':''}</span></button>`).join('')||'<div class="dim" style="font-size:12px;padding:8px">Nothing found.</div>';
+    items.map(e=>`<button type="button" class="jitem${e.date===JDATE?' on':''}" data-jd="${e.date}"><span class="jd">${esc(nice(e.date))}${e.mood!=null?`${moodI(e.mood)}`:''}${e.ink&&e.ink.strokes&&e.ink.strokes.length?'<span class="dim"> ✎</span>':''}</span></button>`).join('')||'<div class="dim" style="font-size:12px;padding:8px">Nothing found.</div>';
   const streak=(()=>{let n=0;const d=new Date(logical());for(;;){if(days.has(ymd(d))){n++;d.setDate(d.getDate()-1)}else if(ymd(d)===DAYK){d.setDate(d.getDate()-1)}else break}return n})();
   $('jStreak').textContent=`${JLIST.length} entries · ${streak} day streak`;
 }
@@ -34,7 +34,7 @@ $('jList').onclick=e=>{const b=e.target.closest('[data-jd]');if(b){flushJ();open
 function flushJ(){if(jSaveT){clearTimeout(jSaveT);jSaveT=null;JE.updatedAt=new Date().toISOString();save(jpath(JE.date),JE,true);jDirty=false}}
 function renderJEditor(keepScroll){
   $('jDate').textContent=new Date(JDATE+'T12:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-  $('jMood').innerHTML=MOODS.map(([v,l])=>`<button type="button" data-mood="${v}" aria-pressed="${String(JE.mood)===v}" title="${l}">${moodI(v)}<span>${l}</span></button>`).join('');
+  $('jMood').innerHTML=`<div class="mood10"><b class="num" id="jMoodVal">${JE.mood!=null?(+JE.mood).toFixed(1):'–'}<small>/10</small></b><input type="range" min="0" max="10" step="0.1" value="${JE.mood!=null?JE.mood:5}" id="jMoodR" aria-label="Mood, 0 to 10">${JE.mood!=null?'<button type="button" class="mood10x" data-mclr="1" aria-label="Clear mood">✕</button>':''}</div>`;
   $('jTags').innerHTML=(JE.tags||[]).map((t,i)=>`<span class="jtag">#${esc(t)}<button type="button" data-rmtag="${i}" aria-label="Remove tag">✕</button></span>`).join('')+`<input class="jtagin" id="jTagIn" placeholder="+ tag" aria-label="Add tag">`;
   $('jText').value=JE.text||'';autoGrow();
   $('jWords').textContent=((JE.text||'').trim().match(/\S+/g)||[]).length+' words';
@@ -44,16 +44,18 @@ function renderJEditor(keepScroll){
 $('jPrev').onclick=()=>{flushJ();openEntry(addDays(JDATE,-1))};
 $('jNext').onclick=()=>{flushJ();openEntry(addDays(JDATE,1))};
 $('jToday').onclick=()=>{flushJ();openEntry(DAYK)};
-$('jMood').onclick=e=>{const b=e.target.closest('[data-mood]');if(!b)return;JE.mood=JE.mood===+b.dataset.mood?null:+b.dataset.mood;saveJ();renderJEditor();burstEl(b,18)};
+$('jMood').onclick=e=>{if(e.target.closest('[data-mclr]')){JE.mood=null;saveJ();renderJEditor()}};
+$('jMood').oninput=e=>{if(e.target.id==='jMoodR')$('jMoodVal').innerHTML=(+e.target.value).toFixed(1)+'<small>/10</small>'};
+$('jMood').onchange=e=>{if(e.target.id!=='jMoodR')return;const had=JE.mood!=null;JE.mood=Math.round(+e.target.value*10)/10;saveJ();if(!had)renderJEditor()};
 $('jTags').onclick=e=>{const b=e.target.closest('[data-rmtag]');if(b){JE.tags.splice(+b.dataset.rmtag,1);saveJ();renderJEditor()}};
 $('jTags').onkeydown=e=>{if(e.target.id!=='jTagIn')return;if(e.key==='Enter'||e.key===','){e.preventDefault();const v=e.target.value.trim().replace(/^#/,'');if(v){JE.tags=[...(JE.tags||[]),v];saveJ();renderJEditor();$('jTagIn').focus()}}};
 function autoGrow(){const t=$('jText');t.style.height='auto';t.style.height=Math.max(260,t.scrollHeight)+'px'}
 $('jText').oninput=()=>{JE.text=$('jText').value;autoGrow();$('jWords').textContent=((JE.text||'').trim().match(/\S+/g)||[]).length+' words';saveJ()};
-$('jPrompts').innerHTML=jpBtn('recap','Day recap','pr')+PROMPTS.map(([k,l])=>jpBtn(k,l)).join('');
+$('jPrompts').innerHTML=jpBtn('recap','Day recap','pr')+jpBtn('ask','Prompt')+PROMPTS.map(([k,l])=>jpBtn(k,l)).join('');
 $('jDel').onclick=function(){if(!this.dataset.arm){this.dataset.arm=1;this.classList.add('arm');this.insertAdjacentHTML('beforeend','<span>Delete?</span>');clearTimeout(this._t);this._t=setTimeout(()=>{delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove()},3000);return}
   clearTimeout(this._t);clearTimeout(jSaveT);delete this.dataset.arm;this.classList.remove('arm');const x=this.querySelector('span');x&&x.remove();
   const d=JDATE;removeDoc(jpath(d));JLIST=JLIST.filter(e=>e.date!==d);JE={date:d,text:'',mood:null,tags:[],ink:{h:PAGE_H,strokes:[]}};if(typeof JL!=='undefined')JL.reset();renderJList();renderJEditor();$('jSaved').textContent='deleted'};
-$('jPrompts').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b)return;if(b.dataset.pr==='recap'){jInsertRecap(b);return}const p=PROMPTS.find(x=>x[0]===b.dataset.pr)[2];JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+p;renderJEditor();const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ()};
+$('jPrompts').onclick=e=>{const b=e.target.closest('[data-pr]');if(!b)return;if(b.dataset.pr==='recap'){jInsertRecap(b);return}if(b.dataset.pr==='ask'){jPrompt().then(q=>{JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+q+'\n';renderJEditor();const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ()}).catch(er=>nxErr(er,'prompt'));return}const p=PROMPTS.find(x=>x[0]===b.dataset.pr)[2];JE.text=(JE.text?JE.text.replace(/\s*$/,'')+'\n\n':'')+p;renderJEditor();const t=$('jText');t.focus();t.setSelectionRange(t.value.length,t.value.length);saveJ()};
 
 /* --- handwriting: drawn straight over the typed page (shared layer in 11a) --- */
 const JL=inkLayer({host:$('jPage'),canvas:$('jCanvas'),bar:$('jTools'),full:$('jEditor'),paper:false,get:()=>JE&&JE.ink||null,make:()=>{if(!JE.ink)JE.ink={h:IH,strokes:[]};return JE.ink},changed:saveJ});
@@ -105,7 +107,7 @@ async function jRecap(d){
   }catch(e){}
   try{
     const dd=d===DAYK&&typeof DAY!=='undefined'?DAY:await load('days/d-'+d);
-    if(dd&&dd.total){P('plan',dd.done+'/'+dd.total+' ticked · '+R(dd.done/dd.total*100)+'%');if(dd.water)S('water · '+dd.water)}
+    if(dd&&dd.total){P('plan',(dd.n!=null?dd.nd+'/'+dd.n:dd.done+'/'+dd.total)+' ticked · '+R(dd.done/dd.total*100)+'%');if(dd.water)S('water · '+dd.water)}
   }catch(e){}
   try{
     const fo=await load('tools/focus');const fs=((fo&&fo.sessions)||[]).filter(x=>x.d===d);

@@ -1,8 +1,8 @@
 /* ================= JOURNAL tabs: journal · notes (Apple Notes) · tasks (Todoist) =================
    notes: notes/n-<id> {id,html,folder,pin,created,upd} · notes/folders {list:[name]}
    tasks: tasks/all {list:[task],projects:[{id,n,col}]}  task {id,t,d,tm,p,proj,rep,note,sub:[{t,x}],done,created} */
-let JTAB=LS.get('jtab')||'journal';
-function setJTab(t){if(typeof inkExitFull==='function')inkExitFull();JTAB=t;LS.set('jtab',t);document.querySelectorAll('#jTabs [data-jt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.jt===t));
+let JTAB=LS.get('jtab')||'journal';if(JTAB==='people')JTAB='journal';
+function setJTab(t){if(t==='people')t='journal';if(typeof inkExitFull==='function')inkExitFull();JTAB=t;LS.set('jtab',t);document.querySelectorAll('#jTabs [data-jt]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.jt===t));
   $('jPaneJ').hidden=t!=='journal';$('jPaneN').hidden=t!=='notes';$('jPaneT').hidden=t!=='tasks';$('jPaneM').hidden=t!=='mood';$('jPaneP').hidden=t!=='people';
   if(t==='mood'&&typeof renderMood==='function')renderMood().catch(e=>nxErr(e,'mood'));if(t==='people'&&typeof renderPeople==='function')renderPeople().catch(e=>nxErr(e,'people'));
   if(t==='notes')loadNotes();if(t==='tasks')loadTasks();if(t==='journal'){if(jLoaded)renderJEditor();else loadJournal()}}
@@ -18,8 +18,8 @@ const nText=h=>{const d=document.createElement('div');d.innerHTML=h||'';d.queryS
 const nTitle=n=>{const d=document.createElement('div');d.innerHTML=n.html||'';const f=[...d.childNodes].map(x=>x.textContent.trim()).find(Boolean);return (f||(n.ink&&n.ink.strokes&&n.ink.strokes.length?'handwritten note':'new note')).slice(0,80)};
 function nAgo(t){const d=new Date(t),n=new Date();return ymd(d)===ymd(n)?d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}):((n-d)<6*864e5?d.toLocaleDateString('en-GB',{weekday:'long'}):d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'2-digit'})).toLowerCase()}
 function renderNotes(listOnly){const el=$('jPaneN');if(!el)return;const q=(($('nQ')||{}).value||'').toLowerCase();
-  const all=Object.values(NOTES).filter(n=>NF==='all'||n.folder===NF).filter(n=>!q||nText(n.html).toLowerCase().includes(q)).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.upd>a.upd?1:-1));
-  const listHtml=`${all.map(n=>{const t=nTitle(n);const body=nText(n.html).slice(t.length).trim();const th=nThumb(n);return `<button type="button" class="nitem${n.id===NCUR?' on':''}${th?' hasth':''}" data-n="${n.id}">${th}<b>${n.pin?'📌 ':''}${esc(t)}</b><span class="dim"><span class="num">${nAgo(n.upd)}</span> ${esc(body.slice(0,70))||(th?'handwriting':'no additional text')}</span></button>`}).join('')||'<div class="dim" style="padding:14px 4px">No notes</div>'}`;
+  const qw=q.trim().split(/\s+/).filter(Boolean);const all=Object.values(NOTES).filter(n=>NF==='all'||n.folder===NF||qw.length).filter(n=>{if(!qw.length)return true;const tx=(nText(n.html)+' '+(n.folder||'')).toLowerCase();return qw.every(w=>tx.includes(w))}).sort((a,b)=>(b.pin?1:0)-(a.pin?1:0)||(b.upd>a.upd?1:-1));
+  const listHtml=`${all.map(n=>{const t=nTitle(n);const body=nText(n.html).slice(t.length).trim();const th=nThumb(n);return `<button type="button" class="nitem nitav${n.id===NCUR?' on':''}${th?' hasth':''}" data-n="${n.id}">${nAvatar(n)}<span class="nit-t"><b>${n.pin?'📌 ':''}${qw.length?nHit(t,qw):esc(t)}</b><span class="dim"><span class="num">${nAgo(n.upd)}</span>${qw.length?' '+nSnip(body,qw):n.folder&&NF==='all'?' · '+esc(n.folder):''}</span></span>${th}</button>`}).join('')||'<div class="dim" style="padding:14px 4px">No notes</div>'}`;
   if(listOnly&&$('nList')){$('nList').innerHTML=listHtml;return}
   el.innerHTML=`<div class="ngrid${NCUR?' editing':''}"><div class="nside"><div class="row" style="gap:6px"><input class="inp" id="nQ" type="search" placeholder="Search notes" value="${esc(q)}" style="flex:1"><button class="btn p" type="button" id="nNew" title="new note">✎</button></div>
     <div class="chips" id="nFolders" style="margin:8px 0">${['all',...NFOLD.list].map(f=>`<button type="button" class="chip${NF===f?' on':''}" data-nf="${esc(f)}">${esc(f)}</button>`).join('')}<button type="button" class="chip" id="nAddF">+ Folder</button></div>
@@ -35,6 +35,7 @@ const NHL=['rgba(255,225,77,.42)','rgba(125,255,155,.36)','rgba(255,126,182,.42)
 function nEditorHtml(n){return `<div class="nhead"><button type="button" class="nback" id="nBack">‹ Notes</button>
   <select id="nFold" class="nfsel" aria-label="Folder">${NFOLD.list.map(f=>`<option ${n.folder===f?'selected':''}>${esc(f)}</option>`).join('')}</select>
   <span class="nsp"></span><span id="nSaved" class="nstat"></span>
+  <button type="button" class="nicon navbtn" id="nAv" title="Note picture" aria-label="Note picture">${nAvatar(n,22)}</button>${n.av?'<button type="button" class="nicon" id="nAvX" title="Remove picture" aria-label="Remove picture">'+NSV('<path d="M6 6l12 12M18 6L6 18"/>')+'</button>':''}
   <button type="button" class="nicon" id="nPin" title="${n.pin?'Unpin':'Pin'}" aria-label="Pin" aria-pressed="${!!n.pin}">${NSV('<path d="M12 17v5M8 3h8l-1 6 3 4H6l3-4z"/>')}</button>
   <button type="button" class="nicon" id="nCopy" title="Copy text" aria-label="Copy">${NSV('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 012-2h9"/>')}</button>
   <button type="button" class="nicon nbad" id="nDel" title="Delete note" aria-label="Delete">${NSV('<path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/>')}<span class="lbl">Delete?</span></button></div>
@@ -52,6 +53,8 @@ function nBind(){const el=$('jPaneN');
     if(b.id==='nBack'){nFlush();NCUR=null;renderNotes();return}
     if(!NCUR)return;const n=NOTES[NCUR];
     if(b.id==='nPin'){n.pin=!n.pin;nSave();renderNotes();return}
+    if(b.id==='nAv'){nPickAv(n);return}
+    if(b.id==='nAvX'){delete n.av;n.upd=new Date().toISOString();nSave();renderNotes();return}
     if(b.id==='nCopy'){navigator.clipboard&&navigator.clipboard.writeText($('nEd').innerText).then(()=>{b.classList.add('ok');setTimeout(()=>b.classList.remove('ok'),1400)});return}
     if(b.id==='nDel'){if(!b.dataset.arm){b.dataset.arm=1;b.classList.add('arm');setTimeout(()=>{delete b.dataset.arm;b.classList.remove('arm')},2500);return}delete NOTES[NCUR];removeDoc('notes/n-'+NCUR);NCUR=null;renderNotes();return}
     if(d.nc){nCmd(d.nc);return}};
@@ -245,3 +248,16 @@ async function renderTodayTasks(){const el=$('todayTasks');if(!el)return;
       setTimeout(()=>{tSave();renderTodayTasks();if(cur==='journal'&&JTAB==='tasks')renderTasks()},260);return}
     if(b.dataset.tte){JTAB='tasks';go('journal');setJTab('tasks');setTimeout(()=>tEdit(b.dataset.tte),250)}}}
 watch('tasks/all',()=>{if(cur==='today')renderTodayTasks()});
+
+/* note pictures: your own photo (shrunk to 96px, kept on the note) or a coloured initial */
+function nAvatar(n,sz){const st=sz?` style="width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.48)}px"`:'';
+  if(n.av)return `<img class="nav" src="${esc(n.av)}" alt=""${st}>`;
+  const t=nTitle(n),ch=(Array.from(t.replace(/^[^\p{L}\p{N}\p{Extended_Pictographic}]+/u,''))[0]||'•').toUpperCase();
+  let h=0;for(const c of String(n.id||t))h=(h*31+c.charCodeAt(0))>>>0;
+  return `<span class="nav" aria-hidden="true" style="background:linear-gradient(135deg,hsl(${h%360} 70% 52%),hsl(${(h+50)%360} 75% 38%));${st?st.slice(8,-1):''}">${esc(ch)}</span>`}
+function nPickAv(n){const i=document.createElement('input');i.type='file';i.accept='image/*';
+  i.onchange=()=>{const f=i.files&&i.files[0];if(!f)return;const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=c.height=96;const x=c.getContext('2d'),m=Math.min(img.width,img.height);
+    x.drawImage(img,(img.width-m)/2,(img.height-m)/2,m,m,0,0,96,96);URL.revokeObjectURL(img.src);n.av=c.toDataURL('image/jpeg',.82);n.upd=new Date().toISOString();nSave();renderNotes()};img.src=URL.createObjectURL(f)};i.click()}
+const nRx=w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+function nHit(t,qw){return esc(t).replace(new RegExp('('+qw.map(w=>nRx(esc(w))).join('|')+')','gi'),'<mark>$1</mark>')}
+function nSnip(body,qw){const lo=body.toLowerCase();let at=-1;for(const w of qw){const i=lo.indexOf(w);if(i>=0&&(at<0||i<at))at=i}if(at<0)return '';const a=Math.max(0,at-24);return (a?'…':'')+nHit(body.slice(a,a+90),qw)}

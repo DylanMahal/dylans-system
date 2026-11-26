@@ -27,6 +27,10 @@ watch('today/nopct',d=>{NOPCT=d?{m:{},...d}:{m:{}};if(typeof M!=='undefined'&&M.
 function setNoPct(i,off){const key=typeof i==='string'?i:pctId(i);if(off)NOPCT.m[key]=1;else delete NOPCT.m[key];save('today/nopct',NOPCT,true);if($('pct'))updateCounts()}
 function pctId(i){return (i.tk||'').toLowerCase().replace(/\s+/g,' ').trim()}
 function noPct(i){return !!NOPCT.m[pctId(i)]}
+/* weights 1–100 per item (default 10): the day % is ticked weight over total weight */
+function pctW(i){const w=NOPCT.w&&NOPCT.w[pctId(i)];return w>0?+w:10}
+function setPctW(i,w){const key=typeof i==='string'?i:pctId(i);w=Math.round(+w);NOPCT.w=NOPCT.w||{};if(w>=1&&w<=100&&w!==10)NOPCT.w[key]=w;else delete NOPCT.w[key];save('today/nopct',NOPCT,true);if($('pct'))updateCounts()}
+function pctOf(vis){const W=vis.reduce((a,i)=>a+pctW(i),0),D=vis.filter(i=>DAY.ticks[i.tk]).reduce((a,i)=>a+pctW(i),0);return {W,D,p:W?Math.round(D/W*100):0}}
 function countedItems(){return visibleItems().filter(i=>!noPct(i))}
 function nowM(){let m=mins(new Date());if(m<300)m+=1440;return m}
 function itemRow(i){
@@ -34,7 +38,7 @@ function itemRow(i){
   const sch=i.sched&&!/^(Daily|—|None)$/.test(i.sched)?i.sched:'';
   return `<div class="it" role="checkbox" tabindex="0" aria-checked="false" data-k="${esc(i.tk)}" data-t="${i.t??''}" data-cmp="${i.cmp?1:0}"><span class="box"></span><span class="t num">${esc(i.time||'')}</span><span><span class="nm">${esc(dn(i.item))}</span>${i.edited?'<span class="delta">Δ</span>':''}${ds?`<span class="dd">${esc(ds)}</span>`:''}${sch?`<span class="dd">· ${esc(sch)}</span>`:''}${i.caution?'<span class="warnflag" title="Has a caution">⚠︎</span>':''}${i.notes?`<span class="nt">${esc(i.notes)}</span>`:''}${i.caution?`<span class="ca">${esc(i.caution)}</span>`:''}</span><span class="row" style="gap:6px;justify-content:flex-end"><button class="ed" type="button" data-edit="${esc(i.key)}">✎</button><span class="ty${i.cmp?' c':''}">${esc(i.type||'')}</span></span></div>`;
 }
-function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks();if(typeof renderTodayCal==='function')renderTodayCal();
+function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks();if(typeof renderTodayWkRev==='function')renderTodayWkRev().catch(e=>console.warn(e));if(typeof renderTodayCal==='function')renderTodayCal();
   const blocks=M.plans[planKind];
   
   $('pWd').setAttribute('aria-pressed',planKind==='weekday');$('pWe').setAttribute('aria-pressed',planKind==='weekend');
@@ -52,16 +56,16 @@ function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks(
 }
 function applyTicks(){document.querySelectorAll('#v-today .it').forEach(el=>el.setAttribute('aria-checked',!!DAY.ticks[el.dataset.k]));updateCounts()}
 function updateCounts(){
-  const vis=countedItems();const total=vis.length;const done=vis.filter(i=>DAY.ticks[i.tk]).length;const p=total?Math.round(done/total*100):0;
+  const vis=countedItems();const n=vis.length;const nd=vis.filter(i=>DAY.ticks[i.tk]).length;const pw=pctOf(vis),p=pw.p,total=pw.W,done=pw.D;
   $('pct').textContent=p+'%';$('pct').className='pct num '+(p>=80?'ok':'');
   $('asc').innerHTML=`<span class="pbar${p>=80?' ok':''}"><i style="width:${Math.min(100,p)}%"></i><em></em></span>`;
-  $('pctTxt').textContent=`${done}/${total} ticked · target 80%`;
+  $('pctTxt').textContent=`${nd}/${n} ticked · target 80%`;
   M.plans[planKind].forEach(b=>{const its=b.items.filter(onToday);const el=$('blk-'+b.bi);if(!el)return;const d=its.filter(i=>DAY.ticks[i.tk]).length;
     el.querySelector('.ct').textContent=`${d}/${its.length}`;el.querySelector('.mini span').style.width=(its.length?d/its.length*100:0)+'%';el.classList.toggle('done',its.length>0&&d===its.length);
     const sb=document.querySelector(`#strip button[data-b="${b.bi}"] .fill`);if(sb)sb.style.width=(its.length?d/its.length*100:0)+'%'});
-  return {done,total,p};
+  return {done,total,p,nd,n};
 }
-function persistDay(){const {done,total}=updateCounts();const names=visibleItems().filter(i=>DAY.ticks[i.tk]).map(i=>i.item);DAY={...DAY,done,total,names,plan:planKind,dow:DOWN};save('days/d-'+DAYK,DAY);schedWidget()}
+function persistDay(){const {done,total,nd,n}=updateCounts();const names=visibleItems().filter(i=>DAY.ticks[i.tk]).map(i=>i.item);DAY={...DAY,done,total,nd,n,names,plan:planKind,dow:DOWN};save('days/d-'+DAYK,DAY);schedWidget()}
 function setTick(k,on){if(on)DAY.ticks[k]=1;else delete DAY.ticks[k];document.querySelectorAll(`#v-today .it[data-k="${CSS.escape(k)}"]`).forEach(el=>el.setAttribute('aria-checked',on));persistDay();if(typeof medsOnTick==='function')medsOnTick(k,on)}
 function autoTick(re){const it=visibleItems().find(i=>re.test(i.item));if(it&&!DAY.ticks[it.tk])setTick(it.tk,true)}
 function toggle(el){
