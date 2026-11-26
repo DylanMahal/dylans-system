@@ -48,8 +48,11 @@ function openDrawer(key){
   <dl>${row('dose',s.dose)}${row('route',s.route)}${row('schedule',s.sched)}${row('taken at',s.times.join(', '))}${row('source',s.src)}${row('pack price',isNum(s.price)?gbp(s.price,2):s.price)}${row('units / pack',s.units)}${row('used / week',s.perweek)}${row('weekly',wk?gbp(wk,2):'')}${row('monthly',s.monthly?gbp(s.monthly,2):'')}${row('yearly',s.monthly?gbp(s.monthly*12,0):'')}</dl>
   ${s.notes?`<div class="sect"><span class="tag">Notes</span>${esc(s.notes)}</div>`:''}
   ${s.cau.length?`<div class="sect"><span class="tag">Interactions & cautions · from your plan</span>${s.cau.map(c=>`<div class="ca">${esc(c)}</div>`).join('')}</div>`:''}
+  ${trialBox(s)}
   ${s.monthly&&M.rate?`<div class="sect"><span class="tag">Costs you</span><span style="font-size:22px;font-weight:800" class="num">${(s.monthly/M.rate).toFixed(1)} h</span> <span class="dim">of work a month</span></div>`:''}`;
   $('drawer').classList.add('on');$('drawer').setAttribute('aria-hidden','false');$('scrim').classList.add('on');$('dClose').onclick=closeDrawer;$('dEdit').onclick=()=>editStack(s);$('dSt').onclick=e=>{const b=e.target.closest('[data-dst]');if(!b)return;setStackStatus(s.name,b.dataset.dst);openDrawer(key)};$('dClose').focus();
+  const tb=$('dTrialBox');if(tb){tb.onchange=e=>{const f=e.target.dataset.trf;if(f){stdSet(s.name,f,e.target.value);openDrawer(key)}};tb.onclick=e=>{if(e.target.closest('#dTrRev')){stdSet(s.name,'reviewed',DAYK);openDrawer(key);if(typeof renderTodayNudges==='function')renderTodayNudges()}}}
+  if(stdOf(s.name).start)trialHtml(s).then(h=>{const el=$('dTrial');if(el)el.innerHTML=h}).catch(e=>console.warn(e));
 }
 function closeDrawer(){$('drawer').classList.remove('on');$('drawer').setAttribute('aria-hidden','true');$('scrim').classList.remove('on')}
 $('scrim').onclick=()=>{closeDrawer();closeSheet()};
@@ -83,3 +86,38 @@ async function loadStackStatus(){const d=await load('stack/status');STOVR={map:{
   rebuild()}
 function setStackStatus(name,st){STOVR.map[norm(name)]=st;save('stack/status',STOVR);rebuild()}
 watch('stack/status',d=>{if(d){STOVR={map:{},...d};rebuild()}});
+
+/* ---- personal trial: a start and a review date per item, and sleep / mood / recovery before vs since ---- */
+let STD={map:{}};load('stack/dates').then(d=>{if(d)STD={map:{},...d}}).catch(()=>{});watch('stack/dates',d=>{if(d)STD={map:{},...d}});
+const stdOf=n=>STD.map[norm(n)]||{};
+function stdSet(n,f,v){const k=norm(n);STD.map[k]={...(STD.map[k]||{}),[f]:v||null};if(f==='review')delete STD.map[k].reviewed;save('stack/dates',STD)}
+function trialBox(s){const t=stdOf(s.name);const dn=t.start?Math.max(0,Math.round((new Date(DAYK+'T12:00')-new Date(t.start+'T12:00'))/864e5))+1:null;
+  const rv=t.review?Math.round((new Date(t.review+'T12:00')-new Date(DAYK+'T12:00'))/864e5):null;
+  return `<div class="sect" id="dTrialBox"><span class="tag">Personal trial</span>
+    <div class="row trf" style="gap:8px;flex-wrap:wrap"><label class="dim">Started<input class="inp" type="date" data-trf="start" value="${esc(t.start||'')}"></label><label class="dim">Review on<input class="inp" type="date" data-trf="review" value="${esc(t.review||'')}"></label></div>
+    ${t.start?`<div class="dim" style="font-size:12px;margin-top:6px">Day ${dn}${rv!=null?rv>0?` · review in ${rv} day${rv>1?'s':''}`:t.reviewed?' · reviewed '+esc(nice(t.reviewed)):' · <b style="color:#ffd60a">review due</b>':''}</div>`:'<div class="dim" style="font-size:12px;margin-top:6px">Set a start date to compare sleep, mood and recovery before and after.</div>'}
+    ${t.review&&t.review<=DAYK&&!t.reviewed?'<button type="button" class="btn" id="dTrRev" style="margin-top:8px">Mark reviewed</button>':''}
+    <div id="dTrial">${t.start?'<div class="dim" style="font-size:12px;margin-top:8px">Reading your data…</div>':''}</div></div>`}
+let TRD=null,TRDT=0;
+async function trialData(){if(TRD&&Date.now()-TRDT<6e4)return TRD;const q=p=>listDocs(p).catch(()=>[]);const [sl,md,hd,jr]=await Promise.all([q('sleep/w-'),q('mood/d-'),q('health/d-'),q('journal/e-')]);
+  const day={};const D=k=>day[k]||(day[k]={});
+  sl.forEach(r=>{const k=r.path.slice(8),n=r.data;if(!n)return;if(n.asleep)D(k).asleep=+n.asleep;try{const v=typeof sQ==='function'?sQ(n):null;if(v)D(k).sq=v}catch(e){}});
+  md.forEach(r=>{const k=r.path.slice(7);const xs=((r.data&&r.data.in)||[]).filter(x=>x.m!=null);if(xs.length)D(k).mood=avg(xs.map(moodV));const es=xs.map(x=>+x.e).filter(Boolean);if(es.length)D(k).en=avg(es)});
+  jr.forEach(r=>{const k=r.path.slice(10);if(r.data&&r.data.mood!=null&&!(day[k]&&day[k].mood!=null))D(k).mood=+r.data.mood});
+  hd.forEach(r=>{const h=r.data||{},k=r.path.slice(9);if(+h.hrv)D(k).hrv=+h.hrv;if(+h.rhr)D(k).rhr=+h.rhr});
+  TRD=day;TRDT=Date.now();return day}
+const TRM=[['sq','Sleep score',v=>Math.round(v),1],['asleep','Time asleep',v=>Math.floor(v/60)+'h '+pad(Math.round(v%60))+'m',1],['mood','Mood',v=>v.toFixed(1),1],['en','Energy',v=>v.toFixed(1),1],['hrv','HRV',v=>Math.round(v)+' ms',1],['rhr','Resting HR',v=>Math.round(v)+' bpm',-1]];
+async function trialHtml(s){const t=stdOf(s.name);if(!t.start)return '';const end=t.review&&t.review<DAYK?t.review:DAYK;const day=await trialData();const b0=addDays(t.start,-28);
+  const pick=(a,b,f)=>Object.keys(day).filter(k=>k>=a&&k<b&&day[k][f]!=null).map(k=>day[k][f]);
+  const rows=TRM.map(([f,l,fm,dir])=>{const B=pick(b0,t.start,f),A=pick(t.start,addDays(end,1),f);if(B.length<3||A.length<3)return null;const b=avg(B),a=avg(A),d=(a-b)/Math.abs(b||1)*100;const good=d*dir>0;
+    return `<div><span>${l}<small>${B.length} vs ${A.length} days</small></span><b class="num">${fm(b)} → ${fm(a)} <em class="${Math.abs(d)<2?'eq':good?'up':'dn'}">${d>0?'+':''}${d.toFixed(0)}%</em></b></div>`}).filter(Boolean);
+  return rows.length?`<div class="reclist trl" style="margin-top:10px">${rows.join('')}</div><div class="dim" style="font-size:11px;margin-top:6px">28 days before the start vs since. One person, no placebo: a nudge to look closer, not proof.</div>`:'<div class="dim" style="font-size:12px;margin-top:8px">Needs at least 3 days of sleep or mood data on each side of the start date.</div>'}
+/* Today: trials due a review and protocols running low */
+function extraNudges(){let h='';
+  if(typeof M!=='undefined'&&M&&M.stack)Object.entries(STD.map).forEach(([k,t])=>{if(!t||!t.review||t.review>DAYK||t.reviewed)return;const s=M.stack.find(x=>norm(x.name)===k);if(!s)return;
+    h+=`<button type="button" class="nx-card nx-row" data-trgo="${esc(s.key)}" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:0"><span class="nx-ic" style="background:#5e5ce6">✓</span><span style="flex:1;min-width:0"><span class="nx-t2">Review ${esc(s.name)}</span><span class="nx-xs" style="display:block">Trial review date reached · see before vs after</span></span><span class="nx-pill">Open</span></button>`});
+  if(typeof PROTO!=='undefined'&&typeof invInfo==='function')PROTO.list.filter(c=>c.active).forEach(c=>{let i;try{i=invInfo(c)}catch(e){return}if(i.daysLeft==null||i.daysLeft>7)return;
+    h+=`<button type="button" class="nx-card nx-row" data-lowgo="1" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:0"><span class="nx-ic" style="background:${i.daysLeft<=3?'#ff453a':'#ff9f0a'}">!</span><span style="flex:1;min-width:0"><span class="nx-t2">${esc(c.name)} running low</span><span class="nx-xs" style="display:block">${i.daysLeft} day${i.daysLeft===1?'':'s'} left at your current dose</span></span><span class="nx-pill">Restock</span></button>`});
+  return h}
+document.addEventListener('click',e=>{const t=e.target.closest('#todayNudges [data-trgo]'),l=e.target.closest('#todayNudges [data-lowgo]');
+  if(t){const k=t.dataset.trgo;go('stack');setTimeout(()=>openDrawer(k),350)}if(l)go('stack/protocols')});

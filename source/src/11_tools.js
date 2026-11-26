@@ -20,7 +20,8 @@ let FOCUS={sessions:[],pomo:false,brk:10,task:''},MUSIC={list:[],cur:null,vol:60
 const DW_TARGET=260;
 function tmLeft(){return TM.end?Math.max(0,Math.round((TM.end-Date.now())/1000)):TM.left}
 function tmTotal(){return (TM.phase==='break'?FOCUS.brk:TM.len)*60}
-function logDw(minutes,task){if(minutes<1)return;DAY.dw=(DAY.dw||0)+minutes;persistDay();FOCUS.sessions.unshift({d:DAYK,at:new Date().toISOString(),min:minutes,task:task||''});FOCUS.sessions=FOCUS.sessions.slice(0,600);save('tools/focus',FOCUS);if(TOOLV==='focus'&&cur==='tools')renderFocus();toolCardSubs()}
+function logDw(minutes,task){if(minutes<1)return;DAY.dw=(DAY.dw||0)+minutes;persistDay();const cl=(FOCUS.cl||[]).filter(x=>x.t);const dn=cl.filter(x=>x.x).map(x=>x.t);
+  FOCUS.sessions.unshift({d:DAYK,at:new Date().toISOString(),min:minutes,task:task||dn.join(', '),tasks:cl.map(x=>({t:x.t,x:!!x.x}))});FOCUS.cl=cl.filter(x=>!x.x);FOCUS.sessions=FOCUS.sessions.slice(0,600);save('tools/focus',FOCUS);if(TOOLV==='focus'&&cur==='tools')renderFocus();toolCardSubs()}
 /* icons — drawn, never unicode glyphs (iOS turns those into emoji) */
 const FZSV=(p,f)=>'<svg viewBox="0 0 24 24" aria-hidden="true" '+(f?'fill="currentColor"':'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"')+'>'+p+'</svg>';
 const FI={
@@ -56,6 +57,7 @@ function renderFocus(){const el=$('t-focus');if(!el)return;const live=YTP&&$('mB
       <div class="fz-in"><span class="fz-ph" id="fPhase">Focus</span><div class="fz-time num" id="timer">--:--</div><span class="fz-end num" id="fEnd"></span></div></div>
     <div class="fz-ctl"><button type="button" class="fz-c" id="tmReset">End</button><button type="button" class="fz-c go" id="tmGo">Start</button></div>
     <div class="fz-dur"><div class="fz-seg" id="tmPresets">${[25,50,75,90].map(m=>`<button type="button" data-m="${m}">${m}m</button>`).join('')}</div><div class="fz-step" id="tmStep"><button type="button" data-d="-5" aria-label="5 minutes less">−</button><i></i><button type="button" data-d="5" aria-label="5 minutes more">+</button></div></div>
+    <div class="fz-cl" id="fzCl">${fzClHtml()}</div>
     <div class="fz-list">
       <label class="fz-row"><span class="fz-ic g">${FI.moon}</span><span class="fz-t"><b>Auto break</b><small>Breaks start on their own</small></span><input type="checkbox" class="sl-sw" id="fPomo"${FOCUS.pomo?' checked':''}></label>
       ${FOCUS.pomo?`<div class="fz-row"><span class="fz-ic b">${FI.cup}</span><span class="fz-t"><b>Break length</b></span><div class="fz-step" id="fBrk"><button type="button" data-b="-5" aria-label="Shorter break">−</button><span class="num" id="fBrkV">${FOCUS.brk} min</span><button type="button" data-b="5" aria-label="Longer break">+</button></div></div>`:''}
@@ -67,7 +69,7 @@ function renderFocus(){const el=$('t-focus');if(!el)return;const live=YTP&&$('mB
       <div class="fz-big num">${Math.floor(dw/60)}<small>h</small> ${pad(dw%60)}<small>m</small></div><div class="fz-goal">of ${fzHm(DW_TARGET)} deep work · ${pct}%</div>
       <div class="meter"><span style="width:${pct}%"></span></div>
       <div class="fz-wk"><div class="gl" style="bottom:calc(22px + (100% - 22px) * ${(DW_TARGET/mx).toFixed(3)})"></div>${per.map((v,i)=>`<div class="d${i===6?' now':''}${v>=DW_TARGET?' hit':''}"><div class="bw"><div class="b" style="height:${(v/mx*100).toFixed(1)}%" title="${fzHm(v)}"></div></div><span class="l">${new Date(days[i]+'T12:00').toLocaleDateString('en-GB',{weekday:'narrow'})}</span></div>`).join('')}</div>
-      ${today.length?`<div class="fz-log">${today.map(s=>`<div><span class="t num">${new Date(s.at).toTimeString().slice(0,5)}</span><span class="n">${esc(s.task||'Focus session')}</span><b class="num">${s.min} min</b></div>`).join('')}</div>`:`<div class="fz-empty">No sessions yet today</div>`}
+      ${today.length?`<div class="fz-log">${today.map(s=>`<div><span class="t num">${new Date(s.at).toTimeString().slice(0,5)}</span><span class="n">${esc(s.task||'Focus session')}${(s.tasks||[]).length?`<small>${s.tasks.filter(x=>x.x).length}/${s.tasks.length} tasks</small>`:''}</span><b class="num">${s.min} min</b></div>`).join('')}</div>`:`<div class="fz-empty">No sessions yet today</div>`}
     </div></div>
     <div class="panel"><div class="ph"><span class="tag">Audio deck</span></div><div class="pb${MUSIC.showVid?' showvid':''}" id="mBox">${musicHTML()}</div></div>
     <div class="panel"><div class="ph"><span class="tag">Ambient</span></div><div class="pb"><div class="fz-amb" id="ambBtns">${AMBS.map(([k,l,ic])=>`<button type="button" data-amb="${k}" aria-pressed="${AMB.kind===k}"><i>${FI[ic]}</i>${l}</button>`).join('')}</div>
@@ -81,15 +83,32 @@ function renderFocus(){const el=$('t-focus');if(!el)return;const live=YTP&&$('mB
   }else el.innerHTML=html;
   drawTimer();bindFocus(!!live);
 }
+/* session checklist: what this block is for. Ticked items are saved with the session when it ends; unticked ones carry over */
+function fzClHtml(){const L=FOCUS.cl||[];return `<div class="fz-clh"><b>This session</b><span class="dim">${L.filter(x=>x.x).length}/${L.length}</span></div>
+  ${L.map((x,i)=>`<div class="fz-ci${x.x?' on':''}"><button type="button" class="fz-cb" data-fci="${i}" aria-pressed="${!!x.x}" aria-label="Tick ${esc(x.t)}"></button><span>${esc(x.t)}</span><button type="button" class="fz-cx" data-fcx="${i}" aria-label="Remove">${FI.x}</button></div>`).join('')}
+  <input class="fz-cin" id="fzCin" placeholder="+ Add a task for this session" maxlength="80" enterkeyhint="done">`}
+function fzClDraw(){const el=$('fzCl');if(el){el.innerHTML=fzClHtml()}}
+function fzClBind(){const el=$('fzCl');if(!el)return;
+  el.onclick=e=>{const a=e.target.closest('[data-fci]'),x=e.target.closest('[data-fcx]');if(!a&&!x)return;const L=FOCUS.cl=FOCUS.cl||[];
+    if(a){const it=L[+a.dataset.fci];if(it){it.x=!it.x;if(it.x){const r=a.getBoundingClientRect();burst(r.left+r.width/2,r.top+r.height/2,14,true)}}}else L.splice(+x.dataset.fcx,1);save('tools/focus',FOCUS);fzClDraw()};
+  el.onkeydown=e=>{if(e.target.id!=='fzCin'||e.key!=='Enter')return;e.preventDefault();const v=e.target.value.trim();if(!v)return;(FOCUS.cl=FOCUS.cl||[]).push({t:v,x:false});save('tools/focus',FOCUS);fzClDraw();$('fzCin').focus()}}
+function fzBrkLog(m){if(!(m>=1))return;(FOCUS.brks=FOCUS.brks||[]).unshift({d:DAYK,min:m});FOCUS.brks=FOCUS.brks.slice(0,400);save('tools/focus',FOCUS)}
+/* week page: every focus day of this week: time, sessions, breaks and the tasks finished */
+async function renderWkFocus(){const el=$('wkFocus');if(!el)return;if(!FOCUS.sessions.length){const f=await load('tools/focus').catch(()=>null);if(f)FOCUS={...FOCUS,...f}}
+  const days=wrDays(0).filter(d=>d<=DAYK).reverse();const rows=days.map(d=>{const ss=FOCUS.sessions.filter(s=>s.d===d);const br=(FOCUS.brks||[]).filter(b=>b.d===d).reduce((a,b)=>a+b.min,0);return {d,ss,min:ss.reduce((a,s)=>a+s.min,0),br,done:ss.flatMap(s=>(s.tasks||[]).filter(x=>x.x).map(x=>x.t))}}).filter(r=>r.ss.length);
+  const tot=rows.reduce((a,r)=>a+r.min,0),tasks=rows.reduce((a,r)=>a+r.done.length,0);
+  el.innerHTML=`<div class="panel"><div class="ph"><span class="tag">Focus this week</span><span class="dim num">${fzHm(tot)} · ${tasks} tasks</span></div><div class="pb">${rows.length?rows.map(r=>`<details class="fzw"${r.d===DAYK?' open':''}><summary><b>${new Date(r.d+'T12:00').toLocaleDateString('en-GB',{weekday:'long'})}</b><span class="num">${fzHm(r.min)} focus · ${r.ss.length} session${r.ss.length>1?'s':''}${r.br?' · '+r.br+'m breaks':''}</span></summary>
+    <div class="fz-log">${r.ss.slice().reverse().map(s=>`<div><span class="t num">${new Date(s.at).toTimeString().slice(0,5)}</span><span class="n">${esc(s.task||'Focus session')}</span><b class="num">${s.min} min</b></div>`).join('')}</div>
+    ${r.done.length?`<div class="fzw-t">${r.done.map(t=>`<span>✓ ${esc(t)}</span>`).join('')}</div>`:''}</details>`).join(''):'<div class="dim" style="font-size:12.5px">No focus sessions this week yet.</div>'}</div></div>`}
 function setLen(m){TM={len:m,end:null,left:m*60,phase:'focus'};LS.set('timer',TM);drawTimer()}
 function bindFocus(keepDeck){
   $('tmGo').onclick=()=>{if(TM.end){TM.left=tmLeft();TM.end=null;pushCancel('focus')}else{TM.end=Date.now()+TM.left*1000;if(typeof brickAuto==='function'&&TM.phase==='focus')brickAuto(true,Math.ceil(TM.left/60));if(nOn('focus'))pushOne('focus',TM.end,TM.phase==='break'?'Break over':'Focus session complete',TM.phase==='break'?'Time to get back to it':'Time for a break','./#tools')}LS.set('timer',TM);drawTimer();glitchAll()};
-  $('tmReset').onclick=()=>{if(TM.phase==='focus'){const done=Math.floor((TM.len*60-tmLeft())/60);logDw(done)}if(TM.end)pushCancel('focus');TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
+  $('tmReset').onclick=()=>{if(TM.phase==='focus'){const done=Math.floor((TM.len*60-tmLeft())/60);logDw(done)}else fzBrkLog(Math.floor(((FOCUS.brk||10)*60-tmLeft())/60));if(TM.end)pushCancel('focus');TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'};LS.set('timer',TM);drawTimer()};
   $('tmPresets').onclick=e=>{const b=e.target.closest('button');if(!b||TM.end)return;setLen(+b.dataset.m)};
   $('tmStep').onclick=e=>{const b=e.target.closest('button');if(!b||TM.end)return;setLen(Math.max(5,Math.min(240,TM.len+(+b.dataset.d))))};
   $('fPomo').onchange=e=>{FOCUS.pomo=e.target.checked;save('tools/focus',FOCUS);setTimeout(renderFocus,220)};
   if($('fBrk'))$('fBrk').onclick=e=>{const b=e.target.closest('button');if(!b)return;FOCUS.brk=Math.max(5,Math.min(30,(FOCUS.brk||10)+(+b.dataset.b)));$('fBrkV').textContent=FOCUS.brk+' min';save('tools/focus',FOCUS);drawTimer()};
-  $('fFull').onclick=openFocusMode;
+  $('fFull').onclick=openFocusMode;fzClBind();
   $('mBox').onclick=musicClick;vizAttach($('vizC'));
   $('ambBtns').onclick=e=>{const b=e.target.closest('[data-amb]');if(!b)return;ambient(AMB.kind===b.dataset.amb?null:b.dataset.amb);$('ambBtns').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.amb===AMB.kind))};
   $('ambVol').oninput=e=>{AMB.vol=+e.target.value;LS.set('amb',{vol:AMB.vol});if(AMB.g)AMB.g.gain.value=AMB.vol/100*.6};
@@ -110,7 +129,7 @@ function drawTimer(){const l=tmLeft();const tot=tmTotal();const hh=Math.floor(l/
   if($('tmStep'))$('tmStep').querySelectorAll('button').forEach(b=>b.disabled=!!TM.end);
   if(TM.end&&l===0){chime();if(TM.phase==='focus'){logDw(TM.len);if(typeof brickAuto==='function')brickAuto(false);flash('block_done');shake();burst(innerWidth/2,innerHeight/2,160,true);
       TM=FOCUS.pomo?{len:TM.len,phase:'break',left:FOCUS.brk*60,end:Date.now()+FOCUS.brk*60*1000}:{len:TM.len,end:null,left:TM.len*60,phase:'focus'}}
-    else{flash('back_to_work');TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'}}LS.set('timer',TM);drawTimer()}}
+    else{flash('back_to_work');fzBrkLog(FOCUS.brk||10);TM={len:TM.len,end:null,left:TM.len*60,phase:'focus'}}LS.set('timer',TM);drawTimer()}}
 setInterval(drawTimer,1000);
 function chime(){try{const A=window.AudioContext||window.webkitAudioContext;const a=new A();[523,659,784,1046].forEach((f,i)=>{const o=a.createOscillator(),g=a.createGain();o.type='sine';o.frequency.value=f;const t=a.currentTime+i*.14;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.9);o.connect(g);g.connect(a.destination);o.start(t);o.stop(t+1)})}catch(e){}try{navigator.vibrate&&navigator.vibrate([200,80,200])}catch(e){}}
 

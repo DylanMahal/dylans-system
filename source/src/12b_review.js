@@ -90,6 +90,7 @@ const wrDueToday=()=>logical().getDay()===0;
 async function renderTodayWkRev(){const el=$('todayWkRev');if(!el)return;if(!wrDueToday()){el.innerHTML='';return}
   if(!WEEK||!WEEK.rev){const w=await load('weeks/w-'+WK).catch(()=>null);if(w)WEEK={...(WEEK||{}),...w}}
   const a=document.activeElement;if(a&&a.closest&&a.closest('#todayWkRev'))return;
+  const gr=typeof gymRecapMini==='function'?await gymRecapMini():'';
   const done=WEEK&&WEEK.rev&&WRF.every(([f])=>String(WEEK.rev[f]||'').trim());
-  el.innerHTML=`<div class="wr-card wr-today"><details${done?'':' open'}><summary><span class="wr-eye">Week review · ${esc(WK)}</span><span class="dim" style="font-size:12px">${done?'done ✓':'Sunday, 3 questions'}</span></summary>${wrRefl()}<button type="button" class="ttgo" data-wrgo="1" style="margin-top:10px">Open week review</button></details></div>`;
-  el.onclick=e=>{if(e.target.closest('[data-wrgo]')){go('week');setTimeout(()=>{const r=$('wkReview');if(r)r.scrollIntoView({behavior:'smooth',block:'start'})},400)}}}
+  el.innerHTML=`<div class="wr-card wr-today"><details${done?'':' open'}><summary><span class="wr-eye">Week review · ${esc(WK)}</span><span class="dim" style="font-size:12px">${done?'done ✓':'Sunday, 3 questions'}</span></summary>${wrRefl()}<div class="wr-eye" style="margin:16px 0 8px">Gym recap</div>${gr}<button type="button" class="ttgo" data-wrgo="1" style="margin-top:10px">Open week review</button> <button type="button" class="ttgo" data-grgo="1" style="margin-top:10px">Open gym recap</button></details></div>`;
+  el.onclick=e=>{if(e.target.closest('[data-grgo]')){GYMV='stats';go('gym');return}if(e.target.closest('[data-wrgo]')){go('week');setTimeout(()=>{const r=$('wkReview');if(r)r.scrollIntoView({behavior:'smooth',block:'start'})},400)}}}

@@ -8,7 +8,7 @@ async function renderWeek(){if(typeof renderWeekChange==='function')renderWeekCh
   $('days').innerHTML=last7.map((d,i)=>{const v=v7[i];const p=v&&v.total?Math.round(v.done/v.total*100):null;const t=ymd(d)===DAYK;return `<div class="d${t?' t':''}"><div class="bw">${p===null?'<span class="nil"></span>':`<div class="b ${p>=80?'ok':p<50?'low':''}" style="height:${Math.max(3,p)}%"><span class="p num${p<14?' out':''}">${p}%</span></div>`}</div><span class="l">${t?'today':DOW[d.getDay()].toLowerCase()}</span></div>`}).join('');
   if(FX)document.querySelectorAll('#days .b').forEach((b,i)=>b.animate([{transform:'scaleY(0)'},{transform:'scaleY(1)'}],{duration:500,delay:i*60,easing:'cubic-bezier(.2,.9,.1,1)',fill:'backwards'}));
   const logged=v7.filter(v=>v&&v.total).length;$('daysNote').textContent=logged<2?'Fills in as you tick items on the today view.':`${logged} of 7 days logged · avg ${Math.round(avg(v7.filter(v=>v&&v.total).map(v=>v.done/v.total*100)))}%`;
-  wkStreaks();renderReview();
+  wkStreaks();renderReview();if(typeof renderWkFocus==='function')renderWkFocus().catch(e=>console.warn(e));
   WEEK=await load('weeks/w-'+WK)||WEEK||{};if(typeof wrReflFill==='function')wrReflFill();
   renderTargets();
   $('weekSub').textContent=`${WK} · review Sundays 19:00`;

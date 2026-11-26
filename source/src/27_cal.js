@@ -33,6 +33,7 @@ function calEvents(d){const k=ymd(d),dow=String((d.getDay()+6)%7+1),out=[];
     const mk=(x,one)=>{const m=calM(x);return {t:x[0],c:x[1],s:m.ad?0:calMin(x[3]),e:m.ad?1440:(calMin(x[4])||1440),d:x[5]||'',one:!!one,id:x[6],kind:one?'one':'ev',days:one?'':String(x[2]),date:k,ad:!!m.ad,from:m.from||'',until:m.until||'',rm:m.rm}};
     (CAL.ev||[]).forEach(x=>{const m=calM(x);if(String(x[2]).includes(dow)&&(!m.from||k>=m.from)&&(!m.until||k<=m.until)&&!(ex[x[6]]||[]).includes(k))out.push(mk(x))});
     (CAL.one||[]).forEach(x=>{if(x[2]===k)out.push(mk(x,1))})}
+  if(dow==='7')out.push({t:'Gym review',c:'gym',s:18*60+30,e:19*60,d:"This week's lifting recap",one:true,id:'gymrev',kind:'virt',virt:true,days:'',date:k,ad:false,from:'',until:'',rm:-1});
   if(dow==='7')out.push({t:'Week review',c:'other',s:19*60,e:19*60+30,d:"What worked, what didn't, next week",one:true,id:'wkrev',kind:'virt',virt:true,days:'',date:k,ad:false,from:'',until:'',rm:-1});
   return out}
 function calLay(evs){evs.sort((x,y)=>x.s-y.s||y.e-x.e);let grp=[],gEnd=-1;
@@ -140,7 +141,7 @@ function calEdit(o,orig){let c=o.c||'other';const rk=calRepKind(o.rep,o.date),wd
     if(b.id==='ceDel')calDelete(orig)};
   $('ceT').onkeydown=e=>{if(e.key==='Enter')$('ceOk').click()}}
 function calDelete(ev){if(ev.kind==='ev')calAsk('Delete',sc=>calCommit(ev,null,sc));else calCommit(ev,null,'all')}
-function calDetail(ev){if(ev&&ev.virt){go('week');setTimeout(()=>{const r=$('wkReview');if(r)r.scrollIntoView({behavior:'smooth',block:'start'})},400);return}const d=calD(ev.date);
+function calDetail(ev){if(ev&&ev.id==='gymrev'){GYMV='stats';go('gym');return}if(ev&&ev.virt){go('week');setTimeout(()=>{const r=$('wkReview');if(r)r.scrollIntoView({behavior:'smooth',block:'start'})},400);return}const d=calD(ev.date);
   openSheet(ev.t,`<div class="gc-det"><div><i style="background:${calCol(ev)}"></i><b>${esc(ev.t)}</b></div><div class="dim">${esc(d.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'}))} · ${ev.ad?'All day':calFmt(ev.s,ev.e)}</div>
     <div class="dim">${esc(ev.c)} calendar${ev.one?'':' · '+calRepLabel(ev.days)+(ev.until?' until '+esc(nice(ev.until)):'')}</div>${ev.ad?'':`<div class="dim">🔔 ${calRmTxt(ev.rm)}</div>`}${ev.d?`<p>${esc(ev.d)}</p>`:''}
     <div class="bigbtns" style="margin-top:10px"><button class="btn p" type="button" id="cdE">Edit</button><button class="btn" type="button" id="cdC">Duplicate</button><button class="btn" type="button" id="cdD">Delete</button></div></div>`);

@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700;800&family=Silkscreen&display=swap" rel="stylesheet">
 <script>(function(){var n=navigator,u=n.userAgent;if(!(/iPhone|iPad|iPod|Android/.test(u)||(/Macintosh/.test(u)&&n.maxTouchPoints>1)))document.documentElement.classList.add('is-pc')})()</script>
-<link rel="stylesheet" href="app.css?v=1795712770">
+<link rel="stylesheet" href="app.css?v=1795714014">
 </head>
 <body class="fx">
 <style>
@@ -430,6 +430,10 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
     <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Streaks">Streaks</h2><span class="sub" id="habSub"></span></div></div>
     <div id="habBody"></div>
   </section>
+  <section class="view" id="v-looks" aria-label="Looks">
+    <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Looks" data-lx="looks">Looks</h2><span class="sub">Routine · log · measurements · photos</span></div></div>
+    <div id="lkBody"></div>
+  </section>
   <section class="view" id="v-media" aria-label="Media">
     <div class="banner"><div class="art"></div><div class="bover"><span class="eyebrow"></span><h2 class="glitch" data-text="Media">Media</h2><span class="sub">Anime · movies · manga · books</span></div></div>
     <div class="toolcards four" id="mediaCards">
@@ -479,7 +483,7 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
     </div>
     <div id="weekChange" style="margin-top:12px"></div>
     <div class="panel" style="margin-top:12px"><div class="ph"><span class="tag">Weekly targets</span></div><div class="pb"><div id="targets"></div><button class="addrow" type="button" id="addTarget">+ Add target</button></div></div>
-    <div id="wkReview" style="margin-top:12px"></div>
+    <div id="wkFocus" style="margin-top:12px"></div><div id="wkReview" style="margin-top:12px"></div>
   </section>
 
   <!-- STACK -->
@@ -546,9 +550,9 @@ video::-webkit-media-controls-start-playback-button,video::-webkit-media-control
 <div id="dbg" style="position:fixed;left:8px;bottom:90px;z-index:999;max-width:90vw;font:11px monospace;color:#fff;background:#a00;padding:6px 8px;display:none;white-space:pre-wrap;cursor:pointer"></div>
 <script>(function(){function rep(m){if(window.nxErr){window.nxErr(m);return}var d=document.getElementById('dbg');if(!d)return;d.style.display='block';d.textContent='⚠ '+m;clearTimeout(d._t);d._t=setTimeout(function(){d.style.display='none'},8000);d.onclick=function(){d.style.display='none'}}
 addEventListener('error',function(e){rep((e.message||e)+' @'+(e.lineno||'')+':'+(e.colno||''))});addEventListener('unhandledrejection',function(e){var r=e.reason;rep('async: '+(r&&(r.message||r.code)||r))});})();</script>
-<script>window.APP_V="1795712770"</script>
-<script src="config.js?v=1795712770"></script>
+<script>window.APP_V="1795714014"</script>
+<script src="config.js?v=1795714014"></script>
 <script src="vendor/supabase.js"></script>
-<script src="app.js?v=1795712770"></script>
+<script src="app.js?v=1795714014"></script>
 </body>
 </html>
