@@ -15,7 +15,7 @@ async function nSubscribe(){if(!('serviceWorker' in navigator)||!('PushManager' 
 /* queue */
 let NQ=null;
 async function nQueue(){if(NQ)return NQ;NQ=(await load('push/q'))||{items:[]};return NQ}
-async function pushOne(tag,at,title,body,url){if(!NSET.on)return;const q=await nQueue();q.items=q.items.filter(i=>i.tag!==tag);if(at&&at>Date.now()+3000)q.items.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body:'',url:url||'./'});save('push/q',q,true)}
+async function pushOne(tag,at,title,body,url){if(!NSET.on)return;const q=await nQueue();q.items=q.items.filter(i=>i.tag!==tag);if(at&&at>Date.now()+3000)q.items.push({id:rid()+rid(),tag,at:new Date(at).toISOString(),title,body:tag==='rest'?(body||''):'',url:url||'./'});save('push/q',q,true)}
 /* notification copy: title only, no body. Minimal by design (Dylan's call). */
 const nT=t=>{t=String(t||'').replace(/\s+/g,' ').trim();return t?t[0].toUpperCase()+t.slice(1):''};
 const nClock=m=>{const h=Math.floor(m/60)%24;return (h%12||12)+':'+pad(m%60)+(h<12?' am':' pm')};

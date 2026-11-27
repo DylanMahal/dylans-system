@@ -30,10 +30,12 @@ function sQB(n){if(!n||!n.asleep)return null;const g=(SSET&&SSET.goal||8)*60,a=n
   const bed=n.start&&n.end?(new Date(n.end)-new Date(n.start))/6e4:0;
   const eff=bed>a?sCl((a/bed-.75)/.17):1; /* share of time in bed asleep: 92%+ full, 75% zero */
   const aw=sWakes(n)!=null?sCl(1-(sWakes(n)-2)/10):sCl(1-((n.awake||0)-20)/70); /* wake-ups: ≤2 full, 12+ zero */
-  let tim=1;if(n.start){const d=new Date(n.start),b=d.getHours()*60+d.getMinutes(),[h,m]=sBedFor().split(':').map(Number);let off=Math.abs(b-(h*60+m));off=Math.min(off,1440-off);tim=sCl(1-(off-30)/120)}
-  const wk=sWakes(n),offM=n.start?Math.round(Math.abs((()=>{const d=new Date(n.start),b=d.getHours()*60+d.getMinutes(),[h,m]=sBedFor().split(':').map(Number);let o=Math.abs(b-(h*60+m));return Math.min(o,1440-o)})())):0;
-  const P=[['Duration',dur,40,fmtHM(a)],['Deep',deep,15,Math.round(n.deep||0)+'m'],['REM',rem,15,Math.round(n.rem||0)+'m'],['Restfulness',aw,10,wk!=null?wk+' wake-up'+(wk===1?'':'s'):Math.round(n.awake||0)+'m awake'],['Timing',tim,5,n.start?offM+'m off':'']].filter(x=>hasSt||(x[0]!=='Deep'&&x[0]!=='REM'));
-  const W=P.reduce((t,x)=>t+x[2],0);return {parts:P,score:Math.round(P.reduce((t,x)=>t+x[1]*x[2],0)/W*100)}}
+  /* timing: how far bedtime and wake-up sit from your targets (30 min free, nothing left at 3 h off); waking far off target also caps the score */
+  const sOff=(iso,tg)=>{if(!iso)return null;const d=new Date(iso),b=d.getHours()*60+d.getMinutes(),[h,m]=String(tg).split(':').map(Number);let o=Math.abs(b-(h*60+m));return Math.round(Math.min(o,1440-o))};
+  const oB=sOff(n.start,sBedFor()),oW=sOff(n.end,(SSET&&SSET.wake)||'07:30');const tS=o=>o==null?1:sCl(1-(o-30)/150);const tim=Math.min(tS(oB),tS(oW));
+  const wk=sWakes(n),offTx=[oB!=null?'bed '+fmtHM(oB)+' off':'',oW!=null?'woke '+fmtHM(oW)+' off':''].filter(Boolean).join(' · ');
+  const P=[['Duration',dur,40,fmtHM(a)],['Deep',deep,15,Math.round(n.deep||0)+'m'],['REM',rem,15,Math.round(n.rem||0)+'m'],['Restfulness',aw,10,wk!=null?wk+' wake-up'+(wk===1?'':'s'):Math.round(n.awake||0)+'m awake'],['Timing',tim,20,offTx]].filter(x=>hasSt||(x[0]!=='Deep'&&x[0]!=='REM'));
+  const W=P.reduce((t,x)=>t+x[2],0);let score=Math.round(P.reduce((t,x)=>t+x[1]*x[2],0)/W*100);const far=Math.max(oB||0,oW||0);if(far>=180)score=Math.min(score,Math.round(75-Math.min(25,(far-180)/12)));return {parts:P,score}}
 /* one clean timeline from overlapping sources (Watch + phone): at every moment the most specific stage wins, gaps count as awake, blips under 3 min fold into their neighbour */
 function sNorm(segs){const g=(segs||[]).map(([a,b,st])=>[+new Date(a),+new Date(b),st]).filter(x=>x[1]>x[0]);if(!g.length)return [];
   const P={deep:4,rem:3,awake:2,core:1};const bs=[...new Set(g.flatMap(x=>[x[0],x[1]]))].sort((a,b)=>a-b);const out=[];

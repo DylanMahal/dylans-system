@@ -93,22 +93,23 @@ function renderWorkout(){if(ACTIVE&&!ACTIVE.editing)ascPrime();
   <div class="exlist">${ACTIVE.ex.map((x,xi)=>exCard(x,xi)).join('')}</div>
   <button class="addex" type="button" data-act="addex">+ Add exercises</button>`);
   const wn=$('wNote');if(wn&&wn.value){wn.style.height='auto';wn.style.height=wn.scrollHeight+'px'}
+  el.querySelectorAll('textarea.exnote').forEach(t=>{if(t.value){t.style.height='auto';t.style.height=t.scrollHeight+'px'}});
 }
 function exCard(x,xi){
   const e=exOf(x);const T=XTYPES[e.ty]||XTYPES.wr;const prev=prevSets(x);const b=bests(e.id,ACTIVE.id);const col=ssColor(x.ss);
   const cols=`34px minmax(0,1fr) ${T.f.map(()=>'minmax(52px,64px)').join(' ')} 40px 38px`;
   return `<div class="exc${x.ss?' ss':''}" data-x="${xi}" style="${x.ss?'--ssc:'+col:''}">${x.ss?`<span class="sslab">Superset</span>`:''}
   <div class="exh"><button class="exhead" type="button" data-exinfo="${xi}">${thumb(e)}<span><b class="exname">${esc(e.n)}</b><span class="dim exsub">${esc(e.pm.join(', '))}${T!==XTYPES.wr?' · '+T.l:''}</span>${(()=>{const sc=rlEx(e.id,ACTIVE.id,x);return sc==null?'':rlChip(sc,18)})()}</span></button><button class="iconbtn" type="button" data-exmenu="${xi}" aria-label="Exercise options">⋯</button></div>
-  <input class="exnote" data-note="${xi}" placeholder="Add notes here…" value="${esc(x.note||'')}" aria-label="Notes">${dpSugg(x,e,prev)}
+  <textarea class="exnote" data-note="${xi}" rows="1" placeholder="Add notes here…" aria-label="Notes">${esc(x.note||'')}</textarea>${dpSugg(x,e,prev)}
   <button class="resttag" type="button" data-restpick="${xi}">⧗ rest timer: ${x.rest?mmss(x.rest):'off'}</button>
   <div class="sgrid shead" style="grid-template-columns:${cols}"><span>Set</span><span>Previous</span>${T.f.map(f=>f==='kg'?`<button class="uswap" type="button" data-unit="${xi}" title="Switch kg / lbs">${(T.pfx||'')+uL(e.id)} ⇄</button>`:`<span>${FLAB[f]}</span>`).join('')}<span>RPE</span><span>✓</span></div>
-  ${x.sets.map((s,si)=>{const p=prev[si];const pr=s.done&&s.t!=='w'&&isPR(e,s,b);return `<div class="sgrid srow${s.done?' done':''}${pr?' pr':''}" data-s="${xi}:${si}" style="grid-template-columns:${cols}">
+  ${x.sets.map((s,si)=>{const p=prev[si];const pr=s.done&&s.t!=='w'&&isPR(e,s,b);return `<div class="swr"><button class="swdel" type="button" data-swdel="${xi}:${si}" tabindex="-1">Delete</button><div class="sgrid srow${s.done?' done':''}${pr?' pr':''}" data-s="${xi}:${si}" style="grid-template-columns:${cols}">
     <button class="stype t-${s.t||'n'}" type="button" data-stype="${xi}:${si}" title="Set type">${setLabel(x.sets,si)}</button>
     <button class="sprev" type="button" data-prev="${xi}:${si}" ${p?'':'disabled'}>${p?esc(fmtSet(x,p)):'—'}</button>
     ${T.f.map(f=>{const v=f==='sec'?(s.sec?mmss(s.sec):''):f==='kg'?uIn(e.id,s.kg):(s[f]??'');const ph=p?(f==='sec'?(p.sec?mmss(p.sec):''):f==='kg'?uIn(e.id,p.kg):(p[f]??'')):'';return `<input class="sin num" inputmode="${f==='r'||f==='m'?'numeric':f==='sec'?'text':'decimal'}" data-f="${f}" data-at="${xi}:${si}" value="${esc(v)}" placeholder="${esc(ph)}" aria-label="${FLAB[f]}">`}).join('')}
     <button class="srpe${s.rpe?' on':''}" type="button" data-rpe="${xi}:${si}">${s.rpe||'·'}</button>
     <button class="scheck" type="button" data-done="${xi}:${si}" aria-pressed="${!!s.done}" aria-label="Complete set">✓</button>
-    ${pr?'<span class="prtag">PR</span>':''}</div>`}).join('')}
+    ${pr?'<span class="prtag">PR</span>':''}</div></div>`}).join('')}
   <button class="addset" type="button" data-addset="${xi}">+ Add set</button></div>`;
 }
 function isPR(e,s,b){if(e.ty==='wr'||e.ty==='wbw')return b.e>0&&e1(s)>b.e;if(e.ty==='bw'||e.ty==='r')return b.reps>0&&+s.r>b.reps;if(e.ty==='dur')return b.sec>0&&+s.sec>b.sec;if(e.ty==='dd')return b.km>0&&+s.km>b.km;return false}
@@ -160,7 +161,7 @@ $('g-workout').addEventListener('click',e=>{
 $('g-workout').addEventListener('input',e=>{const t=e.target;const d=t.dataset;
   if(t.id==='wName'){ACTIVE.name=t.value;saveActive();return}
   if(t.id==='wNote'){ACTIVE.note=t.value;t.style.height='auto';t.style.height=t.scrollHeight+'px';saveActive();return}
-  if(d.note!=null){ACTIVE.ex[+d.note].note=t.value;saveActive();return}
+  if(d.note!=null){ACTIVE.ex[+d.note].note=t.value;t.style.height='auto';t.style.height=t.scrollHeight+'px';saveActive();return}
   if(d.f){const [xi,si]=SXY(d.at);const s=ACTIVE.ex[xi].sets[si];const f=d.f;const v=t.value.replace(',','.');s[f]=f==='sec'?pmmss(t.value):f==='kg'?uOut(exOf(ACTIVE.ex[xi]).id,v):v;saveActive()}
 });
 $('g-workout').addEventListener('change',e=>{if(e.target.dataset.f)renderWorkout()});
@@ -180,7 +181,7 @@ function exMenu(xi){const x=ACTIVE.ex[xi];const e=exOf(x);const T=XTYPES[e.ty]||
   openSheet(e.n,`<div class="optlist">
    <button class="opt" type="button" data-m="info">ⓘ exercise info &amp; history</button>
    <button class="opt" type="button" data-m="ss">⛓ ${x.ss?'remove from superset':'superset with…'}</button>
-   <button class="opt" type="button" data-m="replace">⇄ replace exercise</button>
+   <button class="opt" type="button" data-m="replace">⇄ replace exercise</button><button class="opt" type="button" data-m="order">↕ reorder exercises</button>
    ${T.f.includes('kg')?'<button class="opt" type="button" data-m="unit">⇄ use '+(isLb(e.id)?'kg':'lbs')+' for this exercise</button><button class="opt" type="button" data-m="warm">Add warm-up sets</button><button class="opt" type="button" data-m="plates">◎ plate calculator</button>':''}
    <button class="opt" type="button" data-m="up">↑ move up</button><button class="opt" type="button" data-m="down">↓ move down</button>
    <button class="opt bad" type="button" data-m="rm">✕ remove exercise</button></div>`);
@@ -188,6 +189,7 @@ function exMenu(xi){const x=ACTIVE.ex[xi];const e=exOf(x);const T=XTYPES[e.ty]||
     if(m==='info')return openExercise(e.id);
     if(m==='unit'){closeSheet();return toggleUnit(e.id)}
     if(m==='rm'){closeSheet();return mut(()=>ACTIVE.ex.splice(xi,1))}
+    if(m==='order')return exReorder();
     if(m==='up'||m==='down'){closeSheet();const j=xi+(m==='up'?-1:1);if(j<0||j>=ACTIVE.ex.length)return;return mut(()=>{const a=ACTIVE.ex;[a[xi],a[j]]=[a[j],a[xi]]})}
     if(m==='replace'){return pickExercises(list=>{const n=list[0];if(!n)return;mut(()=>{const y=exEntry(n,{sets:x.sets.length,rest:x.rest,ss:x.ss});ACTIVE.ex[xi]=y})},{single:true})}
     if(m==='ss'){if(x.ss){closeSheet();return mut(()=>{const g=x.ss;x.ss=null;const left=ACTIVE.ex.filter(y=>y.ss===g);if(left.length<2)left.forEach(y=>y.ss=null)})}
@@ -253,11 +255,12 @@ function showSummary(w){const muscles=muscleSets([w]);const top=Object.entries(m
 function routineFrom(w){return {id:rid(),name:w.name,folder:'',ex:w.ex.map(x=>({id:exKey(x),n:exOf(x).n,sets:x.sets.filter(s=>s.t!=='w').length||x.sets.length,rest:x.rest??120,note:x.note||'',ss:x.ss||null}))}}
 
 /* ---------- rest timer ---------- */
-function startRest(sec){restTotal=sec;restEnd=Date.now()+sec*1000;LS.set('restEnd',restEnd);LS.set('restTotal',restTotal);renderRest();if(nOn('rest')){let nx='';try{for(const x of ACTIVE.ex){if(x.sets.some(s=>!s.done)){nx=exOf(x).n;break}}}catch(e){}pushOne('rest',restEnd,'Rest complete',nx?'Next up: '+nx:'Time for your next set','./#gym')}}
+function startRest(sec){restTotal=sec;restEnd=Date.now()+sec*1000;LS.set('restEnd',restEnd);LS.set('restTotal',restTotal);renderRest();if(nOn('rest')){pushOne('rest',restEnd,'Rest complete',restNext(),'./#gym')}}
 let restOk=null;
 function clearRest(){restEnd=null;LS.set('restEnd',null);$('restDock').classList.remove('on');pushCancel('rest')}
-function renderRest(){const bar=$('restDock');if(!restEnd){bar.classList.remove('on');return}bar.classList.add('on')}
-$('restDock').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.rd==='skip'){restEnd=null;LS.set('restEnd',null);renderRest();pushCancel('rest');return}const d=+b.dataset.rd;restEnd=Math.max(Date.now()+1000,restEnd+d*1000);restTotal=Math.max(15,restTotal+d);LS.set('restEnd',restEnd);LS.set('restTotal',restTotal);if(nOn('rest'))pushOne('rest',restEnd,'Rest complete','Time for your next set','./#gym')};
+function restNext(){try{for(const x of ACTIVE.ex){if(x.sets.some(s=>!s.done))return exOf(x).n}}catch(e){}return ''}
+function renderRest(){const bar=$('restDock');if(typeof restLift==='function')restLift();if(!restEnd){bar.classList.remove('on');return}bar.classList.add('on')}
+$('restDock').onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.rd==='skip'){restEnd=null;LS.set('restEnd',null);renderRest();pushCancel('rest');return}const d=+b.dataset.rd;restEnd=Math.max(Date.now()+1000,restEnd+d*1000);restTotal=Math.max(15,restTotal+d);LS.set('restEnd',restEnd);LS.set('restTotal',restTotal);if(nOn('rest'))pushOne('rest',restEnd,'Rest complete',restNext(),'./#gym')};
 function beep(){try{const A=window.AudioContext||window.webkitAudioContext;const a=new A();[0,.18,.36].forEach((t,i)=>{const o=a.createOscillator(),g=a.createGain();o.frequency.value=i===2?1320:880;g.gain.setValueAtTime(.0001,a.currentTime+t);g.gain.exponentialRampToValueAtTime(.25,a.currentTime+t+.01);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+t+.15);o.connect(g);g.connect(a.destination);o.start(a.currentTime+t);o.stop(a.currentTime+t+.16)})}catch(e){}}
 setInterval(()=>{
   if(ACTIVE&&!ACTIVE.editing&&$('wDur'))$('wDur').textContent=fmtDur(Date.now()-new Date(ACTIVE.startedAt));
