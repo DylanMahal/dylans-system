@@ -67,7 +67,7 @@ function updateCounts(){
 }
 function persistDay(){const {done,total,nd,n}=updateCounts();const names=visibleItems().filter(i=>DAY.ticks[i.tk]).map(i=>i.item);DAY={...DAY,done,total,nd,n,names,plan:planKind,dow:DOWN};save('days/d-'+DAYK,DAY);schedWidget()}
 function setTick(k,on){if(on)DAY.ticks[k]=1;else delete DAY.ticks[k];document.querySelectorAll(`#v-today .it[data-k="${CSS.escape(k)}"]`).forEach(el=>el.setAttribute('aria-checked',on));persistDay();if(typeof medsOnTick==='function')medsOnTick(k,on)}
-function autoTick(re){const it=visibleItems().find(i=>re.test(i.item));if(it&&!DAY.ticks[it.tk])setTick(it.tk,true)}
+function autoTick(re,ty){const c=visibleItems().filter(i=>re.test(i.item));const it=(ty&&c.find(i=>ty.test(i.type||'')))||c.find(i=>!/^\w+\s+(carbs?|meal|snack|food|drink|shake|bag|kit)/i.test(i.item))||c[0];if(it&&!DAY.ticks[it.tk])setTick(it.tk,true)}
 function toggle(el){
   const k=el.dataset.k;const on=!DAY.ticks[k];setTick(k,on);
   if(on){burstEl(el.querySelector('.box'),34);const nm=el.querySelector('.nm');scramble(nm,nm.textContent,300)}

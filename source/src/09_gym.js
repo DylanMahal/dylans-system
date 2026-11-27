@@ -154,7 +154,7 @@ $('g-workout').addEventListener('click',e=>{
     saveActive();renderWorkout();
     if(s.done){const row=document.querySelector(`.srow[data-s="${xi}:${si}"]`);if(row)burstEl(row.querySelector('.scheck'),pr?90:24,pr);if(pr){flash('new_pr');shake()}
       const grp=x.ss?ACTIVE.ex.filter(y=>y.ss===x.ss):[x];if(!ACTIVE.editing&&x.rest&&grp[grp.length-1]===x)startRest(x.rest)}
-    if(s.done&&stats(ACTIVE).n===1&&!ACTIVE.editing)autoTick(/^Gym\b/);
+    if(s.done&&stats(ACTIVE).n===1&&!ACTIVE.editing)autoTick(/^Gym\b/,/train|gym|workout/i);
   }
 });
 $('g-workout').addEventListener('input',e=>{const t=e.target;const d=t.dataset;
@@ -219,7 +219,7 @@ function finishWorkout(){
     saveScreen(w,()=>commit(w));};
   const commit=w=>{
     const pre=rlOverall();save('gym/w-'+w.id,w,true);WORKOUTS.unshift(w);recountUsed();ACTIVE=null;saveActive();clearRest();
-    autoTick(/^Gym\b/);shake();renderGym();rlAfter(pre,w,()=>showSummary(w));
+    autoTick(/^Gym\b/,/train|gym|workout/i);shake();renderGym();rlAfter(pre,w,()=>showSummary(w));
   };
   if(undone){openSheet('finish workout?',`<p class="dim" style="margin:0 0 14px">${undone} set${undone>1?'s':''} not ticked.</p><div class="bigbtns"><button class="btn p" type="button" id="fDrop">Discard unticked + finish</button><button class="btn" type="button" id="fKeep">Keep sets with values</button><button class="btn" type="button" id="fBack">Back</button></div>`);
     $('fDrop').onclick=()=>{closeSheet();go2(true)};$('fKeep').onclick=()=>{closeSheet();go2(false)};$('fBack').onclick=closeSheet}
