@@ -4,12 +4,22 @@ const STATUSL={active:'in plan',asneeded:'as needed',paused:'paused',notinplan:'
 let stF='active',catF=null,sortK='monthly',sortD=-1;
 /* focus group: a cross-cutting chip for everything that supports one goal. its name and the private part of its
    word list come from sys/lex (w.fx, fxk); the generic support compounds below are just the public fallback. */
-const FXK_BASE=['tyrosine','zinc','magnesium','bromantane','memantine','theanine','citicoline','cdp choline','alpha gpc','alcar','acetyl l carnitine','nac','omega','fish oil','iron','vitamin d','caffeine','rhodiola','ginkgo','saffron','lions mane','uridine','phosphatidylserine','guanfacine','modafinil','astaxanthin','astax','nebivolol','taurine','9 me bc','9mebc','mexidol','lemborexant','nacet','n acetylcysteine ethyl','adhd','medikinet','vyvanse','elvanse','ritalin','methylphenidate','lisdexamfetamine'];
+const FXK_BASE=['tyrosine','zinc','magnesium','bromantane','memantine','citicoline','cdp choline','alpha gpc','alcar','acetyl l carnitine','nac','iron','vitamin d','caffeine','rhodiola','ginkgo','saffron','lions mane','uridine','phosphatidylserine','guanfacine','modafinil','astaxanthin','astax','nebivolol','taurine','9 me bc','9mebc','lemborexant','nacet','n acetylcysteine ethyl','adhd','medikinet','vyvanse','elvanse','ritalin','methylphenidate','lisdexamfetamine'];
 const fxN=x=>' '+norm(x).replace(/[^a-z0-9]+/g,' ').trim()+' ';
-const fxMatch=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(FXK_BASE.concat(LX('fxk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
+const fxAuto=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(FXK_BASE.concat(LX('fxk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
 /* sleep group: same idea, for anything that aids sleep. extra private names come from sys/lex (slk). */
 const SLK_BASE=['melatonin','glycine','magnesium','theanine','lemborexant','apigenin','ashwagandha','gaba','valerian','tryptophan','5 htp','5htp','inositol','taurine','passionflower','lemon balm','magnolia','cbd','cbn','trazodone','doxylamine','diphenhydramine','mirtazapine','zopiclone','zolpidem','daridorexant','suvorexant','ramelteon','hydroxyzine','tart cherry','montmorency','kava','chamomile','lavender','sleep'];
-const slMatch=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(SLK_BASE.concat(LX('slk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
+const slAuto=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(SLK_BASE.concat(LX('slk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
+/* hand edits on top of the keyword match: stack/groups = {fx:{in:[name], out:[name]}, sl:{…}} */
+let STG={fx:{in:[],out:[]},sl:{in:[],out:[]}};
+load('stack/groups').then(d=>{if(d)STG={fx:{in:[],out:[]},sl:{in:[],out:[]},...d};if(cur==='stack'&&typeof renderStack==='function')renderStack()}).catch(()=>{});
+watch('stack/groups',d=>{if(d){STG={fx:{in:[],out:[]},sl:{in:[],out:[]},...d};if(cur==='stack'&&typeof renderStack==='function')renderStack()}});
+const stgHas=(g,s)=>{const G=STG[g]||{},n=norm(s.name);if((G.out||[]).some(x=>norm(x)===n))return false;if((G.in||[]).some(x=>norm(x)===n))return true;return g==='fx'?fxAuto(s):slAuto(s)};
+const fxMatch=s=>stgHas('fx',s),slMatch=s=>stgHas('sl',s);
+function stgEdit(g){const all=((typeof M!=='undefined'&&M&&M.stack)||[]).slice().sort((a,b)=>a.name.localeCompare(b.name));const lab=g==='fx'?LW('fx','ADHD'):LW('sl','sleep');
+  openSheet('Edit '+lab+' group',`<div class="dim" style="font-size:12.5px;margin-bottom:10px">Tick what belongs in this group.</div><div class="stg-l">${all.map((s,i)=>`<label class="stg-i"><input type="checkbox" data-gi="${i}"${stgHas(g,s)?' checked':''}><span>${esc(s.name)}</span></label>`).join('')}</div><div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="stgOk">Save</button></div>`);
+  $('stgOk').onclick=()=>{const G={in:[],out:[]};document.querySelectorAll('#sheetBody [data-gi]').forEach(c=>{const s=all[+c.dataset.gi];const auto=g==='fx'?fxAuto(s):slAuto(s);if(c.checked&&!auto)G.in.push(s.name);if(!c.checked&&auto)G.out.push(s.name)});STG[g]=G;save('stack/groups',STG);closeSheet();renderStack()}}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-stg]');if(b)stgEdit(b.dataset.stg)});
 const stFilter=k=>s=>k==='all'||(k==='fx'?fxMatch(s):k==='sl'?slMatch(s):k==='inb'?s.inb:k==='opt'?!s.inb:k==='edited'?s.edited:s.status===k);
 function renderStack(){
   const st=M.stack;const c=s=>st.filter(x=>x.status===s).length;
@@ -19,7 +29,7 @@ function renderStack(){
   const pb=st.filter(s=>s.inb&&s.status==='paused'&&s.monthly>0);
   $('stackWarn').innerHTML='';
   const sts=[['all','all'],['active','in plan'],['asneeded','as needed'],['paused','paused'],['notinplan','not in plan'],['inb','in budget'],['opt','optional'],['fx',LW('fx','ADHD')],['sl',LW('sl','sleep')]];
-  $('stChips').innerHTML=sts.map(([k,l])=>`<button class="chip" type="button" data-s="${k}" aria-pressed="${stF===k}">${l}<span class="c">${st.filter(stFilter(k)).length}</span></button>`).join('');
+  $('stChips').innerHTML=sts.map(([k,l])=>`<button class="chip" type="button" data-s="${k}" aria-pressed="${stF===k}">${l}<span class="c">${st.filter(stFilter(k)).length}</span></button>`).join('')+(stF==='fx'||stF==='sl'?`<button class="chip" type="button" data-stg="${stF}">✎ Edit group</button>`:'');
   $('catChips').innerHTML=STACK_CATS.map(cc=>`<button class="chip" type="button" data-c="${esc(cc)}" aria-pressed="${catF===cc}"><i style="background:${STC[cc]}"></i>${esc(cc.split(' / ')[0].toLowerCase())}<span class="c">${st.filter(s=>s.cat===cc).length}</span></button>`).join('');
   renderStackTbl();
 }

@@ -121,10 +121,10 @@ function tSetSt(tk,st){if(st==='done'){if(!tk.done){tToggle(tk.id);if(!tk.done)t
 let JB={v:'board',p:'all',q:'',f:'',...(LS.get('tjira')||{})};const jSaveV=()=>LS.set('tjira',{v:JB.v,p:JB.p,f:JB.f});
 function jDue(tk){if(!tk.d)return '';const late=tk.d<DAYK&&!tk.done,now=tk.d===DAYK;return `<span class="jdue${late?' late':now?' now':''}">${TSV(TIC.cal)}${esc(tCap(tWhen({d:tk.d})).replace(/ \d.*$/,''))}${tk.tm?' '+esc(tk.tm):''}</span>`}
 const jWait=tk=>false&&tk.wo?`<span class="jwo">${TSV('<circle cx="12" cy="8.5" r="3.5"/><path d="M5 20c.8-3.6 3.6-5.5 7-5.5s6.2 1.9 7 5.5"/>')}${esc(tk.wo)}</span>`:'';
-function jFoot(tk){const subs=tk.sub||[];return `<span class="jkey">${esc(jKey(tk))}</span><span class="jsp"></span>${jDue(tk)}${tk.rep?`<span class="jm" title="Repeats">${TSV(TIC.rep)}</span>`:''}${subs.length?`<span class="jm">${TSV(TIC.sub)}${subs.filter(s=>s.x).length}/${subs.length}</span>`:''}${jIc(JPR[tk.p||3]||JPR[3])}`}
+function jFoot(tk){const subs=tk.sub||[];return `<span class="jkey">${esc(jKey(tk))}</span><span class="jsp"></span>${tk.sp?`<span class="jpt num" title="Story points">${tk.sp}</span>`:''}${jDue(tk)}${tk.rep?`<span class="jm" title="Repeats">${TSV(TIC.rep)}</span>`:''}${subs.length?`<span class="jm">${TSV(TIC.sub)}${subs.filter(s=>s.x).length}/${subs.length}</span>`:''}${jIc(JPR[tk.p||3]||JPR[3])}`}
 function jCard(tk){const P=JB.p==='all'&&TASKS.projects.find(x=>x.id===tk.proj);
   return `<div class="jc trow${tk.done?' done':''}" data-tk="${tk.id}" data-te="${tk.id}" draggable="true"><div class="jc-t">${esc(tk.t)}</div>${jWait(tk)?`<div class="jc-l">${jWait(tk)}</div>`:''}${P?`<div class="jc-l"><span class="jlab" style="--c:${P.col}">${esc(P.n)}</span></div>`:''}<div class="jc-f">${jFoot(tk)}</div></div>`}
-function jRow(tk){const st=tSt(tk);return `<div class="jr trow${tk.done?' done':''}" data-tk="${tk.id}" data-te="${tk.id}"><span class="jkey">${esc(jKey(tk))}</span><span class="jr-t">${esc(tk.t)}</span>${jWait(tk)}${jDue(tk)}${jIc(JPR[tk.p||3]||JPR[3])}<button type="button" class="jst ${JSC[st]}" data-cyc="${tk.id}">${(JST.find(s=>s[0]===st)||JST[0])[1]}</button></div>`}
+function jRow(tk){const st=tSt(tk);return `<div class="jr trow${tk.done?' done':''}" data-tk="${tk.id}" data-te="${tk.id}"><span class="jkey">${esc(jKey(tk))}</span><span class="jr-t">${esc(tk.t)}</span>${jWait(tk)}${jDue(tk)}${tk.sp?`<span class="jpt num" title="Story points">${tk.sp}</span>`:''}${jIc(JPR[tk.p||3]||JPR[3])}<button type="button" class="jst ${JSC[st]}" data-cyc="${tk.id}">${(JST.find(s=>s[0]===st)||JST[0])[1]}</button></div>`}
 function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.list;
   if(JB.p!=='all'&&JB.p!=='inbox'&&!TASKS.projects.some(P=>P.id===JB.p))JB.p='all';
   const q=JB.q.toLowerCase();
@@ -137,7 +137,7 @@ function renderTasks(){const el=$('jPaneT');if(!el)return;tKeys();const L=TASKS.
   const P=TASKS.projects.find(x=>x.id===JB.p);const name=JB.p==='all'?'All work':JB.p==='inbox'?'Inbox':P.n;
   const openN=vis.filter(t=>!t.done).length;
   let body='';
-  if(JB.v==='board')body=`<div class="jboard">${JST.map(([k,l])=>{const r=by(k);return `<section class="jcol" data-col="${k}"><header class="jcol-h"><span>${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length}</span></header><div class="jcol-b">${k==='todo'?'<!--ADD-->':''}${r.map(jCard).join('')}</div></section>`}).join('')}</div>`;
+  if(JB.v==='board')body=`<div class="jboard">${JST.map(([k,l])=>{const r=by(k);return `<section class="jcol" data-col="${k}"><header class="jcol-h"><span>${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length}${(()=>{const p=vis.filter(t=>tSt(t)===k).reduce((a,t)=>a+(+t.sp||0),0);return p?` · ${p} pts`:''})()}</span></header><div class="jcol-b">${k==='todo'?'<!--ADD-->':''}${r.map(jCard).join('')}</div></section>`}).join('')}</div>`;
   else body=JST.map(([k,l])=>{const r=by(k);return `<div class="jlg"><div class="jlg-h"><span class="jst ${JSC[k]}">${l}</span><span class="num">${vis.filter(t=>tSt(t)===k).length} task${vis.filter(t=>tSt(t)===k).length===1?'':'s'}</span></div>${r.length?`<div class="jlist">${r.map(jRow).join('')}</div>`:'<div class="jlg-e">Nothing here</div>'}</div>`}).join('');
   const chip=(k,l,dot)=>`<button type="button" class="jchip${JB.p===k?' on':''}" data-jp="${esc(k)}">${dot?`<i class="tkdot" style="background:${dot}"></i>`:''}${esc(l)}</button>`;
   const fchip=(k,l)=>`<button type="button" class="jfch${JB.f===k?' on':''}" data-jf="${k}">${l}</button>`;
@@ -200,6 +200,8 @@ function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const dr
     </div>
     <div class="tes-lab">Priority</div>
     <div class="tes-seg" id="tePr">${PRI.map(p=>`<button type="button" data-tp="${p}" aria-pressed="${draft.p===p}">${jIc(JPR[p])}<span>${JPR[p][0]}</span></button>`).join('')}</div>
+    <div class="tes-lab">Points <span class="dim" style="font-weight:400">how hard is it?</span></div>
+    <div class="tes-seg tes-pts" id="teSp">${[1,2,3,5,8,13,21].map(v=>`<button type="button" data-tsp="${v}" aria-pressed="${+draft.sp===v}"><b class="num">${v}</b></button>`).join('')}</div>
     <div class="tes-lab">Subtasks${draft.sub.length?` <span class="num">${draft.sub.filter(s=>s.x).length}/${draft.sub.length}</span>`:''}</div>
     <div class="tes-card">${draft.sub.map((s,i)=>`<div class="tes-sub${s.x?' done':''}"><button type="button" class="tkchk" data-ts="${i}" aria-label="Complete">${TSV('<path d="M6.5 12.5l3.5 3.5 7.5-8"/>')}</button><input data-tsi="${i}" value="${esc(s.t)}" placeholder="Subtask"><button type="button" class="tes-clr" data-tsd="${i}" aria-label="Remove">${TSV('<path d="M7 7l10 10M17 7L7 17"/>')}</button></div>`).join('')}
       <button type="button" class="tes-add" id="teSub">${TSV(TIC.plus)}Add subtask</button></div>
@@ -210,7 +212,7 @@ function tEdit(id){const tk=TASKS.list.find(x=>x.id===id);if(!tk)return;const dr
   const read=()=>{draft.t=$('teT').value.trim()||draft.t;draft.note=$('teN').value;draft.d=$('teD').value||null;draft.tm=$('teTm').value||null;draft.rep=$('teR').value||null;draft.proj=$('teP').value||null;if($('teWo'))draft.wo=$('teWo').value.trim()||null;sb.querySelectorAll('[data-tsi]').forEach(x=>draft.sub[+x.dataset.tsi].t=x.value)};
   sb.onclick=e=>{const b=e.target.closest('button');if(!b)return;const d=b.dataset;
     if(d.clr){e.preventDefault();read();draft[d.clr]=null;draw();return}
-    if(d.tp){read();draft.p=+d.tp;draw();return}if(d.tst){read();draft.st=d.tst;draw();return}if(d.ts){read();const s=draft.sub[+d.ts];s.x=!s.x;draw();return}if(d.tsd){read();draft.sub.splice(+d.tsd,1);draw();return}
+    if(d.tp){read();draft.p=+d.tp;draw();return}if(d.tsp){read();draft.sp=+draft.sp===+d.tsp?null:+d.tsp;draw();return}if(d.tst){read();draft.st=d.tst;draw();return}if(d.ts){read();const s=draft.sub[+d.ts];s.x=!s.x;draw();return}if(d.tsd){read();draft.sub.splice(+d.tsd,1);draw();return}
     if(b.id==='teSub'){read();draft.sub.push({t:'',x:false});draw();const ins=sb.querySelectorAll('[data-tsi]');ins[ins.length-1].focus();return}
     if(b.id==='teDel'){if(!b.dataset.arm){b.dataset.arm=1;b.textContent='Tap again to delete';b.classList.add('arm');return}TASKS.list=TASKS.list.filter(x=>x.id!==id);tSave();closeSheet();renderTasks();return}
     if(b.id==='teOk'){read();draft.sub=draft.sub.filter(s=>s.t.trim());const st=draft.st;delete draft.st;draft.done=tk.done;Object.assign(tk,draft);tSetSt(tk,st);tSave();closeSheet();renderTasks()}}}

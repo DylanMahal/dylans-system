@@ -18,16 +18,16 @@ function renderTodayMood(){const el=$('todayMood');if(!el)return;
   if(!s&&!last){el.innerHTML='';return}
   const full=moodOpen||(s&&(!c||c.e==null));
   if(!full){const x=c||last;el.innerHTML=`<div class="nx nx-today" style="padding:0"><button type="button" class="nx-card nx-row" id="moodReopen" style="padding:12px 16px;display:flex;align-items:center;gap:12px;border:0">
-    <span style="flex:none">${nxFaceSvg(mood5(moodV(x)),26)}</span><span style="flex:1;min-width:0"><span class="nx-t2">Mood ${moodV(x).toFixed(1)}/10${x.e?` · energy ${x.e}`:''}</span><span class="nx-xs" style="display:block">${nxClock(x.at)}${(x.tags||[]).length?' · '+x.tags.join(', '):''}</span></span><span class="nx-pill">Change</span></button></div>`;return}
+    <span style="flex:none">${nxFaceSvg(mood5(moodV(x)),26)}</span><span style="flex:1;min-width:0"><span class="nx-t2">Mood ${moodV(x).toFixed(1)}/10${x.e?` · energy ${eV(x).toFixed(1)}`:''}</span><span class="nx-xs" style="display:block">${nxClock(x.at)}${(x.tags||[]).length?' · '+x.tags.join(', '):''}</span></span><span class="nx-pill">Change</span></button></div>`;return}
   const x=c||{m:null,e:null,tags:[]};
   el.innerHTML=`<div class="nx nx-today" style="padding:0"><div class="nx-card" style="background:radial-gradient(120% 120% at 100% 0%,rgba(48,209,88,.10),transparent 55%),rgba(255,255,255,.045)">
     <div class="nx-split"><span class="nx-t2">How do you feel?</span><span class="nx-xs">${s==='eve'?'evening':'midday'} check-in</span></div>
-    <div class="mood10"><b class="num" id="moodVal">${x.m!=null?moodV(x).toFixed(1):'–'}<small>/10</small></b><input type="range" min="0" max="10" step="0.1" value="${x.m!=null?moodV(x):5}" id="moodRange" aria-label="Mood, 0 to 10"></div>
+    <div class="mood10"><b class="num" id="moodVal">${x.m!=null?moodV(x).toFixed(1):'–'}<small>/10</small></b><input type="range" min="1" max="10" step="0.1" value="${x.m!=null?Math.max(1,moodV(x)):5.5}" id="moodRange" aria-label="Mood, 1 to 10"></div>
     <div class="nx-split nx-xs" style="padding:0 6px"><span>Awful</span><span>Great</span></div>
-    <div class="nx-split" style="margin:16px 0 8px"><span class="nx-s" style="color:#d1d1d6;font-weight:600">Energy</span><span class="nx-xs">1 to 5</span></div>
-    ${nxScale(x.e,'data-energy')}
+    <div class="nx-split" style="margin:16px 0 8px"><span class="nx-s" style="color:#d1d1d6;font-weight:600">Energy</span><span class="nx-xs">1 to 10</span></div>
+    ${nxSlide(eV(x),'data-energyr')}
     <div class="nx-chips" style="margin-top:12px">${MOOD_TAGS.map(t=>`<button type="button" class="nx-ch" data-mtag="${t}" aria-pressed="${(x.tags||[]).includes(t)}">${t[0].toUpperCase()+t.slice(1)}</button>`).join('')}</div>
-    <div class="nx-xs" style="margin-top:12px">Tags are optional. Two taps is enough.${last&&last!==c?` Last check-in ${nxClock(last.at)} · mood ${moodV(last).toFixed(1)}${last.e?' · energy '+last.e:''}`:''}</div>
+    <div class="nx-xs" style="margin-top:12px">Tags are optional. Two taps is enough.${last&&last!==c?` Last check-in ${nxClock(last.at)} · mood ${moodV(last).toFixed(1)}${last.e?' · energy '+eV(last).toFixed(1):''}`:''}</div>
   </div></div>`}
 function moodEntry(){const s=moodSlot()||'mid';let c=MOODD.in.find(x=>moodSlotOf(x.at)===s);if(!c){c={at:new Date().toISOString(),m:null,e:null,tags:[]};MOODD.in.push(c)}return c}
 document.addEventListener('click',e=>{const host=e.target.closest('#todayMood');if(!host)return;
@@ -37,6 +37,9 @@ document.addEventListener('click',e=>{const host=e.target.closest('#todayMood');
   if(c.m==null){c.m=5;c.s=10}c.at=c.at||new Date().toISOString();moodSave();
   if(f&&typeof burstEl==='function')burstEl(f,22);
   moodOpen=true;renderTodayMood();clearTimeout(moodHold);if(c.m!=null&&c.e)moodHold=setTimeout(()=>{moodOpen=false;renderTodayMood()},tg?2600:1400)});
+const eV=x=>x&&x.e!=null?(x.es===10?+x.e:x.e*2):null;
+document.addEventListener('change',e=>{if(!e.target.matches('[data-energyr]'))return;const c=moodEntry();c.e=r10(e.target.value);c.es=10;c.at=c.at||new Date().toISOString();moodSave();
+  moodOpen=true;renderTodayMood();clearTimeout(moodHold);if(c.m!=null)moodHold=setTimeout(()=>{moodOpen=false;renderTodayMood()},1600)});
 document.addEventListener('input',e=>{if(e.target.id!=='moodRange')return;const v=$('moodVal');if(v)v.innerHTML=(+e.target.value).toFixed(1)+'<small>/10</small>'});
 document.addEventListener('change',e=>{if(e.target.id!=='moodRange')return;const c=moodEntry();c.m=Math.round(+e.target.value*10)/10;c.s=10;c.at=c.at||new Date().toISOString();moodSave();
   moodOpen=true;renderTodayMood();clearTimeout(moodHold);if(c.e)moodHold=setTimeout(()=>{moodOpen=false;renderTodayMood()},1600)});
@@ -51,7 +54,7 @@ async function moodData(){
     load('tools/brick').catch(()=>null),load('tools/focus').catch(()=>null),listDocs('days/d-').catch(()=>[]),load('people/log').catch(()=>null)]);
   const [frows,hlog,hlist,tasks]=await Promise.all([listDocs('food/d-').catch(()=>[]),load('habits/log').catch(()=>null),load('habits/list').catch(()=>null),load('tasks/all').catch(()=>null)]);
   const day={};const D=k=>day[k]||(day[k]={});
-  mrows.forEach(r=>{const k=r.path.slice(7);if(k<since)return;const xs=((r.data&&r.data.in)||[]).filter(x=>x.m!=null);if(xs.length){D(k).m=nxAvg(xs.map(moodV));const es=xs.map(x=>x.e).filter(Boolean);if(es.length)D(k).e=nxAvg(es);D(k).src='c'}});
+  mrows.forEach(r=>{const k=r.path.slice(7);if(k<since)return;const xs=((r.data&&r.data.in)||[]).filter(x=>x.m!=null);if(xs.length){D(k).m=nxAvg(xs.map(moodV));const es=xs.map(eV).filter(Boolean);if(es.length)D(k).e=nxAvg(es);D(k).src='c'}});
   jrows.forEach(r=>{const k=r.path.slice(10);if(k<since||!r.data||!r.data.mood)return;if(day[k]&&day[k].m!=null)return;D(k).m=+r.data.mood;D(k).src='j'});
   const F={};const set=(k,f,v)=>{if(day[k])(day[k].f=day[k].f||{})[f]=v};
   srows.forEach(r=>{const k=r.path.slice(8);if(!r.data||!day[k])return;try{const q=sQ(r.data);if(q)set(k,'sleep80',q>=80);if(r.data.asleep)set(k,'short',r.data.asleep<360)}catch(_){}});

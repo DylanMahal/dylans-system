@@ -34,7 +34,7 @@ $('jList').onclick=e=>{const b=e.target.closest('[data-jd]');if(b){flushJ();open
 function flushJ(){if(jSaveT){clearTimeout(jSaveT);jSaveT=null;JE.updatedAt=new Date().toISOString();save(jpath(JE.date),JE,true);jDirty=false}}
 function renderJEditor(keepScroll){
   $('jDate').textContent=new Date(JDATE+'T12:00').toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
-  $('jMood').innerHTML=`<div class="mood10"><b class="num" id="jMoodVal">${JE.mood!=null?(+JE.mood).toFixed(1):'–'}<small>/10</small></b><input type="range" min="0" max="10" step="0.1" value="${JE.mood!=null?JE.mood:5}" id="jMoodR" aria-label="Mood, 0 to 10">${JE.mood!=null?'<button type="button" class="mood10x" data-mclr="1" aria-label="Clear mood">✕</button>':''}</div>`;
+  $('jMood').innerHTML=`<div class="mood10"><b class="num" id="jMoodVal">${JE.mood!=null?(+JE.mood).toFixed(1):'–'}<small>/10</small></b><input type="range" min="1" max="10" step="0.1" value="${JE.mood!=null?JE.mood:5}" id="jMoodR" aria-label="Mood, 0 to 10">${JE.mood!=null?'<button type="button" class="mood10x" data-mclr="1" aria-label="Clear mood">✕</button>':''}</div>`;
   $('jTags').innerHTML=(JE.tags||[]).map((t,i)=>`<span class="jtag">#${esc(t)}<button type="button" data-rmtag="${i}" aria-label="Remove tag">✕</button></span>`).join('')+`<input class="jtagin" id="jTagIn" placeholder="+ tag" aria-label="Add tag">`;
   $('jText').value=JE.text||'';autoGrow();
   $('jWords').textContent=((JE.text||'').trim().match(/\S+/g)||[]).length+' words';

@@ -38,7 +38,7 @@ function itemRow(i){
   const sch=i.sched&&!/^(Daily|—|None)$/.test(i.sched)?i.sched:'';
   return `<div class="it" role="checkbox" tabindex="0" aria-checked="false" data-k="${esc(i.tk)}" data-t="${i.t??''}" data-cmp="${i.cmp?1:0}"><span class="box"></span><span class="t num">${esc(i.time||'')}</span><span><span class="nm">${esc(dn(i.item))}</span>${i.edited?'<span class="delta">Δ</span>':''}${ds?`<span class="dd">${esc(ds)}</span>`:''}${sch?`<span class="dd">· ${esc(sch)}</span>`:''}${i.caution?'<span class="warnflag" title="Has a caution">⚠︎</span>':''}${i.notes?`<span class="nt">${esc(i.notes)}</span>`:''}${i.caution?`<span class="ca">${esc(i.caution)}</span>`:''}</span><span class="row" style="gap:6px;justify-content:flex-end"><button class="ed" type="button" data-edit="${esc(i.key)}">✎</button><span class="ty${i.cmp?' c':''}">${esc(i.type||'')}</span></span></div>`;
 }
-function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks();if(typeof renderTodayWkRev==='function')renderTodayWkRev().catch(e=>console.warn(e));if(typeof renderTodayCal==='function')renderTodayCal();
+function renderToday(){if(typeof renderTodayTasks==='function')renderTodayTasks();if(typeof renderTodayWkRev==='function')renderTodayWkRev().catch(e=>console.warn(e));if(typeof renderDopa==='function')renderDopa().catch(e=>nxErr(e,'rules box'));if(typeof renderTodayCal==='function')renderTodayCal();
   const blocks=M.plans[planKind];
   
   $('pWd').setAttribute('aria-pressed',planKind==='weekday');$('pWe').setAttribute('aria-pressed',planKind==='weekend');

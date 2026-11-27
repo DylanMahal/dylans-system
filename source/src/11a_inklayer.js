@@ -102,7 +102,7 @@ function inkLayer(o){
     if(a.startsWith('s:')){INKS.w=+a.slice(2);inkSet();L.refresh();return}
     if(a==='po'){INKS.po=!INKS.po;inkSet();L.refresh();return}
     if(a.startsWith('bg:')){const kk=o.make();kk.bg=a.slice(3);L.redraw();L.refresh();touch();return}
-    if(a==='full'){if(o.full){o.full.classList.toggle('inkfull');document.documentElement.classList.toggle('inkfull-on',!!document.querySelector('.inkfull'));L.refresh();setTimeout(()=>L.size(),60)}return}
+    if(a==='full'){if(o.full){o.full.classList.toggle('inkfull');inkFullSync();L.refresh();setTimeout(()=>L.size(),60)}return}
     if(a==='page'){k.h=(k.h||IH)+IH;L.size();touch();closePop();return}
     if(a==='undo'||a==='redo'){const from=a==='undo'?L.stack.undo:L.stack.redo,to=a==='undo'?L.stack.redo:L.stack.undo;const u=from.pop();if(!u)return;
       const adding=a==='undo'?!!u.del:!!u.add;const s=u.add||u.del;
@@ -135,5 +135,13 @@ function inkLayer(o){
 
 const inkMarkHtml=v=>String(v||'').split('⁣').map((c,i)=>{if(!i)return esc(c).replace(/⁤/g,'');const j=c.indexOf('⁤');return j<0?'<mark class="inkmk">'+esc(c)+'</mark>':'<mark class="inkmk">'+esc(c.slice(0,j))+'</mark>'+esc(c.slice(j+1)).replace(/⁤/g,'')}).join('');
 /* fullscreen: Esc, or leaving the page, closes it */
-const inkExitFull=()=>{document.querySelectorAll('.inkfull').forEach(x=>x.classList.remove('inkfull'));document.documentElement.classList.remove('inkfull-on')};
+/* a fixed element is trapped by any ancestor with a transform, filter or z-index; while fullscreen is on, those are switched off
+   all the way up so the note covers the whole screen like a notes app, then put back exactly as they were */
+function inkFullSync(){document.querySelectorAll('[data-ifs]').forEach(p=>{p.style.cssText=p.dataset.ifs;delete p.dataset.ifs});
+  const el=document.querySelector('.inkfull');document.documentElement.classList.toggle('inkfull-on',!!el);if(!el)return;
+  for(let p=el.parentElement;p&&p!==document.documentElement;p=p.parentElement){const c=getComputedStyle(p);
+    if(c.transform!=='none'||c.filter!=='none'||(c.backdropFilter&&c.backdropFilter!=='none')||(c.webkitBackdropFilter&&c.webkitBackdropFilter!=='none')||c.zIndex!=='auto'||c.contain!=='none'||c.willChange!=='auto'||c.perspective!=='none'||c.animationName!=='none'){
+      p.dataset.ifs=p.style.cssText;p.style.setProperty('transform','none','important');p.style.setProperty('filter','none','important');p.style.setProperty('backdrop-filter','none','important');p.style.setProperty('-webkit-backdrop-filter','none','important');
+      p.style.setProperty('z-index','auto','important');p.style.setProperty('contain','none','important');p.style.setProperty('will-change','auto','important');p.style.setProperty('perspective','none','important');p.style.setProperty('animation','none','important')}}}
+const inkExitFull=()=>{document.querySelectorAll('.inkfull').forEach(x=>x.classList.remove('inkfull'));inkFullSync()};
 addEventListener('keydown',e=>{if(e.key==='Escape'&&document.querySelector('.inkfull')){inkExitFull();document.querySelectorAll('[data-ik="full"]').forEach(b=>{b.textContent='⛶ full';b.setAttribute('aria-pressed',false)})}});

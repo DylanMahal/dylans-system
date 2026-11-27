@@ -5,7 +5,7 @@ function nInkDirty(){const n=NOTES[NCUR];if(!n)return;n.upd=new Date().toISOStri
 function nInkMount(){
   const ed=document.querySelector('#jPaneN .neditor'),ned=$('nEd');if(!ed||!ned||!NCUR||!NOTES[NCUR])return;
   if(NL){NL.destroy();NL=null}
-  document.documentElement.classList.toggle('inkfull-on',!!document.querySelector('.inkfull'));
+  if(typeof inkFullSync==='function')inkFullSync();else document.documentElement.classList.toggle('inkfull-on',!!document.querySelector('.inkfull'));
   const host=document.createElement('div');host.className='inkhost';ned.replaceWith(host);
   const cv=document.createElement('canvas');cv.className='inkcv';host.append(ned,cv);
   const bar=document.createElement('div');bar.id='nTools';const tb=ed.querySelector('.nhead');tb?tb.after(bar):ed.prepend(bar);

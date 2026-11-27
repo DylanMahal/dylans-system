@@ -44,6 +44,7 @@ function sNorm(segs){const g=(segs||[]).map(([a,b,st])=>[+new Date(a),+new Date(
   return out}
 function sWakes(n){const g=sNorm(n.segs);const sl=g.filter(x=>x[2]!=='awake');if(!sl.length)return null;
   const t0=sl[0][0],t1=sl[sl.length-1][1];let c=0,end=-1;g.forEach(([a,b,st])=>{if(st!=='awake'||a<t0||b>t1)return;if(a-end>6e4)c++;end=b});return c}
+document.addEventListener('change',e=>{const t=e.target;if(!t.matches('[data-wmood]'))return;const k=t.dataset.k;const n=k&&SNIGHTS[k];if(!n)return;n.mood=r10(t.value);n.ms=10;save('sleep/w-'+k,n)});
 function sQ(n){const b=sQB(n);return b?b.score:0}
 function renderSleep(){if(!sleepLoaded){loadSleep();return}
   document.querySelectorAll('#sleepSeg [data-sv]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.sv===SV));
@@ -78,7 +79,7 @@ function sRow(k){const n=SNIGHTS[k];const q=sQ(n);
 function sLast(){const el=$('sleepBody');const k=Object.keys(SNIGHTS).sort().pop();
   if(!k){el.innerHTML=sEmpty('No nights yet','Wear your Apple Watch to bed and finish the one-time setup, and every morning your sleep lands here automatically','Open setup');sGoSetup(el);return}
   const n=SNIGHTS[k];
-  el.innerHTML=sNight(k)+`<div class="sl-card"><div class="sl-h"><span>How do you feel?</span></div><div class="sl-mood">${['😫','😕','😐','🙂','😁'].map((m,i)=>`<button type="button" data-mood="${i+1}" aria-pressed="${n.mood===i+1}">${m}</button>`).join('')}</div>
+  el.innerHTML=sNight(k)+`<div class="sl-card"><div class="sl-h"><span>How do you feel?</span></div>${nxSlide(n.mood!=null?(n.ms===10?n.mood:n.mood*2):null,'data-wmood data-k="'+k+'"')}
     <div class="sl-h" style="margin-top:18px"><span>Sleep notes</span></div><div class="chips" style="margin:0">${STAGS_FN().map(t=>`<button type="button" class="chip${(n.tags||[]).includes(t)?' on':''}" data-tag="${esc(t)}">${t}</button>`).join('')}</div></div>
     <div class="sl-card sl-tonight"><span class="sl-ico"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor"/></svg></span><div><div class="sl-sub">Tonight</div><b>Be asleep by <span class="num">${sBedFor()}</span></b><div class="sl-sub">${SSET.goal} h goal · ${SSET.wake} wake-up${SSET.bedOn?' · reminder 30 min before':''}</div></div></div>`;
   el.onclick=e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.mood){n.mood=+b.dataset.mood;save('sleep/w-'+k,n);sLast();return}
@@ -289,7 +290,7 @@ function sMain(){const el=$('sleepBody');const ks=Object.keys(SNIGHTS).sort();
     <div class="sm-tiles">${tile('moon','Fell asleep',n.start?sT(n.start):'—')}${tile('reg','Regularity',reg!=null?reg+'<small>%</small>':'—')}${tile('heart','Recovery',R?R.v+'<small>%</small>':'—','rec" style="--z:'+(R?sZone(R.v)[0]:'#8e8e93'))}${tile('wake','Wake-ups',wk!=null?wk:'—')}</div>
     ${reg==null?`<div class="sl-note sm-hint">Regularity appears once you have two nights in a row synced.</div>`:''}
     <div class="sm-sec">Experience</div>
-    <div class="sl-card"><div class="sm-q">How did you feel waking up?</div><div class="sm-mood">${[1,2,3,4,5].map(v=>`<button type="button" data-mood="${v}" aria-pressed="${n.mood===v}" aria-label="Mood ${v} of 5">${sFace(v)}</button>`).join('')}</div>
+    <div class="sl-card"><div class="sm-q">How did you feel waking up?</div>${nxSlide(n.mood!=null?(n.ms===10?n.mood:n.mood*2):null,'data-wmood data-k="'+k+'"')}
       <div class="sm-q" style="margin-top:18px">Sleep notes</div><div class="sm-tags">${STAGS_FN().map(t=>`<button type="button" data-tag="${esc(t)}" aria-pressed="${(n.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}</div>
       <div class="sm-q" style="margin-top:16px">Might have hurt sleep</div><div class="sm-tags sm-neg">${SNEG().map(t=>`<button type="button" data-tag="${esc(t)}" aria-pressed="${(n.tags||[]).includes(t)}">${esc(t)}</button>`).join('')}<button type="button" class="sm-add" data-negadd="1">+ Add</button></div></div>
     <div class="sl-card sl-tonight"><span class="sl-ico">${sIco('moon',20)}</span><div><div class="sl-sub">Tonight</div><b>Be asleep by <span class="num">${sBedFor()}</span></b><div class="sl-sub">${SSET.goal} h goal · ${SSET.wake} wake-up${SSET.bedOn?' · reminder 30 min before':''}</div></div></div>

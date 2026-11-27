@@ -66,7 +66,7 @@ function fmtSet(x,s){const xid=exOf(x).id,ty=exOf(x).ty;const T=XTYPES[ty]||XTYP
 function bestSet(x){return x.sets.filter(s=>s.done!==false&&s.t!=='w').sort((a,b)=>e1(b)-e1(a)||(+b.r||0)-(+a.r||0)||(+b.sec||0)-(+a.sec||0))[0]}
 
 /* ---------- shell ---------- */
-function renderGym(){
+function renderGym(){if(GYMV==='history')GYMV='workout';
   $('gymSeg').querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.g===GYMV));
   ['workout','routines','history','stats','exercises','motivation'].forEach(v=>$('g-'+v).hidden=v!==GYMV);
   $('gymSub').textContent=ACTIVE?(ACTIVE.editing?'editing a past workout':'workout in progress'):(planKind==='weekend'?(DOWN==='Sun'?'plan today: lower 11:00':'plan today: upper 11:00'):(DOWN==='Tue'||DOWN==='Thu'?'plan today: upper 20:30':'rest day in the plan'));
@@ -81,12 +81,12 @@ function ssColor(ss){if(!ss||!ACTIVE)return '';const ids=[...new Set(ACTIVE.ex.m
 function renderWorkout(){if(ACTIVE&&!ACTIVE.editing)ascPrime();
   const el=$('g-workout');
   if(!ACTIVE){
-    const sug=gymTypeFor();const folders={};ROUTINES.list.forEach(r=>(folders[r.folder||'my routines']=folders[r.folder||'my routines']||[]).push(r));
-    domPatch(el,`<div class="gstart">${rlWindow()}
+    const sug=gymTypeFor();const rs=ROUTINES.list.slice().sort((a,b)=>(norm(b.name).includes(sug)?1:0)-(norm(a.name).includes(sug)?1:0));
+    domPatch(el,`<div class="gstart">${gMiniCal()}${rlWindow()}
       <button class="bigstart" type="button" data-act="empty"><span class="tag">Quick start</span><b>Start empty workout</b><span class="dim">Log as you go</span></button>
-      ${Object.entries(folders).map(([f,rs])=>`<div class="rgrid">${rs.map(r=>rCard(r,norm(r.name).includes(sug))).join('')}</div>`).join('')||'<div class="dim" style="font-size:12px">No routines yet. Make an "Upper" and a "Lower" one so starting a session is one tap.</div>'}
-      ${WORKOUTS[0]?`<div class="ph2"><span class="tag">Last workout</span></div>${wCard(WORKOUTS[0])}`:''}
-    </div>`);return}
+      ${rs.length?`<div class="rgrid rfit${RT_ALL?' all':''}">${rs.map(r=>rCard(r,norm(r.name).includes(sug))).join('')}</div><button type="button" class="rmore" data-rall hidden></button>`:'<div class="dim" style="font-size:12px">No routines yet. Make an "Upper" and a "Lower" one so starting a session is one tap.</div>'}
+      ${gHistList()}
+    </div>`);rFit(el);return}
   const st=stats(ACTIVE);const ed=!!ACTIVE.editing;
   domPatch(el,`<div class="wbar"><input class="wname" id="wName" value="${esc(ACTIVE.name)}" aria-label="Workout name"><div class="wstats"><div><span class="dim">${ed?'date':'duration'}</span><b class="num" id="wDur">${ed?esc(nice(ACTIVE.date).toLowerCase()):fmtDur(Date.now()-new Date(ACTIVE.startedAt))}</b></div><div><span class="dim">Volume</span><b class="num">${fmtVol(st.vol)} kg</b></div><div><span class="dim">Sets</span><b class="num">${st.n}</b></div><div><span class="dim">Session rank</span>${rlChip(rlLive(),18)}</div></div><div class="row"><button class="btn" type="button" data-act="discard">${ed?'cancel':'discard'}</button><button class="btn p" type="button" data-act="finish">${ed?'save':'finish'}</button></div></div>
   <textarea class="wnote" id="wNote" rows="1" placeholder="Workout notes">${esc(ACTIVE.note||'')}</textarea>
@@ -154,7 +154,7 @@ $('g-workout').addEventListener('click',e=>{
     s.done=!s.done;s.at=s.done?new Date().toISOString():null;const ra=s.done&&rb!=null?rlEx(ex.id,ACTIVE.id,x):null;if(ra!=null&&Math.floor(ra)>Math.floor(rb)){if(!ascRank(ex,rb,ra))setTimeout(()=>rlUpToast(ex.n,rb,ra),350)}const b=bests(ex.id,ACTIVE.id);const pr=s.done&&s.t!=='w'&&isPR(ex,s,b);if(s.done)ascCheck(ex,s,b.kg);
     saveActive();renderWorkout();
     if(s.done){const row=document.querySelector(`.srow[data-s="${xi}:${si}"]`);if(row)burstEl(row.querySelector('.scheck'),pr?90:24,pr);if(pr){flash('new_pr');shake()}
-      const grp=x.ss?ACTIVE.ex.filter(y=>y.ss===x.ss):[x];if(!ACTIVE.editing&&x.rest&&grp[grp.length-1]===x)startRest(x.rest)}
+      const grp=x.ss?ACTIVE.ex.filter(y=>y.ss===x.ss):[x];if(!ACTIVE.editing&&(s.t==='w'||x.rest)&&grp[grp.length-1]===x)startRest(s.t==='w'?60:x.rest)}
     if(s.done&&stats(ACTIVE).n===1&&!ACTIVE.editing)autoTick(/^Gym\b/,/train|gym|workout/i);
   }
 });
@@ -399,6 +399,24 @@ function openExercise(id,tab='summary'){const e=EXMAP.get(id)||exOf({id,n:id});c
 }
 
 /* ---------- history: list + calendar ---------- */
+/* on the workout page: a small month calendar at the top and the month's workouts at the bottom */
+let RT_ALL=false;
+function gMonth(){const base=HIST_MONTH?new Date(HIST_MONTH+'-01T12:00'):logical();return {y:base.getFullYear(),mo:base.getMonth()}}
+function gMiniCal(){const {y,mo}=gMonth();const first=new Date(y,mo,1),days=new Date(y,mo+1,0).getDate(),off=(first.getDay()+6)%7,pre=`${y}-${pad(mo+1)}`,today=ymd(logical());
+  const by={};WORKOUTS.forEach(w=>{if(w.date&&w.date.startsWith(pre))(by[w.date]=by[w.date]||[]).push(w)});const n=Object.values(by).flat().length;
+  return `<div class="gcal"><div class="gcal-h"><button class="iconbtn chev" type="button" data-gcm="-1" aria-label="Previous month">‹</button><span>${first.toLocaleDateString('en-GB',{month:'long',year:'numeric'})}<small class="dim num"> · ${n} workout${n===1?'':'s'}</small></span><button class="iconbtn chev" type="button" data-gcm="1" aria-label="Next month">›</button></div>
+    <div class="gcal-g">${['M','T','W','T','F','S','S'].map(d=>`<span class="gcal-d">${d}</span>`).join('')}${'<span></span>'.repeat(off)}${Array.from({length:days},(_,i)=>{const k=`${pre}-${pad(i+1)}`;const ws=by[k]||[];return `<button type="button" class="gcal-c${ws.length?' on':''}${k===today?' today':''}"${ws.length?` data-gcd="${k}"`:' tabindex="-1"'}>${i+1}</button>`}).join('')}</div></div>`}
+function gHistList(){const {y,mo}=gMonth();const pre=`${y}-${pad(mo+1)}`;const ws=WORKOUTS.filter(w=>w.date&&w.date.startsWith(pre));
+  return `<div class="ph2"><span class="tag">History</span><span class="dim" style="font-size:12px">${esc(new Date(y,mo,1).toLocaleDateString('en-GB',{month:'long'}))} · ${WORKOUTS.length} in total</span></div>${ws.length?`<div class="wlist">${ws.map(wCard).join('')}</div>`:'<div class="dim" style="font-size:12.5px">No workouts this month.</div>'}`}
+/* routines: only as many as fit in one row; the rest are a tap away */
+function rFit(el){const g=el.querySelector('.rfit'),m=el.querySelector('[data-rall]');if(!g||!m)return;requestAnimationFrame(()=>{const cards=[...g.children];cards.forEach(c=>c.hidden=false);
+  if(g.classList.contains('all')){m.hidden=false;m.textContent='Show fewer';return}const cols=Math.max(1,getComputedStyle(g).gridTemplateColumns.split(' ').filter(Boolean).length);
+  const fit=cols===1?2:cols;cards.forEach((c,i)=>c.hidden=i>=fit);const more=cards.length-fit;m.hidden=more<=0;m.textContent=`Show all ${cards.length} routines`})}
+$('g-workout').addEventListener('click',e=>{const b=e.target.closest('[data-gcm],[data-gcd],[data-rall]');if(!b)return;
+  if(b.dataset.gcm){const {y,mo}=gMonth();const d=new Date(y,mo+ +b.dataset.gcm,1,12);HIST_MONTH=`${d.getFullYear()}-${pad(d.getMonth()+1)}`;renderWorkout();return}
+  if(b.dataset.gcd){const ws=WORKOUTS.filter(w=>w.date===b.dataset.gcd);if(ws.length)openWorkout(ws[0].id);return}
+  if(b.hasAttribute('data-rall')){const g=$('g-workout').querySelector('.rfit');if(g){RT_ALL=!RT_ALL;g.classList.toggle('all',RT_ALL);rFit($('g-workout'))}}});
+addEventListener('resize',()=>{if(cur==='gym'&&!ACTIVE)rFit($('g-workout'))});
 function renderHistory(){const el=$('g-history');
   const head=`<div class="row" style="justify-content:space-between;margin-bottom:10px"><div class="seg" id="hMode"><button type="button" data-h="list" aria-pressed="${HIST_MODE==='list'}">List</button><button type="button" data-h="cal" aria-pressed="${HIST_MODE==='cal'}">Calendar</button></div><span class="tag">${WORKOUTS.length} workouts</span></div>`;
   if(HIST_MODE==='list'){el.innerHTML=head+`<div class="wlist">${WORKOUTS.map(wCard).join('')||'<div class="dim">Finished workouts show up here.</div>'}</div>`}

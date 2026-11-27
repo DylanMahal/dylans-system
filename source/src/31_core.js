@@ -25,6 +25,10 @@ function nxFaceSvg(l,size=30){const col=NX_MOODC[l],c={1:-7,2:-3.5,3:0,4:4,5:7}[
   return `<svg viewBox="0 0 34 34" width="${size}" height="${size}" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="${col}" stroke-width="2.2"/><circle cx="12" cy="14" r="1.9" fill="${col}"/><circle cx="22" cy="14" r="1.9" fill="${col}"/><path d="M10.5 ${(22-c/2).toFixed(1)} Q17 ${(22+c).toFixed(1)} 23.5 ${(22-c/2).toFixed(1)}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linecap="round"/></svg>`}
 const NX_MOODL={1:'awful',2:'low',3:'okay',4:'good',5:'great'};
 function nxFaces(sel,attr='data-mood',size=30){return `<div class="nx-faces">${[1,2,3,4,5].map(l=>`<button type="button" class="nx-face" ${attr}="${l}" aria-pressed="${+sel===l}" aria-label="${NX_MOODL[l]}" style="--fc:${NX_MOODC[l]}">${nxFaceSvg(l,size)}</button>`).join('')}</div>`}
+/* every rating is 1 to 10 in 0.1 steps; old 1-5 values are doubled on read */
+function nxSlide(v,attr,extra=''){const on=v!=null&&isFinite(v);return `<div class="nx-sl${on?'':' unset'}"><input type="range" min="1" max="10" step="0.1" value="${on?(+v).toFixed(1):'5.5'}" ${attr} ${extra} aria-label="1 to 10"><b class="num">${on?(+v).toFixed(1):'–'}</b></div>`}
+document.addEventListener('input',e=>{const t=e.target;if(t.type!=='range'||!t.closest('.nx-sl'))return;const w=t.closest('.nx-sl');w.classList.remove('unset');w.querySelector('b').textContent=(+t.value).toFixed(1)});
+const r10=v=>Math.round(+v*10)/10;
 function nxScale(sel,attr){return `<div class="nx-scale">${[1,2,3,4,5].map(n=>`<button type="button" ${attr}="${n}" aria-pressed="${+sel===n}">${n}</button>`).join('')}</div>`}
 
 /* goal trajectory: actual points (x = days from start) against a dashed straight line to the target */

@@ -41,16 +41,17 @@ function medDue(){if(!medsLoaded)return [];const now=Date.now();return medActive
 function openMedCheck(id){const m=medById(id);if(!m)return;const dz=medDayDose(id,DAYK);const st={focus:null,mood:null,app:null,jit:null,se:[]};
   const draw=()=>`<div class="nx" style="padding:0;gap:14px">
     <div class="nx-s" style="margin-top:-4px">${dz?`About ${Math.max(0,Math.round((Date.now()-new Date(dz.at))/36e5*10)/10)} h after your ${nxClock(dz.at)} dose.`:'No dose logged today yet.'} Rate how today has been so far.</div>
-    ${[['focus','Focus'],['mood','Mood'],['app','Appetite'],['jit','Jittery or anxious']].map(([k,l])=>`<div class="nx-field"><span class="nx-lab">${l}</span>${nxScale(st[k],'data-mc-'+k)}</div>`).join('')}
+    ${[['focus','Focus'],['mood','Mood'],['app','Appetite'],['jit','Jittery or anxious']].map(([k,l])=>`<div class="nx-field"><span class="nx-lab">${l}</span>${nxSlide(st[k],'data-mcr="'+k+'"')}</div>`).join('')}
     <div class="nx-field"><span class="nx-lab">Side effects</span><div class="nx-chips">${MED_SE.map(s=>`<button type="button" class="nx-ch" data-mcse="${s}" aria-pressed="${st.se.includes(s)}">${s[0].toUpperCase()+s.slice(1)}</button>`).join('')}</div></div>
     <div class="nx-field"><span class="nx-lab">BP and pulse · optional</span><div class="nx-grid3"><input class="nx-inp num" id="mcS" type="number" inputmode="numeric" placeholder="sys" aria-label="systolic"><input class="nx-inp num" id="mcD" type="number" inputmode="numeric" placeholder="dia" aria-label="diastolic"><input class="nx-inp num" id="mcP" type="number" inputmode="numeric" placeholder="pulse" aria-label="pulse"></div><span class="nx-xs">Also goes into your BP log on Today.</span></div>
     <button type="button" class="nx-btnp" id="mcSave">Save check-in</button></div>`;
   openSheet(m.name+' · peak check-in',draw());const sb=$('sheetBody');
-  sb.onclick=e=>{for(const k of ['focus','mood','app','jit']){const b=e.target.closest('[data-mc-'+k+']');if(b){st[k]=+b.getAttribute('data-mc-'+k);b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b));return}}
+  sb.onchange=e=>{const r=e.target.closest('[data-mcr]');if(r)st[r.dataset.mcr]=r10(r.value)};
+  sb.onclick=e=>{
     const se=e.target.closest('[data-mcse]');if(se){const s=se.dataset.mcse;if(s==='none')st.se=st.se.includes('none')?[]:['none'];else{st.se=st.se.filter(x=>x!=='none');st.se=st.se.includes(s)?st.se.filter(x=>x!==s):st.se.concat(s)}sb.querySelectorAll('[data-mcse]').forEach(x=>x.setAttribute('aria-pressed',st.se.includes(x.dataset.mcse)));return}
     if(e.target.closest('#mcSave')){if(st.focus==null&&st.mood==null&&st.app==null&&st.jit==null&&!st.se.length){closeSheet();return}
       const s=+$('mcS').value,d=+$('mcD').value,p=+$('mcP').value||null;const bp=s&&d?{s,d,p}:(p?{p}:null);
-      const mon=medMonth(DAYK);MEDM[mon]=MEDM[mon]||{doses:[],checks:[]};MEDM[mon].checks.push({id:rid(),med:id,at:new Date().toISOString(),dose:dz?dz.dose:(+m.dose||null),...st,bp});medsSaveLog(mon);
+      const mon=medMonth(DAYK);MEDM[mon]=MEDM[mon]||{doses:[],checks:[]};MEDM[mon].checks.push({id:rid(),med:id,at:new Date().toISOString(),dose:dz?dz.dose:(+m.dose||null),...st,s:10,bp});medsSaveLog(mon);
       if(bp&&bp.s&&typeof BP!=='undefined'){BP.r.push({t:new Date().toISOString(),s:bp.s,d:bp.d,p:bp.p||null});save('body/bp',BP);if(typeof renderBody==='function')renderBody()}
       if(typeof pushCancel==='function')pushCancel('peak:'+id+':'+DAYK);closeSheet();renderTodayNudges();if(cur==='stack')renderMeds()}}}
 
@@ -77,7 +78,7 @@ function medCurve(m,dz){const w=330,h=96,pl=2,pr=2,pt=8,pb=18,W=w-pl-pr,H=h-pt-p
 /* group check-ins by the dose that day */
 function medByDose(id){const g={};MEDLOG.checks.filter(c=>c.med===id&&c.dose!=null).forEach(c=>{(g[c.dose]=g[c.dose]||[]).push(c)});return g}
 function medDoseDays(id,dose){return [...new Set(MEDLOG.doses.filter(x=>x.med===id&&+x.dose===+dose).map(x=>x.day||String(x.at).slice(0,10)))]}
-function medStats(id,dose){const cs=(medByDose(id)[dose]||[]),days=medDoseDays(id,dose);const a=k=>nxAvg(cs.map(c=>c[k]));
+function medStats(id,dose){const cs=(medByDose(id)[dose]||[]),days=medDoseDays(id,dose);const a=k=>nxAvg(cs.map(c=>c[k]==null?null:c.s===10?c[k]:c[k]*2));
   const bps=(typeof BP!=='undefined'?BP.r:[]).filter(r=>days.includes(String(r.t).slice(0,10)));const ck=cs.map(c=>c.bp).filter(Boolean);
   const sys=nxAvg(bps.map(r=>r.s).concat(ck.map(b=>b.s))),dia=nxAvg(bps.map(r=>r.d).concat(ck.map(b=>b.d))),pul=nxAvg(bps.map(r=>r.p).concat(ck.map(b=>b.p)));
   const se={};cs.forEach(c=>(c.se||[]).filter(x=>x!=='none').forEach(x=>{se[x]=(se[x]||0)+1}));
@@ -102,7 +103,7 @@ async function renderMeds(){const el=$('stackPaneM');if(!el)return;if(!medsLoade
     const A=medStats(ti.id,curD),B=prevD!=null?medStats(ti.id,prevD):null;const since=MEDLOG.doses.filter(x=>x.med===ti.id&&+x.dose===curD).map(x=>x.day||String(x.at).slice(0,10)).sort()[0];
     const t=(lab,v,u,pv,better)=>{const d=v!=null&&pv!=null?v-pv:null;const good=d==null?null:(better==='up'?d>=0:d<=0);return `<div class="nx-tile" style="background:rgba(255,255,255,.04)"><span>${lab}</span><b class="num">${v!=null?(Math.abs(v)>=20?Math.round(v):v.toFixed(1)):'–'}<small> ${u}</small></b><em class="${good==null?'':good?'nx-up':'nx-dn'}">${d==null?(A.n?A.n+' check-ins':'no check-ins yet'):(d>0?'▲ ':'▼ ')+(Math.abs(d)>=20?Math.round(Math.abs(d)):Math.abs(d).toFixed(1))+' vs '+prevD+' '+(ti.unit||'mg')}</em></div>`};
     h+=`<div class="nx-card"><div class="nx-split"><span class="nx-t2">Titration · ${esc(ti.name)}</span><span class="nx-pill nx-cy">${since?'Day '+(nxDays(since,DAYK)+1)+' on '+curD+' '+(ti.unit||'mg'):curD+' '+(ti.unit||'mg')}</span></div>
-      <div class="nx-grid2" style="margin-top:12px;gap:8px">${t('Focus',A.focus,'/ 5',B&&B.focus,'up')}${t('Appetite',A.app,'/ 5',B&&B.app,'up')}${t('Resting pulse',A.pul,'bpm',B&&B.pul,'down')}${t('Jittery',A.jit,'/ 5',B&&B.jit,'down')}</div>
+      <div class="nx-grid2" style="margin-top:12px;gap:8px">${t('Focus',A.focus,'/ 10',B&&B.focus,'up')}${t('Appetite',A.app,'/ 10',B&&B.app,'up')}${t('Resting pulse',A.pul,'bpm',B&&B.pul,'down')}${t('Jittery',A.jit,'/ 10',B&&B.jit,'down')}</div>
       <div class="nx-btns" style="margin-top:12px"><button type="button" class="nx-btn2" data-medv="compare" data-med="${ti.id}">Compare doses</button><button type="button" class="nx-btn2 pk" data-medv="report" data-med="${ti.id}">Appointment report</button></div></div>`}
   course.forEach(m=>{const c=m.course,day=nxDays(c.start,DAYK)+1;const logged=MEDLOG.doses.filter(x=>x.med===m.id).reduce((a,x)=>a+(+x.dose||0),0);const est=Math.max(logged,(+c.mg||+m.dose||0)*day);
     const kg=+c.kg||(typeof WT!=='undefined'&&WT.r.length?+WT.r[WT.r.length-1].kg:0);const total=+c.target||0;
@@ -148,7 +149,7 @@ async function renderMedCompare(el){const m=medById(MEDSEL)||medActive().find(x=
   const seKeys=[...new Set(S.flatMap(s=>Object.keys(s.se)))];
   el.innerHTML=`<div class="nx"><button type="button" class="nx-back" data-medback>‹ Meds</button>
     <div class="nx-card"><div class="nx-t1">${esc(m.name)} · dose comparison</div><div class="nx-s" style="margin-top:4px">${first?nxDate(first.day||String(first.at).slice(0,10))+' to '+nxDate(DAYK)+' · ':''}${S.map((s,i)=>`${ds[i]} ${u} for ${s.days} day${s.days===1?'':'s'}`).join(', ')} · ${S.reduce((a,s)=>a+s.n,0)} check-ins</div>
-      ${ds.length?`<div style="margin-top:8px">${row('Focus','focus',1,5,'up')}${row('Mood','mood',1,5,'up')}${row('Appetite','app',1,5,'up','',undefined,'Lower appetite helps a cut, but keep protein up')}${row('Jittery or anxious','jit',1,5,'down')}${row('Resting pulse','pul',50,110,'down',v=>String(Math.round(v)),' bpm')}${row('Systolic BP','sys',90,150,'down',v=>String(Math.round(v)))}${row('Sleep score the night after','sleep',0,100,'up',v=>String(Math.round(v)))}</div>`:'<div class="nx-s" style="margin-top:10px">Rate a few peak check-ins on each dose and the comparison builds itself.</div>'}</div>
+      ${ds.length?`<div style="margin-top:8px">${row('Focus','focus',1,10,'up')}${row('Mood','mood',1,10,'up')}${row('Appetite','app',1,10,'up','',undefined,'Lower appetite helps a cut, but keep protein up')}${row('Jittery or anxious','jit',1,10,'down')}${row('Resting pulse','pul',50,110,'down',v=>String(Math.round(v)),' bpm')}${row('Systolic BP','sys',90,150,'down',v=>String(Math.round(v)))}${row('Sleep score the night after','sleep',0,100,'up',v=>String(Math.round(v)))}</div>`:'<div class="nx-s" style="margin-top:10px">Rate a few peak check-ins on each dose and the comparison builds itself.</div>'}</div>
     ${seKeys.length?`<div class="nx-card"><div class="nx-h"><span>Side effects</span><em>share of check-ins</em></div><div class="nx-rows">${seKeys.map(k=>`<div class="nx-row"><span>${esc(k[0].toUpperCase()+k.slice(1))}</span><span class="num nx-s">${S.map((s,i)=>(s.n?Math.round((s.se[k]||0)/s.n*100):0)+'%'+(i<S.length-1?' → ':'')).join('')}</span></div>`).join('')}</div></div>`:''}
     <div class="nx-card"><div class="nx-h"><span>Questions for your appointment</span><em>saved with this med</em></div><textarea class="nx-inp" id="medQ" rows="4" placeholder="What you want to ask, one per line">${esc(m.q||'')}</textarea></div>
     <button type="button" class="nx-btnp" data-medv="report" data-med="${m.id}">Make appointment report</button></div>`;
