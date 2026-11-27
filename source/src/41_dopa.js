@@ -3,7 +3,7 @@
    A rule marked as a streak is also a habit (id 'dp-<ruleId>'), so it shows on Streaks and in the Streak widget.
    The rule words are yours: edit them in the box. The defaults are generic and can come from sys/lex (dopa). */
 let DOPA=null,DPLOG={d:{}},dopaLoaded=false;
-const DOPA_DEF=()=>({title:LW('dopat','Daily rules'),rules:LX('dopa',[]).map((t,i)=>({id:'r'+i,t,hab:false}))});
+const DOPA_DEF=()=>({title:LW('dopat','Daily rules'),rules:LX('dopa',[]).map((t,i)=>({id:'r'+i,t,hab:LX('dopah',[]).includes(i)}))});
 async function dopaLoad(){if(dopaLoaded)return;const [a,b]=await Promise.all([load('today/dopa'),load('dopa/log')].map(p=>p.catch(()=>null)));DOPA=a&&a.rules?a:DOPA_DEF();DPLOG={d:{},...(b||{})};dopaLoaded=true}
 watch('today/dopa',d=>{if(d&&d.rules){DOPA=d;if(cur==='today')renderDopa()}});
 watch('dopa/log',d=>{if(d){DPLOG={d:{},...d};if(cur==='today')renderDopa()}});

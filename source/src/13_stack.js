@@ -2,13 +2,13 @@
 const STC=Object.fromEntries(STACK_CATS.map((c,i)=>[c,['#ff2a6d','#ffb000','#57f5a8','#05d9e8','#b18cff','#7a7a7a'][i]||'#7a7a7a']));
 const STATUSL={active:'in plan',asneeded:'as needed',paused:'paused',notinplan:'not in plan'};
 let stF='active',catF=null,sortK='monthly',sortD=-1;
-/* focus group: a cross-cutting chip for everything that supports one goal. its name and the private part of its
-   word list come from sys/lex (w.fx, fxk); the generic support compounds below are just the public fallback. */
-const FXK_BASE=['tyrosine','zinc','magnesium','bromantane','memantine','citicoline','cdp choline','alpha gpc','alcar','acetyl l carnitine','nac','iron','vitamin d','caffeine','rhodiola','ginkgo','saffron','lions mane','uridine','phosphatidylserine','guanfacine','modafinil','astaxanthin','astax','nebivolol','taurine','9 me bc','9mebc','lemborexant','nacet','n acetylcysteine ethyl','adhd','medikinet','vyvanse','elvanse','ritalin','methylphenidate','lisdexamfetamine'];
+/* focus group: a cross-cutting chip for everything that supports one goal. its name and its whole word list
+   come from the private sys/lex (w.fx, fxk); nothing about what is in it lives in this public code. */
+const FXK_BASE=[];
 const fxN=x=>' '+norm(x).replace(/[^a-z0-9]+/g,' ').trim()+' ';
 const fxAuto=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(FXK_BASE.concat(LX('fxk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
-/* sleep group: same idea, for anything that aids sleep. extra private names come from sys/lex (slk). */
-const SLK_BASE=['melatonin','glycine','magnesium','theanine','lemborexant','apigenin','ashwagandha','gaba','valerian','tryptophan','5 htp','5htp','inositol','taurine','passionflower','lemon balm','magnolia','cbd','cbn','trazodone','doxylamine','diphenhydramine','mirtazapine','zopiclone','zolpidem','daridorexant','suvorexant','ramelteon','hydroxyzine','tart cherry','montmorency','kava','chamomile','lavender','sleep'];
+/* second group: same idea; its word list is sys/lex slk. */
+const SLK_BASE=[];
 const slAuto=s=>{const n=fxN(s.name),c=n.replace(/ /g,'');return [...new Set(SLK_BASE.concat(LX('slk',[])))].some(k=>{const t=fxN(k);return t.length<=6?n.includes(t):c.includes(t.replace(/ /g,''))})};
 /* hand edits on top of the keyword match: stack/groups = {fx:{in:[name], out:[name]}, sl:{…}} */
 let STG={fx:{in:[],out:[]},sl:{in:[],out:[]}};
@@ -16,7 +16,7 @@ load('stack/groups').then(d=>{if(d)STG={fx:{in:[],out:[]},sl:{in:[],out:[]},...d
 watch('stack/groups',d=>{if(d){STG={fx:{in:[],out:[]},sl:{in:[],out:[]},...d};if(cur==='stack'&&typeof renderStack==='function')renderStack()}});
 const stgHas=(g,s)=>{const G=STG[g]||{},n=norm(s.name);if((G.out||[]).some(x=>norm(x)===n))return false;if((G.in||[]).some(x=>norm(x)===n))return true;return g==='fx'?fxAuto(s):slAuto(s)};
 const fxMatch=s=>stgHas('fx',s),slMatch=s=>stgHas('sl',s);
-function stgEdit(g){const all=((typeof M!=='undefined'&&M&&M.stack)||[]).slice().sort((a,b)=>a.name.localeCompare(b.name));const lab=g==='fx'?LW('fx','ADHD'):LW('sl','sleep');
+function stgEdit(g){const all=((typeof M!=='undefined'&&M&&M.stack)||[]).slice().sort((a,b)=>a.name.localeCompare(b.name));const lab=g==='fx'?LW('fx','Focus'):LW('sl','sleep');
   openSheet('Edit '+lab+' group',`<div class="dim" style="font-size:12.5px;margin-bottom:10px">Tick what belongs in this group.</div><div class="stg-l">${all.map((s,i)=>`<label class="stg-i"><input type="checkbox" data-gi="${i}"${stgHas(g,s)?' checked':''}><span>${esc(s.name)}</span></label>`).join('')}</div><div class="bigbtns" style="margin-top:12px"><span style="flex:1"></span><button class="btn p" type="button" id="stgOk">Save</button></div>`);
   $('stgOk').onclick=()=>{const G={in:[],out:[]};document.querySelectorAll('#sheetBody [data-gi]').forEach(c=>{const s=all[+c.dataset.gi];const auto=g==='fx'?fxAuto(s):slAuto(s);if(c.checked&&!auto)G.in.push(s.name);if(!c.checked&&auto)G.out.push(s.name)});STG[g]=G;save('stack/groups',STG);closeSheet();renderStack()}}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-stg]');if(b)stgEdit(b.dataset.stg)});
@@ -28,7 +28,7 @@ function renderStack(){
     .map(([k,v,s],i)=>`<div class="panel"><div class="ph"><span class="tag">${k}</span></div><div class="pb"><span class="v num ${i===1?'pink':''}" data-scr="${esc(v)}">${v}</span></div></div>`).join('');
   const pb=st.filter(s=>s.inb&&s.status==='paused'&&s.monthly>0);
   $('stackWarn').innerHTML='';
-  const sts=[['all','all'],['active','in plan'],['asneeded','as needed'],['paused','paused'],['notinplan','not in plan'],['inb','in budget'],['opt','optional'],['fx',LW('fx','ADHD')],['sl',LW('sl','sleep')]];
+  const sts=[['all','all'],['active','in plan'],['asneeded','as needed'],['paused','paused'],['notinplan','not in plan'],['inb','in budget'],['opt','optional'],['fx',LW('fx','Focus')],['sl',LW('sl','sleep')]];
   $('stChips').innerHTML=sts.map(([k,l])=>`<button class="chip" type="button" data-s="${k}" aria-pressed="${stF===k}">${l}<span class="c">${st.filter(stFilter(k)).length}</span></button>`).join('')+(stF==='fx'||stF==='sl'?`<button class="chip" type="button" data-stg="${stF}">✎ Edit group</button>`:'');
   $('catChips').innerHTML=STACK_CATS.map(cc=>`<button class="chip" type="button" data-c="${esc(cc)}" aria-pressed="${catF===cc}"><i style="background:${STC[cc]}"></i>${esc(cc.split(' / ')[0].toLowerCase())}<span class="c">${st.filter(s=>s.cat===cc).length}</span></button>`).join('');
   renderStackTbl();
